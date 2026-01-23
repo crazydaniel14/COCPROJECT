@@ -1,16 +1,24 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbycmSvqeMj_GpuALxs8HTEf5GiI09nQI6fm04RtsA3stKbSW-d6zbm8bzWNWszl1GzQpw/exec?action=current_work";
+const API_URL =
+  "https://script.google.com/macros/s/AKfycbycmSvqeMj_GpuALxs8HTEf5GiI09nQI6fm04RtsA3stKbSW-d6zbm8bzWNWszl1GzQpw/exec?action=current_work_table";
 
 fetch(API_URL)
-  .then(r => r.json())
-  .then(rows => {
-    const tbody = document.querySelector("#boostTable tbody");
+  .then(response => response.json())
+  .then(data => {
+    const thead = document.querySelector("#builderTable thead");
+    const tbody = document.querySelector("#builderTable tbody");
 
-    rows.slice(1).forEach(row => {
+    // ----- HEADER -----
+    const headerRow = document.createElement("tr");
+    data[0].forEach(text => {
+      const th = document.createElement("th");
+      th.textContent = text;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+
+    // ----- ROWS -----
+    data.slice(1).forEach(row => {
       const tr = document.createElement("tr");
-
-      if (row[5] === "FORCED") {
-        tr.classList.add("forced");
-      }
 
       row.forEach(cell => {
         const td = document.createElement("td");
@@ -21,7 +29,7 @@ fetch(API_URL)
       tbody.appendChild(tr);
     });
   })
-  .catch(err => {
-    console.error(err);
-    alert("Failed to load CURRENT WORK data");
+  .catch(error => {
+    console.error(error);
+    alert("Failed to load CURRENT WORK table");
   });
