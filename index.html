@@ -1,11 +1,30 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>COC Upgrade Planner</title>
-</head>
-<body>
-  <h1>COC Upgrade Planner</h1>
-  <p>If you see this, GitHub Pages works 🎉</p>
-</body>
-</html>
+const API_URL = "https://script.google.com/macros/s/AKfycbycmSvqeMj_GpuALxs8HTEf5GiI09nQI6fm04RtsA3stKbSW-d6zbm8bzWNWszl1GzQpw/exec";
+
+fetch(API_URL)
+  .then(r => r.json())
+  .then(rows => {
+    const tbody = document.querySelector("#boostTable tbody");
+
+    // Skip header row
+    rows.slice(1).forEach(row => {
+      const tr = document.createElement("tr");
+
+      if (row[5] === "FORCED") {
+        tr.classList.add("forced");
+      }
+
+      row.forEach(cell => {
+        const td = document.createElement("td");
+        td.textContent = cell instanceof Date
+          ? new Date(cell).toLocaleString()
+          : cell;
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
+    });
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Failed to load CURRENT WORK data");
+  });
