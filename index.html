@@ -1,30 +1,29 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbycmSvqeMj_GpuALxs8HTEf5GiI09nQI6fm04RtsA3stKbSW-d6zbm8bzWNWszl1GzQpw/exec";
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>COC Upgrade Planner</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-fetch(API_URL)
-  .then(r => r.json())
-  .then(rows => {
-    const tbody = document.querySelector("#boostTable tbody");
+  <h1>COC Upgrade Planner</h1>
+  <h2>Upcoming Boosts (from CURRENT WORK)</h2>
 
-    // Skip header row
-    rows.slice(1).forEach(row => {
-      const tr = document.createElement("tr");
+  <table id="boostTable">
+    <thead>
+      <tr>
+        <th>Boost Date</th>
+        <th>Upgrade</th>
+        <th>Builder</th>
+        <th>Old Finish</th>
+        <th>New Finish</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-      if (row[5] === "FORCED") {
-        tr.classList.add("forced");
-      }
-
-      row.forEach(cell => {
-        const td = document.createElement("td");
-        td.textContent = cell instanceof Date
-          ? new Date(cell).toLocaleString()
-          : cell;
-        tr.appendChild(td);
-      });
-
-      tbody.appendChild(tr);
-    });
-  })
-  .catch(err => {
-    console.error(err);
-    alert("Failed to load CURRENT WORK data");
-  });
+  <script src="script.js"></script>
+</body>
+</html>
