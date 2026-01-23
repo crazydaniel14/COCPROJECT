@@ -1,3 +1,5 @@
+console.log("Loaded script.js version 2");
+
 const API_URL =
   "https://script.google.com/macros/s/AKfycbycmSvqeMj_GpuALxs8HTEf5GiI09nQI6fm04RtsA3stKbSW-d6zbm8bzWNWszl1GzQpw/exec?action=current_work_table";
 
