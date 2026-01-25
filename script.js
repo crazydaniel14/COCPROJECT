@@ -51,3 +51,23 @@ row.forEach((cell, colIndex) => {
     console.error(error);
     alert("Failed to load CURRENT WORK table");
   });
+document
+  .getElementById("refreshSheetBtn")
+  .addEventListener("click", () => {
+
+    // Call Apps Script to refresh the spreadsheet
+    fetch(
+      "https://script.google.com/macros/s/AKfycbycmSvqeMj_GpuALxs8HTEf5GiI09nQI6fm04RtsA3stKbSW-d6zbm8bzWNWszl1GzQpw/exec?action=refresh_sheet"
+    )
+      .then(response => response.json())
+      .then(() => {
+        // After spreadsheet refresh, reload the table
+        loadCurrentWorkTable();
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Failed to refresh spreadsheet");
+      });
+
+  });
+
