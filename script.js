@@ -54,6 +54,8 @@ row.forEach((cell, colIndex) => {
 document
   .getElementById("refreshSheetBtn")
   .addEventListener("click", () => {
+    
+    console.log("Refresh button clicked");
 
     // Call Apps Script to refresh the spreadsheet
     fetch(
