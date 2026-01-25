@@ -44,15 +44,23 @@ function loadCurrentWorkTable() {
       thead.innerHTML = "";
       tbody.innerHTML = "";
 
-      // Header
-      const headerRow = document.createElement("tr");
-      data[0].forEach(h => {
-        const th = document.createElement("th");
-        th.textContent = h;
-        headerRow.appendChild(th);
-      });
-      thead.appendChild(headerRow);
-
+      // Header (EXPLICIT — do NOT trust sheet headers)
+         const headerRow = document.createElement("tr");
+         
+         [
+           "BUILDER",
+           "CURRENT UPGRADE",
+           "FINISH TIME",
+           "Time left of upgrade",
+           "NEXT UPGRADE"
+         ].forEach(h => {
+           const th = document.createElement("th");
+           th.textContent = h;
+           headerRow.appendChild(th);
+         });
+         
+         thead.appendChild(headerRow);
+         
       // Find earliest finish time (Sheets MIN equivalent)
       const finishTimes = [];
       for (let i = 1; i < data.length; i++) {
