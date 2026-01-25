@@ -21,13 +21,29 @@ fetch(API_URL)
     // ----- ROWS -----
     data.slice(1).forEach(row => {
       const tr = document.createElement("tr");
+row.forEach((cell, colIndex) => {
+  const td = document.createElement("td");
 
-      row.forEach(cell => {
-        const td = document.createElement("td");
-        td.textContent = cell;
-        tr.appendChild(td);
-      });
+  // FINISH TIME column (index 2)
+  if (colIndex === 2 && cell) {
+    const date = new Date(cell);
 
+    td.textContent = date.toLocaleString("en-US", {
+      timeZone: "America/New_York",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true
+    });
+
+  } else {
+    td.textContent = cell;
+  }
+
+  tr.appendChild(td);
+});
+      
       tbody.appendChild(tr);
     });
   })
