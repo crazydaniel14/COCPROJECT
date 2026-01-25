@@ -1,4 +1,4 @@
-console.log("Loaded script.js version 4");
+console.log("Loaded script.js version 5");
 
 /* =========================
    CONFIG
@@ -55,49 +55,55 @@ function loadCurrentWorkTable() {
         headerRow.appendChild(th);
       });
       thead.appendChild(headerRow);
-/* ----- ROWS ----- */
 
-// Collect finish times first
-const finishTimes = data.slice(1)
-  .map(row => new Date(row[2]))
-  .filter(d => !isNaN(d));
+      /* ----- ROWS ----- */
 
-// Find earliest finish time
-const earliestFinish = new Date(Math.min(...finishTimes));
+      // Collect all valid finish times
+      const finishTimes = data
+        .slice(1)
+        .map(row => new Date(row[2]))
+        .filter(d => !isNaN(d));
 
-data.slice(1).forEach(row => {
-  const tr = document.createElement("tr");
+      // Find earliest finish time (Sheets MIN equivalent)
+      const earliestFinish = new Date(Math.min(...finishTimes));
 
-  const rowFinish = new Date(row[2]);
+      data.slice(1).forEach(row => {
+        const tr = document.createElement("tr");
 
-  // Highlight if this is the earliest finish
-  if (rowFinish.getTime() === earliestFinish.getTime()) {
-    tr.classList.add("next-finish");
-  }
+        const rowFinish = new Date(row[2]);
+        if (rowFinish.getTime() === earliestFinish.getTime()) {
+          tr.classList.add("next-finish");
+        }
 
-  row.forEach((cell, colIndex) => {
-    const td = document.createElement("td");
+        row.forEach((cell, colIndex) => {
+          const td = document.createElement("td");
 
-    // FINISH TIME formatting
-    if (colIndex === 2 && cell) {
-      const date = new Date(cell);
-      td.textContent = date.toLocaleString("en-US", {
-        timeZone: "America/New_York",
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true
+          // FINISH TIME formatting
+          if (colIndex === 2 && cell) {
+            const date = new Date(cell);
+            td.textContent = date.toLocaleString("en-US", {
+              timeZone: "America/New_York",
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true
+            });
+          } else {
+            td.textContent = cell;
+          }
+
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
       });
-    } else {
-      td.textContent = cell;
-    }
-
-    tr.appendChild(td);
-  });
-
-  tbody.appendChild(tr);
-});
+    })
+    .catch(error => {
+      console.error(error);
+      alert("Failed to load CURRENT WORK table");
+    });
+}
 
 /* =========================
    PAGE LOAD + BUTTON WIRING
