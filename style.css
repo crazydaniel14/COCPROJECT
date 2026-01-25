@@ -95,3 +95,8 @@ td:nth-child(4) {
     min-height: 60px;
   }
 }
+/* ===== NEXT FINISH HIGHLIGHT ===== */
+tr.next-finish {
+  background-color: #fff3cd;   /* soft yellow */
+}
+
