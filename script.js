@@ -1,13 +1,39 @@
-console.log("Loaded script.js version 3");
+console.log("Loaded script.js version 4");
 
-const API_URL =
-  "https://script.google.com/macros/s/AKfycbycmSvqeMj_GpuALxs8HTEf5GiI09nQI6fm04RtsA3stKbSW-d6zbm8bzWNWszl1GzQpw/exec?action=current_work_table";
+/* =========================
+   CONFIG
+   ========================= */
+const API_BASE =
+  "https://script.google.com/macros/s/AKfycbycmSvqeMj_GpuALxs8HTEf5GiI09nQI6fm04RtsA3stKbSW-d6zbm8bzWNWszl1GzQpw/exec";
+
+const TABLE_ENDPOINT = API_BASE + "?action=current_work_table";
+const REFRESH_ENDPOINT = API_BASE + "?action=refresh_sheet";
+
+/* =========================
+   LAST REFRESHED INDICATOR
+   ========================= */
+function updateLastRefreshed() {
+  const el = document.getElementById("lastRefreshed");
+  if (!el) return;
+
+  const now = new Date();
+  el.textContent =
+    "Last refreshed: " +
+    now.toLocaleString("en-US", {
+      timeZone: "America/New_York",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true
+    });
+}
 
 /* =========================
    LOAD CURRENT WORK TABLE
    ========================= */
 function loadCurrentWorkTable() {
-  fetch(API_URL)
+  fetch(TABLE_ENDPOINT)
     .then(response => response.json())
     .then(data => {
       const thead = document.querySelector("#builderTable thead");
@@ -21,7 +47,7 @@ function loadCurrentWorkTable() {
       thead.innerHTML = "";
       tbody.innerHTML = "";
 
-      // ----- HEADER -----
+      /* ----- HEADER ----- */
       const headerRow = document.createElement("tr");
       data[0].forEach(text => {
         const th = document.createElement("th");
@@ -30,7 +56,7 @@ function loadCurrentWorkTable() {
       });
       thead.appendChild(headerRow);
 
-      // ----- ROWS -----
+      /* ----- ROWS ----- */
       data.slice(1).forEach(row => {
         const tr = document.createElement("tr");
 
@@ -69,8 +95,9 @@ function loadCurrentWorkTable() {
    ========================= */
 document.addEventListener("DOMContentLoaded", () => {
 
-  // Load table on page load
+  // Initial load
   loadCurrentWorkTable();
+  updateLastRefreshed();
 
   const refreshBtn = document.getElementById("refreshSheetBtn");
 
@@ -82,12 +109,10 @@ document.addEventListener("DOMContentLoaded", () => {
   refreshBtn.addEventListener("click", () => {
     console.log("Refresh button clicked");
 
-    fetch(
-      "https://script.google.com/macros/s/AKfycbycmSvqeMj_GpuALxs8HTEf5GiI09nQI6fm04RtsA3stKbSW-d6zbm8bzWNWszl1GzQpw/exec?action=refresh_sheet"
-    )
+    fetch(REFRESH_ENDPOINT)
       .then(r => r.json())
       .then(() => {
-        // Reload table AFTER spreadsheet refresh
+        updateLastRefreshed();
         loadCurrentWorkTable();
       })
       .catch(err => {
