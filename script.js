@@ -55,40 +55,49 @@ function loadCurrentWorkTable() {
         headerRow.appendChild(th);
       });
       thead.appendChild(headerRow);
+/* ----- ROWS ----- */
 
-      /* ----- ROWS ----- */
-      data.slice(1).forEach(row => {
-        const tr = document.createElement("tr");
+// Collect finish times first
+const finishTimes = data.slice(1)
+  .map(row => new Date(row[2]))
+  .filter(d => !isNaN(d));
 
-        row.forEach((cell, colIndex) => {
-          const td = document.createElement("td");
+// Find earliest finish time
+const earliestFinish = new Date(Math.min(...finishTimes));
 
-          // FINISH TIME column (index 2)
-          if (colIndex === 2 && cell) {
-            const date = new Date(cell);
-            td.textContent = date.toLocaleString("en-US", {
-              timeZone: "America/New_York",
-              month: "short",
-              day: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
-              hour12: true
-            });
-          } else {
-            td.textContent = cell;
-          }
+data.slice(1).forEach(row => {
+  const tr = document.createElement("tr");
 
-          tr.appendChild(td);
-        });
+  const rowFinish = new Date(row[2]);
 
-        tbody.appendChild(tr);
+  // Highlight if this is the earliest finish
+  if (rowFinish.getTime() === earliestFinish.getTime()) {
+    tr.classList.add("next-finish");
+  }
+
+  row.forEach((cell, colIndex) => {
+    const td = document.createElement("td");
+
+    // FINISH TIME formatting
+    if (colIndex === 2 && cell) {
+      const date = new Date(cell);
+      td.textContent = date.toLocaleString("en-US", {
+        timeZone: "America/New_York",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true
       });
-    })
-    .catch(error => {
-      console.error(error);
-      alert("Failed to load CURRENT WORK table");
-    });
-}
+    } else {
+      td.textContent = cell;
+    }
+
+    tr.appendChild(td);
+  });
+
+  tbody.appendChild(tr);
+});
 
 /* =========================
    PAGE LOAD + BUTTON WIRING
