@@ -1,4 +1,4 @@
-console.log("Loaded script.js version 5");
+console.log("Loaded script.js version 6");
 
 /* =========================
    CONFIG
@@ -10,7 +10,7 @@ const TABLE_ENDPOINT = API_BASE + "?action=current_work_table";
 const REFRESH_ENDPOINT = API_BASE + "?action=refresh_sheet";
 
 /* =========================
-   LAST REFRESHED INDICATOR
+   LAST REFRESHED
    ========================= */
 function updateLastRefreshed() {
   const el = document.getElementById("lastRefreshed");
@@ -30,57 +30,52 @@ function updateLastRefreshed() {
 }
 
 /* =========================
-   LOAD CURRENT WORK TABLE
+   LOAD TABLE
    ========================= */
 function loadCurrentWorkTable() {
   fetch(TABLE_ENDPOINT)
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
       const thead = document.querySelector("#builderTable thead");
       const tbody = document.querySelector("#builderTable tbody");
 
-      if (!thead || !tbody) {
-        console.error("Table elements not found");
-        return;
-      }
+      if (!thead || !tbody) return;
 
       thead.innerHTML = "";
       tbody.innerHTML = "";
 
-      /* ----- HEADER ----- */
+      // Header
       const headerRow = document.createElement("tr");
-      data[0].forEach(text => {
+      data[0].forEach(h => {
         const th = document.createElement("th");
-        th.textContent = text;
+        th.textContent = h;
         headerRow.appendChild(th);
       });
       thead.appendChild(headerRow);
 
-      /* ----- ROWS ----- */
-
-      // Collect all valid finish times
-      const finishTimes = data
-        .slice(1)
-        .map(row => new Date(row[2]))
-        .filter(d => !isNaN(d));
-
       // Find earliest finish time (Sheets MIN equivalent)
-      const earliestFinish = new Date(Math.min(...finishTimes));
+      const finishTimes = [];
+      for (let i = 1; i < data.length; i++) {
+        const d = new Date(data[i][2]);
+        if (!isNaN(d)) finishTimes.push(d.getTime());
+      }
+      const earliest = Math.min(...finishTimes);
 
-      data.slice(1).forEach(row => {
+      // Rows
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
         const tr = document.createElement("tr");
 
-        const rowFinish = new Date(row[2]);
-        if (rowFinish.getTime() === earliestFinish.getTime()) {
+        const rowFinish = new Date(row[2]).getTime();
+        if (rowFinish === earliest) {
           tr.classList.add("next-finish");
         }
 
-        row.forEach((cell, colIndex) => {
+        for (let c = 0; c < row.length; c++) {
           const td = document.createElement("td");
 
-          // FINISH TIME formatting
-          if (colIndex === 2 && cell) {
-            const date = new Date(cell);
+          if (c === 2 && row[c]) {
+            const date = new Date(row[c]);
             td.textContent = date.toLocaleString("en-US", {
               timeZone: "America/New_York",
               month: "short",
@@ -90,40 +85,32 @@ function loadCurrentWorkTable() {
               hour12: true
             });
           } else {
-            td.textContent = cell;
+            td.textContent = row[c];
           }
 
           tr.appendChild(td);
-        });
+        }
 
         tbody.appendChild(tr);
-      });
+      }
     })
-    .catch(error => {
-      console.error(error);
+    .catch(err => {
+      console.error(err);
       alert("Failed to load CURRENT WORK table");
     });
 }
 
 /* =========================
-   PAGE LOAD + BUTTON WIRING
+   PAGE LOAD
    ========================= */
-document.addEventListener("DOMContentLoaded", () => {
-
-  // Initial load
+document.addEventListener("DOMContentLoaded", function () {
   loadCurrentWorkTable();
   updateLastRefreshed();
 
   const refreshBtn = document.getElementById("refreshSheetBtn");
+  if (!refreshBtn) return;
 
-  if (!refreshBtn) {
-    console.error("Refresh button not found");
-    return;
-  }
-
-  refreshBtn.addEventListener("click", () => {
-    console.log("Refresh button clicked");
-
+  refreshBtn.addEventListener("click", function () {
     fetch(REFRESH_ENDPOINT)
       .then(r => r.json())
       .then(() => {
@@ -135,5 +122,4 @@ document.addEventListener("DOMContentLoaded", () => {
         alert("Failed to refresh spreadsheet");
       });
   });
-
 });
