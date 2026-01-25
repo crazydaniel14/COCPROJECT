@@ -1,7 +1,7 @@
 body {
   font-family: Calibri, Arial, sans-serif;
   background-color: #f4f6f8;
-  padding: 30px;
+  padding: 20px;
 }
 
 h1 {
@@ -14,44 +14,84 @@ h2 {
   color: #444;
 }
 
-/* ===== TABLE ===== */
+/* ===== TABLE BASE ===== */
 table {
   border-collapse: collapse;
   width: 100%;
   background-color: #ffffff;
-  margin-top: 20px;
+  margin-top: 15px;
 }
 
 th, td {
   border: 1px solid #d0d0d0;
-  padding: 10px 12px;
   text-align: center;
-  font-size: 14px;
+  font-size: 14px;          /* KEEP text size consistent */
+  line-height: 1.2;
 }
 
+/* Header */
 th {
   background-color: #b7b7b7;
   font-weight: bold;
+  padding: 8px 6px;
 }
 
-/* Builder column narrower */
-td:first-child, th:first-child {
-  width: 70px;
+/* ===== COLUMN BEHAVIOR ===== */
+
+/* BUILDER */
+td:first-child,
+th:first-child {
+  width: 48px;
+  font-weight: bold;
+  padding: 6px 4px;
 }
 
-/* Upgrade columns wider */
+/* CURRENT UPGRADE + NEXT UPGRADE
+   Same text size, smaller cell */
 td:nth-child(2),
 td:nth-child(5) {
-  text-align: left;
-  width: 30%;
+  padding: 4px 4px;        /* tighter cell */
+  line-height: 1.1;
 }
 
-/* Finish time */
+/* FINISH TIME */
 td:nth-child(3) {
+  padding: 6px 6px;
   white-space: nowrap;
 }
 
-/* Time left */
+/* TIME LEFT
+   SAME text size, BIGGER CELL */
 td:nth-child(4) {
   font-family: monospace;
+  font-weight: bold;
+
+  padding: 16px 6px;      /* makes cell taller */
+  min-height: 56px;       /* enforces height */
+  vertical-align: middle;
+}
+
+/* ===== MOBILE OPTIMIZATION ===== */
+@media (max-width: 600px) {
+
+  th {
+    padding: 6px 4px;
+    font-size: 13px;
+  }
+
+  td {
+    font-size: 13px;       /* keep text readable */
+  }
+
+  /* Compact CURRENT / NEXT even more */
+  td:nth-child(2),
+  td:nth-child(5) {
+    padding: 3px 4px;
+  }
+
+  /* Emphasize TIME LEFT cell on phone */
+  td:nth-child(4) {
+    padding: 18px 6px;
+    min-height: 60px;
+  }
 }
