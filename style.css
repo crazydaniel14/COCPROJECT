@@ -99,4 +99,8 @@ td:nth-child(4) {
 tr.next-finish {
   background-color: #fff3cd;   /* soft yellow */
 }
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
