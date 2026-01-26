@@ -118,18 +118,27 @@ document.addEventListener("DOMContentLoaded", function () {
   const refreshBtn = document.getElementById("refreshSheetBtn");
   if (!refreshBtn) return;
 
-  refreshBtn.addEventListener("click", function () {
-    fetch(REFRESH_ENDPOINT)
-      .then(r => r.json())
-      .then(() => {
-        updateLastRefreshed();
-        loadCurrentWorkTable();
-      })
-      .catch(err => {
-        console.error(err);
-        alert("Failed to refresh spreadsheet");
-      });
-  });
+refreshBtn.addEventListener("click", function () {
+  // Disable button + show state
+  refreshBtn.disabled = true;
+  const originalText = refreshBtn.textContent;
+  refreshBtn.textContent = "Refreshing…";
+
+  fetch(REFRESH_ENDPOINT)
+    .then(r => r.json())
+    .then(() => {
+      updateLastRefreshed();
+      loadCurrentWorkTable();
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Failed to refresh spreadsheet");
+    })
+    .finally(() => {
+      // Restore button state
+      refreshBtn.disabled = false;
+      refreshBtn.textContent = originalText;
+    });
 });
 
 // EOF
