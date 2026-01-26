@@ -1,7 +1,7 @@
-console.log("Loaded script.js version 8");
+console.log("Loaded script.js version 9");
 
 /* =========================
-   CONFIG
+   CONFIG (DEFINE FIRST)
    ========================= */
 const API_BASE =
   "https://script.google.com/macros/s/AKfycbycmSvqeMj_GpuALxs8HTEf5GiI09nQI6fm04RtsA3stKbSW-d6zbm8bzWNWszl1GzQpw/exec";
@@ -9,6 +9,7 @@ const API_BASE =
 const TABLE_ENDPOINT = API_BASE + "?action=current_work_table";
 const REFRESH_ENDPOINT = API_BASE + "?action=refresh_sheet";
 const TODAYS_BOOST_ENDPOINT = API_BASE + "?action=todays_boost";
+const APPLY_BOOST_ENDPOINT = API_BASE + "?action=apply_todays_boost";
 
 /* =========================
    CANONICAL TABLE HEADERS
@@ -113,7 +114,6 @@ function loadCurrentWorkTable() {
         for (let c = 0; c < TABLE_HEADERS.length; c++) {
           const td = document.createElement("td");
 
-          // FINISH TIME formatting
           if (c === 2 && row[c]) {
             const date = new Date(row[c]);
             td.textContent = date.toLocaleString("en-US", {
@@ -141,13 +141,38 @@ function loadCurrentWorkTable() {
 }
 
 /* =========================
-   PAGE LOAD + REFRESH BUTTON
+   PAGE LOAD + BUTTONS
    ========================= */
 document.addEventListener("DOMContentLoaded", function () {
   loadTodaysBoost();
   loadCurrentWorkTable();
   updateLastRefreshed();
 
+  /* ---- APPLY BOOST BUTTON ---- */
+  const applyBtn = document.getElementById("applyBoostBtn");
+  if (applyBtn) {
+    applyBtn.addEventListener("click", function () {
+      applyBtn.disabled = true;
+      applyBtn.textContent = "Applying…";
+
+      fetch(APPLY_BOOST_ENDPOINT)
+        .then(r => r.json())
+        .then(() => {
+          loadTodaysBoost();
+          loadCurrentWorkTable();
+        })
+        .catch(err => {
+          console.error(err);
+          alert("Failed to apply boost");
+        })
+        .then(() => {
+          applyBtn.disabled = false;
+          applyBtn.textContent = "Apply Today’s Boost";
+        });
+    });
+  }
+
+  /* ---- REFRESH BUTTON ---- */
   const refreshBtn = document.getElementById("refreshSheetBtn");
   if (!refreshBtn) return;
 
@@ -168,7 +193,6 @@ document.addEventListener("DOMContentLoaded", function () {
         alert("Failed to refresh spreadsheet");
       })
       .then(() => {
-        // Safari-safe cleanup
         refreshBtn.disabled = false;
         refreshBtn.textContent = originalText;
       });
