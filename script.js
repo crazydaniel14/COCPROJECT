@@ -1,4 +1,4 @@
-console.log("Loaded script.js version 7");
+console.log("Loaded script.js version 8");
 
 /* =========================
    CONFIG
@@ -8,6 +8,7 @@ const API_BASE =
 
 const TABLE_ENDPOINT = API_BASE + "?action=current_work_table";
 const REFRESH_ENDPOINT = API_BASE + "?action=refresh_sheet";
+const TODAYS_BOOST_ENDPOINT = API_BASE + "?action=todays_boost";
 
 /* =========================
    CANONICAL TABLE HEADERS
@@ -37,6 +38,33 @@ function updateLastRefreshed() {
       hour: "numeric",
       minute: "2-digit",
       hour12: true
+    });
+}
+
+/* =========================
+   TODAY'S BOOST
+   ========================= */
+function loadTodaysBoost() {
+  fetch(TODAYS_BOOST_ENDPOINT)
+    .then(r => r.json())
+    .then(data => {
+      const box = document.getElementById("todaysBoost");
+      if (!box) return;
+
+      box.innerHTML = `
+        <h3>TODAY’S BOOST</h3>
+        <div><strong>Upgrade:</strong> ${data.upgrade || "-"}</div>
+        <div><strong>Builder:</strong> ${data.builder || "-"}</div>
+        <div><strong>Status:</strong> ${data.status || "-"}</div>
+        ${
+          data.warning
+            ? `<div style="margin-top:6px;font-weight:bold;">⚠ ${data.warning}</div>`
+            : ""
+        }
+      `;
+    })
+    .catch(err => {
+      console.error("Failed to load today's boost", err);
     });
 }
 
@@ -113,9 +141,10 @@ function loadCurrentWorkTable() {
 }
 
 /* =========================
-   PAGE LOAD + BUTTON
+   PAGE LOAD + REFRESH BUTTON
    ========================= */
 document.addEventListener("DOMContentLoaded", function () {
+  loadTodaysBoost();
   loadCurrentWorkTable();
   updateLastRefreshed();
 
@@ -131,6 +160,7 @@ document.addEventListener("DOMContentLoaded", function () {
       .then(r => r.json())
       .then(() => {
         updateLastRefreshed();
+        loadTodaysBoost();
         loadCurrentWorkTable();
       })
       .catch(err => {
@@ -138,7 +168,7 @@ document.addEventListener("DOMContentLoaded", function () {
         alert("Failed to refresh spreadsheet");
       })
       .then(() => {
-        // Safari-safe cleanup (no .finally)
+        // Safari-safe cleanup
         refreshBtn.disabled = false;
         refreshBtn.textContent = originalText;
       });
