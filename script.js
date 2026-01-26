@@ -1,4 +1,4 @@
-console.log("Loaded script.js version 6");
+console.log("Loaded script.js version 7");
 
 /* =========================
    CONFIG
@@ -8,6 +8,17 @@ const API_BASE =
 
 const TABLE_ENDPOINT = API_BASE + "?action=current_work_table";
 const REFRESH_ENDPOINT = API_BASE + "?action=refresh_sheet";
+
+/* =========================
+   CANONICAL TABLE HEADERS
+   ========================= */
+const TABLE_HEADERS = [
+  "BUILDER",
+  "CURRENT UPGRADE",
+  "FINISH TIME",
+  "Time left of upgrade",
+  "NEXT UPGRADE"
+];
 
 /* =========================
    LAST REFRESHED
@@ -30,7 +41,7 @@ function updateLastRefreshed() {
 }
 
 /* =========================
-   LOAD TABLE
+   LOAD CURRENT WORK TABLE
    ========================= */
 function loadCurrentWorkTable() {
   fetch(TABLE_ENDPOINT)
@@ -44,44 +55,37 @@ function loadCurrentWorkTable() {
       thead.innerHTML = "";
       tbody.innerHTML = "";
 
-      // Header (EXPLICIT — do NOT trust sheet headers)
-         const headerRow = document.createElement("tr");
-         
-         [
-           "BUILDER",
-           "CURRENT UPGRADE",
-           "FINISH TIME",
-           "Time left of upgrade",
-           "NEXT UPGRADE"
-         ].forEach(h => {
-           const th = document.createElement("th");
-           th.textContent = h;
-           headerRow.appendChild(th);
-         });
-         
-         thead.appendChild(headerRow);
-         
-      // Find earliest finish time (Sheets MIN equivalent)
+      /* ----- HEADER (explicit, stable) ----- */
+      const headerRow = document.createElement("tr");
+      TABLE_HEADERS.forEach(text => {
+        const th = document.createElement("th");
+        th.textContent = text;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+
+      /* ----- FIND EARLIEST FINISH ----- */
       const finishTimes = [];
       for (let i = 1; i < data.length; i++) {
         const d = new Date(data[i][2]);
         if (!isNaN(d)) finishTimes.push(d.getTime());
       }
-      const earliest = Math.min(...finishTimes);
+      const earliestFinish = Math.min.apply(null, finishTimes);
 
-      // Rows
+      /* ----- ROWS ----- */
       for (let i = 1; i < data.length; i++) {
         const row = data[i];
         const tr = document.createElement("tr");
 
         const rowFinish = new Date(row[2]).getTime();
-        if (rowFinish === earliest) {
+        if (rowFinish === earliestFinish) {
           tr.classList.add("next-finish");
         }
 
-        for (let c = 0; c < row.length; c++) {
+        for (let c = 0; c < TABLE_HEADERS.length; c++) {
           const td = document.createElement("td");
 
+          // FINISH TIME formatting
           if (c === 2 && row[c]) {
             const date = new Date(row[c]);
             td.textContent = date.toLocaleString("en-US", {
@@ -93,7 +97,7 @@ function loadCurrentWorkTable() {
               hour12: true
             });
           } else {
-            td.textContent = row[c];
+            td.textContent = row[c] || "";
           }
 
           tr.appendChild(td);
@@ -109,7 +113,7 @@ function loadCurrentWorkTable() {
 }
 
 /* =========================
-   PAGE LOAD
+   PAGE LOAD + BUTTON
    ========================= */
 document.addEventListener("DOMContentLoaded", function () {
   loadCurrentWorkTable();
@@ -118,27 +122,25 @@ document.addEventListener("DOMContentLoaded", function () {
   const refreshBtn = document.getElementById("refreshSheetBtn");
   if (!refreshBtn) return;
 
-refreshBtn.addEventListener("click", function () {
-  // Disable button + show state
-  refreshBtn.disabled = true;
-  const originalText = refreshBtn.textContent;
-  refreshBtn.textContent = "Refreshing…";
+  refreshBtn.addEventListener("click", function () {
+    const originalText = refreshBtn.textContent;
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = "Refreshing…";
 
-  fetch(REFRESH_ENDPOINT)
-    .then(r => r.json())
-    .then(() => {
-      updateLastRefreshed();
-      loadCurrentWorkTable();
-    })
-    .catch(err => {
-      console.error(err);
-      alert("Failed to refresh spreadsheet");
-    })
-    .finally(() => {
-      // Restore button state
-      refreshBtn.disabled = false;
-      refreshBtn.textContent = originalText;
-    });
+    fetch(REFRESH_ENDPOINT)
+      .then(r => r.json())
+      .then(() => {
+        updateLastRefreshed();
+        loadCurrentWorkTable();
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Failed to refresh spreadsheet");
+      })
+      .then(() => {
+        // Safari-safe cleanup (no .finally)
+        refreshBtn.disabled = false;
+        refreshBtn.textContent = originalText;
+      });
+  });
 });
-
-// EOF
