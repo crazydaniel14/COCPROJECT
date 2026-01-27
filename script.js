@@ -1,4 +1,4 @@
-console.log("Loaded script.js version 9");
+console.log("Loaded script.js version 10");
 
 /* =========================
    CONFIG (DEFINE FIRST)
@@ -10,6 +10,27 @@ const TABLE_ENDPOINT = API_BASE + "?action=current_work_table";
 const REFRESH_ENDPOINT = API_BASE + "?action=refresh_sheet";
 const TODAYS_BOOST_ENDPOINT = API_BASE + "?action=todays_boost";
 const APPLY_BOOST_ENDPOINT = API_BASE + "?action=apply_todays_boost";
+
+/* =========================
+   DAILY BOOST UI LOCK
+   ========================= */
+const BOOST_KEY = "dailyBoostApplied";
+
+function todayKeyNY() {
+  return new Date().toLocaleDateString("en-CA", {
+    timeZone: "America/New_York"
+  });
+}
+
+function lockBoostButton(btn) {
+  btn.disabled = true;
+  btn.textContent = "Today’s boost applied ✅";
+}
+
+function unlockBoostButton(btn) {
+  btn.disabled = false;
+  btn.textContent = "Apply Today’s Boost";
+}
 
 /* =========================
    CANONICAL TABLE HEADERS
@@ -84,7 +105,6 @@ function loadCurrentWorkTable() {
       thead.innerHTML = "";
       tbody.innerHTML = "";
 
-      /* ----- HEADER (explicit, stable) ----- */
       const headerRow = document.createElement("tr");
       TABLE_HEADERS.forEach(text => {
         const th = document.createElement("th");
@@ -93,7 +113,6 @@ function loadCurrentWorkTable() {
       });
       thead.appendChild(headerRow);
 
-      /* ----- FIND EARLIEST FINISH ----- */
       const finishTimes = [];
       for (let i = 1; i < data.length; i++) {
         const d = new Date(data[i][2]);
@@ -101,7 +120,6 @@ function loadCurrentWorkTable() {
       }
       const earliestFinish = Math.min.apply(null, finishTimes);
 
-      /* ----- ROWS ----- */
       for (let i = 1; i < data.length; i++) {
         const row = data[i];
         const tr = document.createElement("tr");
@@ -151,23 +169,36 @@ document.addEventListener("DOMContentLoaded", function () {
   /* ---- APPLY BOOST BUTTON ---- */
   const applyBtn = document.getElementById("applyBoostBtn");
   if (applyBtn) {
+
+    // 🔄 Restore lock if boost already used today
+    if (localStorage.getItem(BOOST_KEY) === todayKeyNY()) {
+      lockBoostButton(applyBtn);
+    }
+
     applyBtn.addEventListener("click", function () {
       applyBtn.disabled = true;
       applyBtn.textContent = "Applying…";
 
       fetch(APPLY_BOOST_ENDPOINT)
         .then(r => r.json())
-        .then(() => {
+        .then(data => {
+          if (data.error) {
+            alert("Boost failed: " + data.error);
+            unlockBoostButton(applyBtn);
+            return;
+          }
+
+          // 🔒 Save daily lock
+          localStorage.setItem(BOOST_KEY, todayKeyNY());
+          lockBoostButton(applyBtn);
+
           loadTodaysBoost();
           loadCurrentWorkTable();
         })
         .catch(err => {
           console.error(err);
           alert("Failed to apply boost");
-        })
-        .then(() => {
-          applyBtn.disabled = false;
-          applyBtn.textContent = "Apply Today’s Boost";
+          unlockBoostButton(applyBtn);
         });
     });
   }
