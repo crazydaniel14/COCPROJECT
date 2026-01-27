@@ -302,7 +302,7 @@ const BUILDER_POTION_APPLY_ACTION = "apply_builder_potion";
 
 // Reuse the same base URL you already use elsewhere
 // (If you already defined one globally, REMOVE this line)
-const BASE_URL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
+const BASE_URL = "https://script.google.com/macros/s/AKfycbycmSvqeMj_GpuALxs8HTEf5GiI09nQI6fm04RtsA3stKbSW-d6zbm8bzWNWszl1GzQpw/exec";
 
 // ---- ELEMENTS ----
 const builderPotionBtn = document.getElementById("builderPotionBtn");
