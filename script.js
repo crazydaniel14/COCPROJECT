@@ -1,4 +1,4 @@
-console.log("Loaded script.js version 11");
+console.log("Loaded script.js version 12");
 
 /* =========================
    CONFIG (DEFINE FIRST)
@@ -87,9 +87,7 @@ function loadTodaysBoost() {
         }
       `;
     })
-    .catch(err => {
-      console.error("Failed to load today's boost", err);
-    });
+    .catch(err => console.error("Failed to load today's boost", err));
 }
 
 /* =========================
@@ -101,7 +99,6 @@ function loadCurrentWorkTable() {
     .then(data => {
       const thead = document.querySelector("#builderTable thead");
       const tbody = document.querySelector("#builderTable tbody");
-
       if (!thead || !tbody) return;
 
       thead.innerHTML = "";
@@ -120,14 +117,13 @@ function loadCurrentWorkTable() {
         const d = new Date(data[i][2]);
         if (!isNaN(d)) finishTimes.push(d.getTime());
       }
-      const earliestFinish = Math.min.apply(null, finishTimes);
+      const earliestFinish = Math.min(...finishTimes);
 
       for (let i = 1; i < data.length; i++) {
         const row = data[i];
         const tr = document.createElement("tr");
 
-        const rowFinish = new Date(row[2]).getTime();
-        if (rowFinish === earliestFinish) {
+        if (new Date(row[2]).getTime() === earliestFinish) {
           tr.classList.add("next-finish");
         }
 
@@ -188,9 +184,7 @@ function loadBoostPlan() {
         table.appendChild(tr);
       });
     })
-    .catch(err => {
-      console.error("Failed to load boost plan", err);
-    });
+    .catch(err => console.error("Failed to load boost plan", err));
 }
 
 /* =========================
@@ -202,11 +196,9 @@ document.addEventListener("DOMContentLoaded", function () {
   loadBoostPlan();
   updateLastRefreshed();
 
-  /* ---- APPLY BOOST BUTTON ---- */
+  /* ---- APPLY DAILY BOOST ---- */
   const applyBtn = document.getElementById("applyBoostBtn");
   if (applyBtn) {
-
-    // 🔄 Restore lock if boost already used today
     if (localStorage.getItem(BOOST_KEY) === todayKeyNY()) {
       lockBoostButton(applyBtn);
     }
@@ -224,7 +216,6 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
           }
 
-          // 🔒 Save daily lock
           localStorage.setItem(BOOST_KEY, todayKeyNY());
           lockBoostButton(applyBtn);
 
@@ -240,137 +231,132 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-   /* ---- RUN BOOST SIMULATION BUTTON ---- */
-const runSimBtn = document.getElementById("runBoostSimBtn");
-if (runSimBtn) {
-  runSimBtn.addEventListener("click", function () {
-    const originalText = runSimBtn.textContent;
-    runSimBtn.disabled = true;
-    runSimBtn.textContent = "Running simulation…";
+  /* ---- RUN BOOST SIMULATION ---- */
+  const runSimBtn = document.getElementById("runBoostSimBtn");
+  if (runSimBtn) {
+    runSimBtn.addEventListener("click", function () {
+      const originalText = runSimBtn.textContent;
+      runSimBtn.disabled = true;
+      runSimBtn.textContent = "Running simulation…";
 
-    fetch(RUN_BOOST_SIM_ENDPOINT)
-      .then(r => r.json())
-      .then(() => {
-        loadBoostPlan(); // refresh the mirrored table
-      })
-      .catch(err => {
-        console.error(err);
-        alert("Failed to run boost simulation");
-      })
-      .finally(() => {
-        runSimBtn.disabled = false;
-        runSimBtn.textContent = originalText;
-      });
-  });
- }
+      fetch(RUN_BOOST_SIM_ENDPOINT)
+        .then(() => loadBoostPlan())
+        .catch(err => {
+          console.error(err);
+          alert("Failed to run boost simulation");
+        })
+        .finally(() => {
+          runSimBtn.disabled = false;
+          runSimBtn.textContent = originalText;
+        });
+    });
+  }
 
   /* ---- REFRESH BUTTON ---- */
   const refreshBtn = document.getElementById("refreshSheetBtn");
-  if (!refreshBtn) return;
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", function () {
+      const originalText = refreshBtn.textContent;
+      refreshBtn.disabled = true;
+      refreshBtn.textContent = "Refreshing…";
 
-  refreshBtn.addEventListener("click", function () {
-    const originalText = refreshBtn.textContent;
-    refreshBtn.disabled = true;
-    refreshBtn.textContent = "Refreshing…";
-
-    fetch(REFRESH_ENDPOINT)
-      .then(r => r.json())
-      .then(() => {
-        updateLastRefreshed();
-        loadTodaysBoost();
-        loadCurrentWorkTable();
-        loadBoostPlan();
-      })
-      .catch(err => {
-        console.error(err);
-        alert("Failed to refresh spreadsheet");
-      })
-      .then(() => {
-        refreshBtn.disabled = false;
-        refreshBtn.textContent = originalText;
-      });
-  });
-});
-
-/*****************************************************
- * BUILDER POTION MODAL LOGIC
- *****************************************************/
-
-// ---- CONFIG ----
-const BUILDER_POTION_PREVIEW_ACTION = "preview_builder_potion";
-const BUILDER_POTION_APPLY_ACTION = "apply_builder_potion";
-
-// Reuse the same base URL you already use elsewhere
-// (If you already defined one globally, REMOVE this line)
-const BASE_URL = "https://script.google.com/macros/s/AKfycbycmSvqeMj_GpuALxs8HTEf5GiI09nQI6fm04RtsA3stKbSW-d6zbm8bzWNWszl1GzQpw/exec";
-
-// ---- ELEMENTS ----
-const builderPotionBtn = document.getElementById("builderPotionBtn");
-const builderPotionModal = document.getElementById("builderPotionModal");
-const potionCountInput = document.getElementById("potionCount");
-const previewPotionBtn = document.getElementById("previewPotionBtn");
-const confirmPotionBtn = document.getElementById("confirmPotionBtn");
-const cancelPotionBtn = document.getElementById("cancelPotionBtn");
-const previewBox = document.getElementById("builderPotionPreview");
-
-// ---- OPEN MODAL ----
-builderPotionBtn.addEventListener("click", () => {
-  builderPotionModal.classList.remove("hidden");
-  previewBox.innerHTML = "";
-  confirmPotionBtn.disabled = true;
-});
-
-// ---- CLOSE MODAL ----
-cancelPotionBtn.addEventListener("click", () => {
-  builderPotionModal.classList.add("hidden");
-});
-
-// ---- PREVIEW ----
-previewPotionBtn.addEventListener("click", async () => {
-  const times = Number(potionCountInput.value);
-
-  if (!times || times <= 0) {
-    alert("Please select a valid number of potions.");
-    return;
+      fetch(REFRESH_ENDPOINT)
+        .then(() => {
+          updateLastRefreshed();
+          loadTodaysBoost();
+          loadCurrentWorkTable();
+          loadBoostPlan();
+        })
+        .catch(err => {
+          console.error(err);
+          alert("Failed to refresh spreadsheet");
+        })
+        .finally(() => {
+          refreshBtn.disabled = false;
+          refreshBtn.textContent = originalText;
+        });
+    });
   }
 
-  previewBox.innerHTML = "Loading preview...";
+  /*****************************************************
+   * BUILDER POTION MODAL LOGIC
+   *****************************************************/
+  const BUILDER_POTION_PREVIEW_ACTION = "preview_builder_potion";
+  const BUILDER_POTION_APPLY_ACTION = "apply_builder_potion";
 
-  try {
-    const res = await fetch(
-      `${BASE_URL}?action=${BUILDER_POTION_PREVIEW_ACTION}&times=${times}`
-    );
-    const data = await res.json();
+  const builderPotionBtn = document.getElementById("builderPotionBtn");
+  const builderPotionModal = document.getElementById("builderPotionModal");
+  const potionCountInput = document.getElementById("potionCount");
+  const previewPotionBtn = document.getElementById("previewPotionBtn");
+  const confirmPotionBtn = document.getElementById("confirmPotionBtn");
+  const cancelPotionBtn = document.getElementById("cancelPotionBtn");
+  const previewBox = document.getElementById("builderPotionPreview");
 
-    if (data.error) {
-      previewBox.innerHTML = "Error: " + data.error;
+  if (!builderPotionBtn) return;
+
+  builderPotionBtn.addEventListener("click", () => {
+    builderPotionModal.classList.remove("hidden");
+    previewBox.innerHTML = "";
+    confirmPotionBtn.disabled = true;
+  });
+
+  cancelPotionBtn.addEventListener("click", () => {
+    builderPotionModal.classList.add("hidden");
+  });
+
+  previewPotionBtn.addEventListener("click", async () => {
+    const times = Number(potionCountInput.value);
+    if (!times || times <= 0) {
+      alert("Please select a valid number of potions.");
       return;
     }
 
-    let html = `<strong>Applying ${times} potion(s):</strong><br><br>`;
+    previewBox.innerHTML = "Loading preview…";
 
-    data.preview.forEach(row => {
-      const oldDate = new Date(row.oldTime);
-      const newDate = new Date(row.newTime);
+    try {
+      const res = await fetch(
+        `${API_BASE}?action=${BUILDER_POTION_PREVIEW_ACTION}&times=${times}`
+      );
+      const data = await res.json();
 
-      html += `
-        ${row.builder}:<br>
-        ${oldDate.toLocaleString()} → ${newDate.toLocaleString()}<br><br>
-      `;
-    });
+      let html = `<strong>Applying ${times} potion(s):</strong><br><br>`;
+      data.preview.forEach(row => {
+        html += `
+          ${row.builder}:<br>
+          ${new Date(row.oldTime).toLocaleString()} →
+          ${new Date(row.newTime).toLocaleString()}<br><br>
+        `;
+      });
 
-    previewBox.innerHTML = html;
-    confirmPotionBtn.disabled = false;
+      previewBox.innerHTML = html;
+      confirmPotionBtn.disabled = false;
+    } catch (err) {
+      console.error(err);
+      previewBox.innerHTML = "Failed to load preview.";
+    }
+  });
 
-  } catch (err) {
-    previewBox.innerHTML = "Failed to load preview.";
-    console.error(err);
-  }
+  confirmPotionBtn.addEventListener("click", async () => {
+    const times = Number(potionCountInput.value);
+    confirmPotionBtn.disabled = true;
+    previewBox.innerHTML = "Applying potion(s)…";
+
+    try {
+      await fetch(
+        `${API_BASE}?action=${BUILDER_POTION_APPLY_ACTION}&times=${times}`
+      );
+
+      previewBox.innerHTML = "Builder Potion applied ✅";
+      loadTodaysBoost();
+      loadCurrentWorkTable();
+      loadBoostPlan();
+
+      setTimeout(() => {
+        builderPotionModal.classList.add("hidden");
+      }, 800);
+    } catch (err) {
+      console.error(err);
+      previewBox.innerHTML = "Failed to apply potion.";
+    }
+  });
 });
-
-// ---- APPLY ----
-confirmPotionBtn.addEventListener("click", async () => {
-  const times = Number(potionCountInput.value);
-
-  confirmPotionBtn.disabled = true;
-  previewBox.innerHTML
