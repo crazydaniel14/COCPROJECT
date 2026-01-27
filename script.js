@@ -1,4 +1,4 @@
-console.log("Loaded script.js version 10");
+console.log("Loaded script.js version 11");
 
 /* =========================
    CONFIG (DEFINE FIRST)
@@ -10,6 +10,7 @@ const TABLE_ENDPOINT = API_BASE + "?action=current_work_table";
 const REFRESH_ENDPOINT = API_BASE + "?action=refresh_sheet";
 const TODAYS_BOOST_ENDPOINT = API_BASE + "?action=todays_boost";
 const APPLY_BOOST_ENDPOINT = API_BASE + "?action=apply_todays_boost";
+const BOOST_PLAN_ENDPOINT = API_BASE + "?action=boost_plan";
 
 /* =========================
    DAILY BOOST UI LOCK
@@ -159,11 +160,45 @@ function loadCurrentWorkTable() {
 }
 
 /* =========================
+   LOAD BOOST PLAN TABLE
+   ========================= */
+function loadBoostPlan() {
+  fetch(BOOST_PLAN_ENDPOINT)
+    .then(r => r.json())
+    .then(data => {
+      const table = document.getElementById("boost-plan-table");
+      if (!table) return;
+
+      table.innerHTML = "";
+
+      data.table.forEach((row, rowIndex) => {
+        const tr = document.createElement("tr");
+
+        row.forEach(cell => {
+          const el = document.createElement(rowIndex === 0 ? "th" : "td");
+          el.textContent = cell;
+
+          if (cell === "SAFE") el.classList.add("safe");
+          if (cell === "FORCED") el.classList.add("forced");
+
+          tr.appendChild(el);
+        });
+
+        table.appendChild(tr);
+      });
+    })
+    .catch(err => {
+      console.error("Failed to load boost plan", err);
+    });
+}
+
+/* =========================
    PAGE LOAD + BUTTONS
    ========================= */
 document.addEventListener("DOMContentLoaded", function () {
   loadTodaysBoost();
   loadCurrentWorkTable();
+  loadBoostPlan();
   updateLastRefreshed();
 
   /* ---- APPLY BOOST BUTTON ---- */
@@ -194,6 +229,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
           loadTodaysBoost();
           loadCurrentWorkTable();
+          loadBoostPlan();
         })
         .catch(err => {
           console.error(err);
@@ -218,6 +254,7 @@ document.addEventListener("DOMContentLoaded", function () {
         updateLastRefreshed();
         loadTodaysBoost();
         loadCurrentWorkTable();
+        loadBoostPlan();
       })
       .catch(err => {
         console.error(err);
