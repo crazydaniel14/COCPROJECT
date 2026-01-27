@@ -7,12 +7,21 @@
 </head>
 <body>
 
-  <h1>COC PROGRAM</h1>
-  <h2>Current Builder Status</h2>
- 
+  <h2>COC PROGRAM</h2>
+  <h3>Current Builder Status</h3>
+
+  <!-- 🔹 BUILDER POTION IMAGE BUTTON -->
+  <div class="action-button">
+    <img
+      src="images/builder-potion.png"
+      alt="Apply Builder Potion"
+      id="builderPotionBtn"
+      class="image-button"
+    />
+  </div>
+  
   <div id="todaysBoost"></div>
   <button id="applyBoostBtn">Apply Today’s Boost</button>
-
 
   <table id="builderTable">
     <thead></thead>
@@ -20,18 +29,46 @@
   </table>
 
   <button id="refreshSheetBtn">Refresh Spreadsheet</button>
-  
+
   <h4>Boost Plan (Next 7 Days)</h4>
   <button id="runBoostSimBtn">
-  Run Boost Simulation
+    Run Boost Simulation
   </button>
+
   <div class="table-wrapper">
     <table id="boost-plan-table"></table>
   </div>
 
-
   <div id="lastRefreshed" style="margin: 10px 0; font-size: 13px; color: #555;">
     Last refreshed: —
+  </div>
+
+  <!-- 🔹 BUILDER POTION MODAL (HIDDEN BY DEFAULT) -->
+  <div id="builderPotionModal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Builder Potion</h2>
+
+      <p>How many Builder Potions do you want to apply?</p>
+
+      <!-- NUMBER SELECTOR -->
+      <input
+        type="number"
+        id="potionCount"
+        min="1"
+        step="1"
+        value="1"
+      />
+
+      <!-- PREVIEW OUTPUT -->
+      <div id="builderPotionPreview" class="preview-box"></div>
+
+      <!-- ACTION BUTTONS -->
+      <div class="modal-actions">
+        <button id="previewPotionBtn">Preview</button>
+        <button id="confirmPotionBtn" disabled>Confirm</button>
+        <button id="cancelPotionBtn">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <!-- SCRIPT MUST BE LAST -->
