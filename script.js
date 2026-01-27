@@ -291,3 +291,86 @@ if (runSimBtn) {
       });
   });
 });
+
+/*****************************************************
+ * BUILDER POTION MODAL LOGIC
+ *****************************************************/
+
+// ---- CONFIG ----
+const BUILDER_POTION_PREVIEW_ACTION = "preview_builder_potion";
+const BUILDER_POTION_APPLY_ACTION = "apply_builder_potion";
+
+// Reuse the same base URL you already use elsewhere
+// (If you already defined one globally, REMOVE this line)
+const BASE_URL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
+
+// ---- ELEMENTS ----
+const builderPotionBtn = document.getElementById("builderPotionBtn");
+const builderPotionModal = document.getElementById("builderPotionModal");
+const potionCountInput = document.getElementById("potionCount");
+const previewPotionBtn = document.getElementById("previewPotionBtn");
+const confirmPotionBtn = document.getElementById("confirmPotionBtn");
+const cancelPotionBtn = document.getElementById("cancelPotionBtn");
+const previewBox = document.getElementById("builderPotionPreview");
+
+// ---- OPEN MODAL ----
+builderPotionBtn.addEventListener("click", () => {
+  builderPotionModal.classList.remove("hidden");
+  previewBox.innerHTML = "";
+  confirmPotionBtn.disabled = true;
+});
+
+// ---- CLOSE MODAL ----
+cancelPotionBtn.addEventListener("click", () => {
+  builderPotionModal.classList.add("hidden");
+});
+
+// ---- PREVIEW ----
+previewPotionBtn.addEventListener("click", async () => {
+  const times = Number(potionCountInput.value);
+
+  if (!times || times <= 0) {
+    alert("Please select a valid number of potions.");
+    return;
+  }
+
+  previewBox.innerHTML = "Loading preview...";
+
+  try {
+    const res = await fetch(
+      `${BASE_URL}?action=${BUILDER_POTION_PREVIEW_ACTION}&times=${times}`
+    );
+    const data = await res.json();
+
+    if (data.error) {
+      previewBox.innerHTML = "Error: " + data.error;
+      return;
+    }
+
+    let html = `<strong>Applying ${times} potion(s):</strong><br><br>`;
+
+    data.preview.forEach(row => {
+      const oldDate = new Date(row.oldTime);
+      const newDate = new Date(row.newTime);
+
+      html += `
+        ${row.builder}:<br>
+        ${oldDate.toLocaleString()} → ${newDate.toLocaleString()}<br><br>
+      `;
+    });
+
+    previewBox.innerHTML = html;
+    confirmPotionBtn.disabled = false;
+
+  } catch (err) {
+    previewBox.innerHTML = "Failed to load preview.";
+    console.error(err);
+  }
+});
+
+// ---- APPLY ----
+confirmPotionBtn.addEventListener("click", async () => {
+  const times = Number(potionCountInput.value);
+
+  confirmPotionBtn.disabled = true;
+  previewBox.innerHTML
