@@ -13,7 +13,6 @@ const APPLY_BOOST_ENDPOINT = API_BASE + "?action=apply_todays_boost";
 const BOOST_PLAN_ENDPOINT = API_BASE + "?action=boost_plan";
 const RUN_BOOST_SIM_ENDPOINT = API_BASE + "?action=run_boost_simulation";
 
-
 /* =========================
    DAILY BOOST UI LOCK
    ========================= */
