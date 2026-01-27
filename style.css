@@ -131,3 +131,93 @@ button:disabled {
   color: #c62828;
   font-weight: bold;
 }
+
+/* ==================================================
+   BUILDER POTION IMAGE BUTTON
+   ================================================== */
+
+.image-button {
+  width: 80px;
+  height: 80px;
+  cursor: pointer;
+  margin: 10px 0;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.image-button:hover {
+  transform: scale(1.08);
+  opacity: 0.9;
+}
+
+/* ==================================================
+   MODAL OVERLAY
+   ================================================== */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.hidden {
+  display: none;
+}
+
+/* ==================================================
+   MODAL CONTENT
+   ================================================== */
+
+.modal-content {
+  background: #ffffff;
+  padding: 20px;
+  width: 360px;
+  max-width: 90%;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.modal-content h2 {
+  margin-top: 0;
+}
+
+/* ==================================================
+   NUMBER INPUT
+   ================================================== */
+
+.modal-content input[type="number"] {
+  width: 100%;
+  padding: 8px;
+  font-size: 14px;
+  margin: 8px 0 12px 0;
+}
+
+/* ==================================================
+   PREVIEW BOX
+   ================================================== */
+
+.preview-box {
+  background: #f7f7f7;
+  border: 1px solid #ccc;
+  padding: 10px;
+  font-size: 13px;
+  max-height: 180px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+/* ==================================================
+   MODAL ACTION BUTTONS
+   ================================================== */
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.modal-actions button {
+  flex: 1;
+}
