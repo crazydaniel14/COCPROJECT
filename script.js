@@ -239,6 +239,30 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+   /* ---- RUN BOOST SIMULATION BUTTON ---- */
+const runSimBtn = document.getElementById("runBoostSimBtn");
+if (runSimBtn) {
+  runSimBtn.addEventListener("click", function () {
+    const originalText = runSimBtn.textContent;
+    runSimBtn.disabled = true;
+    runSimBtn.textContent = "Running simulation…";
+
+    fetch(RUN_BOOST_SIM_ENDPOINT)
+      .then(r => r.json())
+      .then(() => {
+        loadBoostPlan(); // refresh the mirrored table
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Failed to run boost simulation");
+      })
+      .finally(() => {
+        runSimBtn.disabled = false;
+        runSimBtn.textContent = originalText;
+      });
+  });
+ }
+
   /* ---- REFRESH BUTTON ---- */
   const refreshBtn = document.getElementById("refreshSheetBtn");
   if (!refreshBtn) return;
