@@ -1,4 +1,4 @@
-console.log("Loaded script.js version 12");
+console.log("Loaded script.js version 13");
 
 /* =========================
    CONFIG (DEFINE FIRST)
@@ -279,12 +279,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /*****************************************************
-   * BUILDER POTION MODAL LOGIC
+   * SHARED MODAL — BUILDER POTION + 1-HOUR BOOST
    *****************************************************/
-  const BUILDER_POTION_PREVIEW_ACTION = "preview_builder_potion";
-  const BUILDER_POTION_APPLY_ACTION = "apply_builder_potion";
-
-  const builderPotionBtn = document.getElementById("builderPotionBtn");
   const builderPotionModal = document.getElementById("builderPotionModal");
   const potionCountInput = document.getElementById("potionCount");
   const previewPotionBtn = document.getElementById("previewPotionBtn");
@@ -292,13 +288,35 @@ document.addEventListener("DOMContentLoaded", function () {
   const cancelPotionBtn = document.getElementById("cancelPotionBtn");
   const previewBox = document.getElementById("builderPotionPreview");
 
+  const builderPotionBtn = document.getElementById("builderPotionBtn");
+  const oneHourBoostBtn = document.getElementById("oneHourBoostBtn");
+
+  let currentPreviewAction = null;
+  let currentApplyAction = null;
+
   if (!builderPotionBtn) return;
 
+  // ---- OPEN MODAL (Builder Potion) ----
   builderPotionBtn.addEventListener("click", () => {
+    currentPreviewAction = "preview_builder_potion";
+    currentApplyAction = "apply_builder_potion";
+
     builderPotionModal.classList.remove("hidden");
     previewBox.innerHTML = "";
     confirmPotionBtn.disabled = true;
   });
+
+  // ---- OPEN MODAL (1-Hour Boost) ----
+  if (oneHourBoostBtn) {
+    oneHourBoostBtn.addEventListener("click", () => {
+      currentPreviewAction = "preview_one_hour_boost";
+      currentApplyAction = "apply_one_hour_boost";
+
+      builderPotionModal.classList.remove("hidden");
+      previewBox.innerHTML = "";
+      confirmPotionBtn.disabled = true;
+    });
+  }
 
   cancelPotionBtn.addEventListener("click", () => {
     builderPotionModal.classList.add("hidden");
@@ -307,7 +325,7 @@ document.addEventListener("DOMContentLoaded", function () {
   previewPotionBtn.addEventListener("click", async () => {
     const times = Number(potionCountInput.value);
     if (!times || times <= 0) {
-      alert("Please select a valid number of potions.");
+      alert("Please select a valid amount.");
       return;
     }
 
@@ -315,11 +333,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     try {
       const res = await fetch(
-        `${API_BASE}?action=${BUILDER_POTION_PREVIEW_ACTION}&times=${times}`
+        `${API_BASE}?action=${currentPreviewAction}&times=${times}`
       );
       const data = await res.json();
 
-      let html = `<strong>Applying ${times} potion(s):</strong><br><br>`;
+      let html = `<strong>Applying ${times} boost(s):</strong><br><br>`;
       data.preview.forEach(row => {
         html += `
           ${row.builder}:<br>
@@ -339,14 +357,14 @@ document.addEventListener("DOMContentLoaded", function () {
   confirmPotionBtn.addEventListener("click", async () => {
     const times = Number(potionCountInput.value);
     confirmPotionBtn.disabled = true;
-    previewBox.innerHTML = "Applying potion(s)…";
+    previewBox.innerHTML = "Applying…";
 
     try {
       await fetch(
-        `${API_BASE}?action=${BUILDER_POTION_APPLY_ACTION}&times=${times}`
+        `${API_BASE}?action=${currentApplyAction}&times=${times}`
       );
 
-      previewBox.innerHTML = "Builder Potion applied ✅";
+      previewBox.innerHTML = "Boost applied ✅";
       loadTodaysBoost();
       loadCurrentWorkTable();
       loadBoostPlan();
@@ -356,7 +374,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }, 800);
     } catch (err) {
       console.error(err);
-      previewBox.innerHTML = "Failed to apply potion.";
+      previewBox.innerHTML = "Failed to apply boost.";
     }
   });
 });
