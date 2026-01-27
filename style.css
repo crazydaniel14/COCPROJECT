@@ -25,7 +25,7 @@ table {
 th, td {
   border: 1px solid #d0d0d0;
   text-align: center;
-  font-size: 14px;          /* KEEP text size consistent */
+  font-size: 14px;
   line-height: 1.2;
 }
 
@@ -46,11 +46,10 @@ th:first-child {
   padding: 6px 4px;
 }
 
-/* CURRENT UPGRADE + NEXT UPGRADE
-   Same text size, smaller cell */
+/* CURRENT UPGRADE + NEXT UPGRADE */
 td:nth-child(2),
 td:nth-child(5) {
-  padding: 4px 4px;        /* tighter cell */
+  padding: 4px 4px;
   line-height: 1.1;
 }
 
@@ -60,47 +59,75 @@ td:nth-child(3) {
   white-space: nowrap;
 }
 
-/* TIME LEFT
-   SAME text size, BIGGER CELL */
+/* TIME LEFT */
 td:nth-child(4) {
   font-family: monospace;
   font-weight: bold;
-
-  padding: 16px 6px;      /* makes cell taller */
-  min-height: 56px;       /* enforces height */
+  padding: 16px 6px;
+  min-height: 56px;
   vertical-align: middle;
 }
 
 /* ===== MOBILE OPTIMIZATION ===== */
 @media (max-width: 600px) {
-
   th {
     padding: 6px 4px;
     font-size: 13px;
   }
 
   td {
-    font-size: 13px;       /* keep text readable */
+    font-size: 13px;
   }
 
-  /* Compact CURRENT / NEXT even more */
   td:nth-child(2),
   td:nth-child(5) {
     padding: 3px 4px;
   }
 
-  /* Emphasize TIME LEFT cell on phone */
   td:nth-child(4) {
     padding: 18px 6px;
     min-height: 60px;
   }
 }
+
 /* ===== NEXT FINISH HIGHLIGHT ===== */
 tr.next-finish {
-  background-color: #fff3cd;   /* soft yellow */
+  background-color: #fff3cd;
 }
+
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
+/* ==================================================
+   BOOST PLAN (MIRROR TABLE ONLY)
+   ================================================== */
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+/* Slightly softer header for Boost Plan */
+#boost-plan-table th {
+  background-color: #d6d6d6;
+}
+
+/* Keep Boost Plan compact */
+#boost-plan-table td,
+#boost-plan-table th {
+  padding: 6px 8px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* SAFE / FORCED indicators */
+#boost-plan-table .safe {
+  color: #2e7d32;
+  font-weight: bold;
+}
+
+#boost-plan-table .forced {
+  color: #c62828;
+  font-weight: bold;
+}
