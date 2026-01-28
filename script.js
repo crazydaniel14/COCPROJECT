@@ -12,7 +12,67 @@ const TODAYS_BOOST_ENDPOINT = API_BASE + "?action=todays_boost";
 const APPLY_BOOST_ENDPOINT = API_BASE + "?action=apply_todays_boost";
 const BOOST_PLAN_ENDPOINT = API_BASE + "?action=boost_plan";
 const RUN_BOOST_SIM_ENDPOINT = API_BASE + "?action=run_boost_simulation";
+const BATTLE_PASS_STATUS_ENDPOINT = API_BASE + "?action=battle_pass_status";
+const BATTLE_PASS_PREVIEW_ENDPOINT = API_BASE + "?action=preview_battle_pass";
+const BATTLE_PASS_APPLY_ENDPOINT = API_BASE + "?action=apply_battle_pass";
 
+
+/* =========================
+   BATTLE PASS BUTTON
+   ========================= */
+
+const battlePassBtn = document.getElementById("battlePassBtn");
+
+if (battlePassBtn) {
+  battlePassBtn.addEventListener("click", async () => {
+    battlePassBtn.style.pointerEvents = "none";
+    battlePassBtn.style.opacity = "0.6";
+
+    try {
+      // 1️⃣ Get current state
+      const statusRes = await fetch(BATTLE_PASS_STATUS_ENDPOINT);
+      const status = await statusRes.json();
+
+      // 2️⃣ Preview
+      const previewRes = await fetch(BATTLE_PASS_PREVIEW_ENDPOINT);
+      const preview = await previewRes.json();
+
+      const message =
+        `Battle Pass Reduction\n\n` +
+        `Current: ${status.currentLevel}%\n` +
+        `Next: ${status.nextLevel}%\n\n` +
+        `Upgrades affected this month: ${preview.upgradesAffected}\n\n` +
+        `Do you want to proceed?`;
+
+      if (!confirm(message)) return;
+
+      // 3️⃣ Apply
+      const applyRes = await fetch(BATTLE_PASS_APPLY_ENDPOINT);
+      const result = await applyRes.json();
+
+      if (result.status === "reset") {
+        alert("Battle Pass reductions reset to 0%.");
+      } else {
+        alert(
+          `Applied ${result.newLevel}% reduction.\n` +
+          `Upgrades affected: ${result.affectedUpgrades}`
+        );
+      }
+
+      // 4️⃣ Refresh UI
+      loadCurrentWorkTable();
+      loadBoostPlan();
+      loadTodaysBoost();
+
+    } catch (err) {
+      console.error(err);
+      alert("Failed to apply Battle Pass reduction.");
+    } finally {
+      battlePassBtn.style.pointerEvents = "auto";
+      battlePassBtn.style.opacity = "1";
+    }
+  });
+}
 /* =========================
    DAILY BOOST UI LOCK
    ========================= */
