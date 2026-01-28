@@ -247,8 +247,8 @@ button:disabled {
 /* Builder character (visual only) */
 .builder-character {
   position: absolute;
-  left: 48px;
-  bottom: 20px;
+  left: 60px;
+  bottom: 15px;
   height: 140px;
   pointer-events: none;
 }
