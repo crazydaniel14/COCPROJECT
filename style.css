@@ -249,7 +249,7 @@ button:disabled {
 .builder-character {
   position: absolute;
   left: 75px;
-  bottom: 12px;
+  bottom: 10px;
   height: 140px;
   pointer-events: none;
 }
