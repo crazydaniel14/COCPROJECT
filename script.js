@@ -1,4 +1,4 @@
-console.log("Loaded script.js version 13");
+console.log("Loaded script.js version 15");
 
 /* =========================
    CONFIG
