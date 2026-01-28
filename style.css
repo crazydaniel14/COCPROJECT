@@ -300,3 +300,48 @@ button:disabled {
   font-size: 13px;
   opacity: 0.7;
 }
+/* ==================================================
+   MOBILE READABILITY TUNING
+   ================================================== */
+
+@media (max-width: 600px) {
+
+  /* Slightly taller cards for breathing room */
+  .builder-card {
+    height: 175px;
+  }
+
+  /* Text column a bit wider */
+  .builder-text {
+    width: 52%;
+  }
+
+  /* BUILDER NAME */
+  .builder-name {
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+
+  /* CURRENT UPGRADE */
+  .builder-upgrade {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+
+  /* TIME LEFT — still the star, but controlled */
+  .builder-time-left {
+    font-size: 20px;
+    margin-bottom: 2px;
+  }
+
+  /* FINISH TIME */
+  .builder-finish {
+    font-size: 11px;
+    margin-bottom: 8px;
+  }
+
+  /* NEXT UPGRADE */
+  .builder-next {
+    font-size: 12px;
+  }
+}
