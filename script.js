@@ -1,7 +1,7 @@
-console.log("Loaded script.js version 15");
+console.log("Loaded script.js version 13");
 
 /* =========================
-   CONFIG
+   CONFIG (DEFINE FIRST)
    ========================= */
 const API_BASE =
   "https://script.google.com/macros/s/AKfycbycmSvqeMj_GpuALxs8HTEf5GiI09nQI6fm04RtsA3stKbSW-d6zbm8bzWNWszl1GzQpw/exec";
@@ -12,14 +12,6 @@ const TODAYS_BOOST_ENDPOINT = API_BASE + "?action=todays_boost";
 const APPLY_BOOST_ENDPOINT = API_BASE + "?action=apply_todays_boost";
 const BOOST_PLAN_ENDPOINT = API_BASE + "?action=boost_plan";
 const RUN_BOOST_SIM_ENDPOINT = API_BASE + "?action=run_boost_simulation";
-
-/* ---- Battle Pass endpoints ---- */
-const BATTLE_PASS_STATUS_ENDPOINT =
-  API_BASE + "?action=battle_pass_status";
-const BATTLE_PASS_PREVIEW_ENDPOINT =
-  API_BASE + "?action=preview_battle_pass";
-const BATTLE_PASS_APPLY_ENDPOINT =
-  API_BASE + "?action=apply_battle_pass";
 
 /* =========================
    DAILY BOOST UI LOCK
@@ -43,7 +35,7 @@ function unlockBoostButton(btn) {
 }
 
 /* =========================
-   TABLE HEADERS
+   CANONICAL TABLE HEADERS
    ========================= */
 const TABLE_HEADERS = [
   "BUILDER",
@@ -99,7 +91,7 @@ function loadTodaysBoost() {
 }
 
 /* =========================
-   CURRENT WORK TABLE
+   LOAD CURRENT WORK TABLE
    ========================= */
 function loadCurrentWorkTable() {
   fetch(TABLE_ENDPOINT)
@@ -165,7 +157,7 @@ function loadCurrentWorkTable() {
 }
 
 /* =========================
-   BOOST PLAN TABLE
+   LOAD BOOST PLAN TABLE
    ========================= */
 function loadBoostPlan() {
   fetch(BOOST_PLAN_ENDPOINT)
@@ -196,7 +188,7 @@ function loadBoostPlan() {
 }
 
 /* =========================
-   PAGE LOAD
+   PAGE LOAD + BUTTONS
    ========================= */
 document.addEventListener("DOMContentLoaded", function () {
   loadTodaysBoost();
@@ -204,7 +196,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadBoostPlan();
   updateLastRefreshed();
 
-  /* ---- DAILY BOOST ---- */
+  /* ---- APPLY DAILY BOOST ---- */
   const applyBtn = document.getElementById("applyBoostBtn");
   if (applyBtn) {
     if (localStorage.getItem(BOOST_KEY) === todayKeyNY()) {
@@ -217,9 +209,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
       fetch(APPLY_BOOST_ENDPOINT)
         .then(r => r.json())
-        .then(() => {
+        .then(data => {
+          if (data.error) {
+            alert("Boost failed: " + data.error);
+            unlockBoostButton(applyBtn);
+            return;
+          }
+
           localStorage.setItem(BOOST_KEY, todayKeyNY());
           lockBoostButton(applyBtn);
+
           loadTodaysBoost();
           loadCurrentWorkTable();
           loadBoostPlan();
@@ -232,26 +231,32 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  /* ---- RUN BOOST SIM ---- */
+  /* ---- RUN BOOST SIMULATION ---- */
   const runSimBtn = document.getElementById("runBoostSimBtn");
   if (runSimBtn) {
     runSimBtn.addEventListener("click", function () {
+      const originalText = runSimBtn.textContent;
       runSimBtn.disabled = true;
-      runSimBtn.textContent = "Running…";
+      runSimBtn.textContent = "Running simulation…";
 
       fetch(RUN_BOOST_SIM_ENDPOINT)
         .then(() => loadBoostPlan())
+        .catch(err => {
+          console.error(err);
+          alert("Failed to run boost simulation");
+        })
         .finally(() => {
           runSimBtn.disabled = false;
-          runSimBtn.textContent = "Run Boost Simulation";
+          runSimBtn.textContent = originalText;
         });
     });
   }
 
-  /* ---- REFRESH ---- */
+  /* ---- REFRESH BUTTON ---- */
   const refreshBtn = document.getElementById("refreshSheetBtn");
   if (refreshBtn) {
     refreshBtn.addEventListener("click", function () {
+      const originalText = refreshBtn.textContent;
       refreshBtn.disabled = true;
       refreshBtn.textContent = "Refreshing…";
 
@@ -262,58 +267,114 @@ document.addEventListener("DOMContentLoaded", function () {
           loadCurrentWorkTable();
           loadBoostPlan();
         })
+        .catch(err => {
+          console.error(err);
+          alert("Failed to refresh spreadsheet");
+        })
         .finally(() => {
           refreshBtn.disabled = false;
-          refreshBtn.textContent = "Refresh Spreadsheet";
+          refreshBtn.textContent = originalText;
         });
     });
   }
 
-  /* =========================
-     BATTLE PASS BUTTON
-     ========================= */
-  const battlePassBtn = document.getElementById("battlePassBtn");
+  /*****************************************************
+   * SHARED MODAL — BUILDER POTION + 1-HOUR BOOST
+   *****************************************************/
+  const builderPotionModal = document.getElementById("builderPotionModal");
+  const potionCountInput = document.getElementById("potionCount");
+  const previewPotionBtn = document.getElementById("previewPotionBtn");
+  const confirmPotionBtn = document.getElementById("confirmPotionBtn");
+  const cancelPotionBtn = document.getElementById("cancelPotionBtn");
+  const previewBox = document.getElementById("builderPotionPreview");
 
-  if (battlePassBtn) {
-    battlePassBtn.addEventListener("click", async () => {
-      battlePassBtn.style.pointerEvents = "none";
-      battlePassBtn.style.opacity = "0.6";
+  const builderPotionBtn = document.getElementById("builderPotionBtn");
+  const oneHourBoostBtn = document.getElementById("oneHourBoostBtn");
 
-      try {
-        const status = await (await fetch(BATTLE_PASS_STATUS_ENDPOINT)).json();
-        const preview = await (await fetch(BATTLE_PASS_PREVIEW_ENDPOINT)).json();
+  let currentPreviewAction = null;
+  let currentApplyAction = null;
 
-        const msg =
-          `Battle Pass Reduction\n\n` +
-          `Current: ${status.currentLevel}%\n` +
-          `Next: ${status.nextLevel}%\n\n` +
-          `Upgrades affected this month: ${preview.upgradesAffected}\n\n` +
-          `Proceed?`;
+  if (!builderPotionBtn) return;
 
-        if (!confirm(msg)) return;
+  // ---- OPEN MODAL (Builder Potion) ----
+  builderPotionBtn.addEventListener("click", () => {
+    currentPreviewAction = "preview_builder_potion";
+    currentApplyAction = "apply_builder_potion";
 
-        const result = await (await fetch(BATTLE_PASS_APPLY_ENDPOINT)).json();
+    builderPotionModal.classList.remove("hidden");
+    previewBox.innerHTML = "";
+    confirmPotionBtn.disabled = true;
+  });
 
-        if (result.status === "reset") {
-          alert("Battle Pass reset to 0%");
-        } else {
-          alert(
-            `Applied ${result.newLevel}% reduction\n` +
-            `Upgrades affected: ${result.affectedUpgrades}`
-          );
-        }
+  // ---- OPEN MODAL (1-Hour Boost) ----
+  if (oneHourBoostBtn) {
+    oneHourBoostBtn.addEventListener("click", () => {
+      currentPreviewAction = "preview_one_hour_boost";
+      currentApplyAction = "apply_one_hour_boost";
 
-        loadCurrentWorkTable();
-        loadBoostPlan();
-        loadTodaysBoost();
-
-      } catch (err) {
-        console.error(err);
-        alert("Battle Pass action failed.");
-      } finally {
-        battlePassBtn.style.pointerEvents = "auto";
-        battlePassBtn.style.opacity = "1";
-      }
+      builderPotionModal.classList.remove("hidden");
+      previewBox.innerHTML = "";
+      confirmPotionBtn.disabled = true;
     });
   }
+
+  cancelPotionBtn.addEventListener("click", () => {
+    builderPotionModal.classList.add("hidden");
+  });
+
+  previewPotionBtn.addEventListener("click", async () => {
+    const times = Number(potionCountInput.value);
+    if (!times || times <= 0) {
+      alert("Please select a valid amount.");
+      return;
+    }
+
+    previewBox.innerHTML = "Loading preview…";
+
+    try {
+      const res = await fetch(
+        `${API_BASE}?action=${currentPreviewAction}&times=${times}`
+      );
+      const data = await res.json();
+
+      let html = `<strong>Applying ${times} boost(s):</strong><br><br>`;
+      data.preview.forEach(row => {
+        html += `
+          ${row.builder}:<br>
+          ${new Date(row.oldTime).toLocaleString()} →
+          ${new Date(row.newTime).toLocaleString()}<br><br>
+        `;
+      });
+
+      previewBox.innerHTML = html;
+      confirmPotionBtn.disabled = false;
+    } catch (err) {
+      console.error(err);
+      previewBox.innerHTML = "Failed to load preview.";
+    }
+  });
+
+  confirmPotionBtn.addEventListener("click", async () => {
+    const times = Number(potionCountInput.value);
+    confirmPotionBtn.disabled = true;
+    previewBox.innerHTML = "Applying…";
+
+    try {
+      await fetch(
+        `${API_BASE}?action=${currentApplyAction}&times=${times}`
+      );
+
+      previewBox.innerHTML = "Boost applied ✅";
+      loadTodaysBoost();
+      loadCurrentWorkTable();
+      loadBoostPlan();
+
+      setTimeout(() => {
+        builderPotionModal.classList.add("hidden");
+      }, 800);
+    } catch (err) {
+      console.error(err);
+      previewBox.innerHTML = "Failed to apply boost.";
+    }
+  });
 });
