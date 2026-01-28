@@ -221,3 +221,87 @@ button:disabled {
 .modal-actions button {
   flex: 1;
 }
+/* ==================================================
+   BUILDER CARDS (NEW UI – MOBILE FIRST)
+   ================================================== */
+
+.builders-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+/* Individual builder card */
+.builder-card {
+  position: relative;
+  background: linear-gradient(180deg, #1b1b1b, #0f0f0f);
+  border-radius: 16px;
+  padding: 16px 16px 16px 76px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.65);
+  cursor: pointer;
+}
+
+/* Status color bar */
+.builder-card.green { border-left: 6px solid #2ecc71; }
+.builder-card.yellow { border-left: 6px solid #f1c40f; }
+.builder-card.red { border-left: 6px solid #e74c3c; }
+
+/* Builder image */
+.builder-img {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(255,255,255,0.25));
+}
+
+/* Text hierarchy */
+.builder-name {
+  font-size: 17px;
+  font-weight: bold;
+  margin-bottom: 6px;
+  color: #ffffff;
+}
+
+.current-upgrade {
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: #e0e0e0;
+}
+
+.time-left {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 4px;
+  color: #ffffff;
+}
+
+.finish-time {
+  font-size: 12px;
+  opacity: 0.75;
+  color: #cccccc;
+}
+
+.next-upgrade {
+  margin-top: 8px;
+  font-size: 13px;
+  opacity: 0.85;
+  color: #dddddd;
+}
+
+/* Touch feedback (mobile) */
+.builder-card:active {
+  transform: scale(0.98);
+}
+
+/* Desktop enhancement (secondary) */
+@media (min-width: 900px) {
+  .builders-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
