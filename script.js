@@ -1,4 +1,4 @@
-console.log("Loaded script.js version 13");
+console.log("Loaded script.js version 14");
 
 /* =========================
    CONFIG (DEFINE FIRST)
@@ -12,6 +12,14 @@ const TODAYS_BOOST_ENDPOINT = API_BASE + "?action=todays_boost";
 const APPLY_BOOST_ENDPOINT = API_BASE + "?action=apply_todays_boost";
 const BOOST_PLAN_ENDPOINT = API_BASE + "?action=boost_plan";
 const RUN_BOOST_SIM_ENDPOINT = API_BASE + "?action=run_boost_simulation";
+
+/* ---- BATTLE PASS ENDPOINTS (NEW) ---- */
+const BATTLE_PASS_STATUS_ENDPOINT =
+  API_BASE + "?action=battle_pass_status";
+const BATTLE_PASS_PREVIEW_ENDPOINT =
+  API_BASE + "?action=preview_battle_pass";
+const BATTLE_PASS_APPLY_ENDPOINT =
+  API_BASE + "?action=apply_battle_pass";
 
 /* =========================
    DAILY BOOST UI LOCK
@@ -377,4 +385,42 @@ document.addEventListener("DOMContentLoaded", function () {
       previewBox.innerHTML = "Failed to apply boost.";
     }
   });
+
+  /*****************************************************
+   * BATTLE PASS BUTTON (NEW)
+   *****************************************************/
+  const battlePassBtn = document.getElementById("battlePassBtn");
+
+  if (battlePassBtn) {
+    battlePassBtn.addEventListener("click", async () => {
+      try {
+        const status = await (await fetch(BATTLE_PASS_STATUS_ENDPOINT)).json();
+        const preview = await (await fetch(BATTLE_PASS_PREVIEW_ENDPOINT)).json();
+
+        const msg =
+          `Battle Pass Reduction\n\n` +
+          `Current: ${status.currentLevel}%\n` +
+          `Next: ${status.nextLevel}%\n\n` +
+          `Upgrades affected this month: ${preview.upgradesAffected}\n\n` +
+          `Proceed?`;
+
+        if (!confirm(msg)) return;
+
+        const result = await (await fetch(BATTLE_PASS_APPLY_ENDPOINT)).json();
+
+        alert(
+          result.status === "reset"
+            ? "Battle Pass reset to 0%"
+            : `Applied ${result.newLevel}% reduction`
+        );
+
+        loadTodaysBoost();
+        loadCurrentWorkTable();
+        loadBoostPlan();
+      } catch (err) {
+        console.error(err);
+        alert("Battle Pass action failed.");
+      }
+    });
+  }
 });
