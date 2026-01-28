@@ -1,4 +1,4 @@
-console.log("Loaded script.js version 14");
+console.log("Loaded script.js version 15");
 
 /* =========================
    CONFIG (DEFINE FIRST)
@@ -20,6 +20,28 @@ const BATTLE_PASS_PREVIEW_ENDPOINT =
   API_BASE + "?action=preview_battle_pass";
 const BATTLE_PASS_APPLY_ENDPOINT =
   API_BASE + "?action=apply_battle_pass";
+
+/* =========================
+   BATTLE PASS HOVER (SAFE)
+   ========================= */
+function updateBattlePassHover() {
+  const btn = document.getElementById("battlePassBtn");
+  if (!btn) return;
+
+  fetch(BATTLE_PASS_STATUS_ENDPOINT)
+    .then(r => r.json())
+    .then(data => {
+      if (data.nextLevel === 0) {
+        btn.title = "Reset Battle Pass to 0%";
+      } else {
+        btn.title = `Next: ${data.nextLevel}% reduction`;
+      }
+    })
+    .catch(() => {
+      // fallback if API fails
+      btn.title = "Battle Pass Reduction";
+    });
+}
 
 /* =========================
    DAILY BOOST UI LOCK
@@ -203,6 +225,7 @@ document.addEventListener("DOMContentLoaded", function () {
   loadCurrentWorkTable();
   loadBoostPlan();
   updateLastRefreshed();
+  updateBattlePassHover();
 
   /* ---- APPLY DAILY BOOST ---- */
   const applyBtn = document.getElementById("applyBoostBtn");
@@ -417,6 +440,7 @@ document.addEventListener("DOMContentLoaded", function () {
         loadTodaysBoost();
         loadCurrentWorkTable();
         loadBoostPlan();
+        updateBattlePassHover();
       } catch (err) {
         console.error(err);
         alert("Battle Pass action failed.");
