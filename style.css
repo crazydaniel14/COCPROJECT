@@ -291,17 +291,169 @@ button:disabled {
   opacity: 0.85;
   color: #dddddd;
 }
+/* ==================================================
+   BUILDER CARDS (NEW UI – MOBILE FIRST)
+   ================================================== */
 
-/* Touch feedback (mobile) */
+.builders-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+/* Individual builder card */
+.builder-card {
+  position: relative;
+  background: linear-gradient(180deg, #1b1b1b, #0f0f0f);
+  border-radius: 16px;
+  padding: 18px 18px 18px 92px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.65);
+  cursor: pointer;
+}
+
+/* Status color bar */
+.builder-card.green { border-left: 6px solid #2ecc71; }
+.builder-card.yellow { border-left: 6px solid #f1c40f; }
+.builder-card.red { border-left: 6px solid #e74c3c; }
+
+/* Builder image */
+.builder-img {
+  position: absolute;
+  left: 14px;
+  top: 18px;
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(255,255,255,0.35));
+}
+
+/* Text hierarchy */
+.builder-name {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  color: #ffffff;
+}
+
+.current-upgrade {
+  font-size: 15px;
+  margin-bottom: 10px;
+  color: #e6e6e6;
+}
+
+.time-left {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 4px;
+  color: #ffffff;
+}
+
+.finish-time {
+  font-size: 12px;
+  opacity: 0.75;
+  color: #cccccc;
+}
+
+.next-upgrade {
+  margin-top: 8px;
+  font-size: 13px;
+  opacity: 0.85;
+  color: #dddddd;
+}
+/* ==================================================
+   BUILDER CARDS – HERO DISTRIBUTION
+   ================================================== */
+
+.builders-container {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 14px;
+}
+
+/* Card shell */
+.builder-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #1b1b1b, #0f0f0f);
+  border-radius: 18px;
+  padding: 48px 18px 18px 18px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.65);
+  cursor: pointer;
+}
+
+/* Status bar */
+.builder-card.green { border-left: 6px solid #2ecc71; }
+.builder-card.yellow { border-left: 6px solid #f1c40f; }
+.builder-card.red { border-left: 6px solid #e74c3c; }
+
+/* Character (hero layer) */
+.builder-img.hero {
+  position: absolute;
+  left: 14px;
+  top: -26px; /* BREAKS CARD TOP */
+  width: 92px;
+  height: auto;
+  z-index: 2;
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,0.6));
+}
+
+/* Text content layer */
+.builder-content {
+  position: relative;
+  z-index: 1;
+  padding-left: 96px;
+}
+
+/* Builder title */
+.builder-title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  color: #ffffff;
+}
+
+/* Current upgrade */
+.current-upgrade {
+  font-size: 15px;
+  margin-bottom: 14px;
+  color: #e6e6e6;
+}
+
+/* Hero metric */
+.time-left {
+  font-size: 26px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  color: #ffffff;
+}
+
+/* Supporting info */
+.finish-time {
+  font-size: 12px;
+  opacity: 0.75;
+  color: #cccccc;
+}
+
+.next-upgrade {
+  margin-top: 12px;
+  font-size: 13px;
+  opacity: 0.85;
+  color: #dddddd;
+}
+
+/* Mobile tap feedback */
 .builder-card:active {
   transform: scale(0.98);
 }
 
-/* Desktop enhancement (secondary) */
+/* Desktop enhancement */
 @media (min-width: 900px) {
   .builders-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
+    gap: 20px;
   }
 }
