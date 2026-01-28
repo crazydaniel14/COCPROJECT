@@ -10,24 +10,39 @@
   <h2>COC PROGRAM</h2>
   <h3>Current Builder Status</h3>
 
-  <!-- 🔹 BUILDER POTION IMAGE BUTTON -->
+  <!-- 🔹 IMAGE ACTION BUTTONS -->
   <div class="action-button">
     <!-- Builder Potion -->
     <img
-    src="Images/BuilderPotion.png"
-    alt="Apply Builder Potion"
-    id="builderPotionBtn"
-    class="image-button"
+      src="Images/BuilderPotion.png"
+      alt="Apply Builder Potion"
+      id="builderPotionBtn"
+      class="image-button"
+      width="50"
+      height="50"
     />
+
     <!-- Builder Snack -->
     <img
-    src="Images/BuilderSnack.png"
-    alt="Apply 1-Hour Boost"
-    id="oneHourBoostBtn"
-    class="image-button"
+      src="Images/BuilderSnack.png"
+      alt="Apply 1-Hour Boost"
+      id="oneHourBoostBtn"
+      class="image-button"
+      width="50"
+      height="50"
+    />
+
+    <!-- Battle Pass -->
+    <img
+      src="Images/Builderpass.png"
+      alt="Battle Pass Reduction"
+      id="battlePassBtn"
+      class="image-button"
+      width="50"
+      height="50"
     />
   </div>
-  
+
   <div id="todaysBoost"></div>
   <button id="applyBoostBtn">Apply Today’s Boost</button>
 
@@ -51,14 +66,13 @@
     Last refreshed: —
   </div>
 
-  <!-- 🔹 BUILDER POTION MODAL (HIDDEN BY DEFAULT) -->
+  <!-- 🔹 BUILDER POTION MODAL (UNCHANGED) -->
   <div id="builderPotionModal" class="modal hidden">
     <div class="modal-content">
       <h2>Builder Potion</h2>
 
       <p>How many Builder Potions do you want to apply?</p>
 
-      <!-- NUMBER SELECTOR -->
       <input
         type="number"
         id="potionCount"
@@ -67,10 +81,8 @@
         value="1"
       />
 
-      <!-- PREVIEW OUTPUT -->
       <div id="builderPotionPreview" class="preview-box"></div>
 
-      <!-- ACTION BUTTONS -->
       <div class="modal-actions">
         <button id="previewPotionBtn">Preview</button>
         <button id="confirmPotionBtn" disabled>Confirm</button>
