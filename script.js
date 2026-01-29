@@ -279,8 +279,6 @@ function loadCurrentWorkTable() {
         tbody.appendChild(tr);
       }  
       // NEW: render builder cards from same data
-      renderBuilderCardsFromTableData(data);
-    })
     .catch(err => {
       console.error(err);
       alert("Failed to load CURRENT WORK table");
