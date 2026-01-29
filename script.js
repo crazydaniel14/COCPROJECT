@@ -1,4 +1,4 @@
-console.log("Loaded script.js – CLEAN STABLE BUILD2");
+console.log("Loaded script.js – CLEAN STABLE BUILD FINAL");
 
 /* =========================
    CONFIG
@@ -11,20 +11,39 @@ const REFRESH_ENDPOINT = API_BASE + "?action=refresh_sheet";
 const TODAYS_BOOST_ENDPOINT = API_BASE + "?action=todays_boost";
 const BOOST_PLAN_ENDPOINT = API_BASE + "?action=boost_plan";
 
+/* Builder / Pass actions */
+const APPLY_TODAYS_BOOST = API_BASE + "?action=apply_todays_boost";
+const RUN_BOOST_SIM = API_BASE + "?action=run_boost_simulation";
+const BUILDER_POTION = API_BASE + "?action=apply_builder_potion";
+const BUILDER_SNACK = API_BASE + "?action=apply_one_hour_boost";
+const BATTLE_PASS = API_BASE + "?action=apply_battle_pass";
+
 /* =========================
-   GLOBAL STATE (SINGLE SOURCE)
+   GLOBAL STATE
    ========================= */
 let currentWorkData = null;
 let todaysBoostInfo = null;
 let isRefreshing = false;
 
 /* =========================
-   UTIL
+   HELPERS
    ========================= */
+function formatFinishTime(raw) {
+  const d = new Date(raw);
+  if (isNaN(d)) return "-";
+  return d.toLocaleString("en-US", {
+    timeZone: "America/New_York",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true
+  }).replace(",", " at");
+}
+
 function updateLastRefreshed() {
   const el = document.getElementById("lastRefreshed");
   if (!el) return;
-
   el.textContent =
     "Last refreshed: " +
     new Date().toLocaleString("en-US", {
@@ -40,38 +59,37 @@ function updateLastRefreshed() {
 /* =========================
    LOADERS (DATA ONLY)
    ========================= */
-async function loadCurrentWorkTable() {
+async function loadCurrentWork() {
   const res = await fetch(TABLE_ENDPOINT);
-  const data = await res.json();
-  currentWorkData = data;
+  currentWorkData = await res.json();
 }
 
 async function loadTodaysBoost() {
   const res = await fetch(TODAYS_BOOST_ENDPOINT);
   const data = await res.json();
 
-  if (data && data.builder && data.status) {
+  if (data?.builder && data?.status) {
     todaysBoostInfo = {
-      builder: data.builder.toString().replace(/[^0-9]/g, ""),
+      builder: data.builder.toString().match(/(\d+)/)?.[1] || null,
       status: data.status
     };
   } else {
     todaysBoostInfo = null;
   }
 
-  // Remove intrusive UI if present
   const box = document.getElementById("todaysBoost");
   if (box) box.innerHTML = "";
 }
 
 async function loadBoostPlan() {
+  const table = document.getElementById("boost-plan-table");
+  if (!table) return;
+
   try {
     const res = await fetch(BOOST_PLAN_ENDPOINT);
     const data = await res.json();
-    const table = document.getElementById("boost-plan-table");
-    if (!table) return;
-
     table.innerHTML = "";
+
     data.table.forEach((row, i) => {
       const tr = document.createElement("tr");
       row.forEach(cell => {
@@ -86,22 +104,6 @@ async function loadBoostPlan() {
   }
 }
 
-//Helper*
-function formatFinishTime(raw) {
-  const d = new Date(raw);
-  if (isNaN(d)) return "-";
-
-  return d.toLocaleString("en-US", {
-    timeZone: "America/New_York",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true
-  }).replace(",", " at");
-}
-
-
 /* =========================
    RENDER BUILDER CARDS
    ========================= */
@@ -110,10 +112,8 @@ function renderBuilderCards() {
 
   const container = document.getElementById("builders-container");
   if (!container) return;
-
   container.innerHTML = "";
 
-  // Find earliest finish
   let earliestFinish = Infinity;
   for (let i = 1; i < currentWorkData.length; i++) {
     const t = new Date(currentWorkData[i][2]).getTime();
@@ -122,66 +122,39 @@ function renderBuilderCards() {
 
   for (let i = 1; i < currentWorkData.length; i++) {
     const row = currentWorkData[i];
-    const match = row[0].toString().match(/(\d+)/);
-    const builderNumber = match ? match[1] : null;
-    const finishTimeMs = new Date(row[2]).getTime();
+    const builderNumber = row[0].toString().match(/(\d+)/)?.[1] || null;
+    const finishMs = new Date(row[2]).getTime();
 
-   let badgeHTML = "";
+    let badgeHTML = "";
 
-if (todaysBoostInfo && todaysBoostInfo.builder === builderNumber) {
-  let img = "Images/Builder Apprentice Safe.png";
+    if (
+      todaysBoostInfo &&
+      builderNumber &&
+      todaysBoostInfo.builder === builderNumber
+    ) {
+      let img = "Images/Builder Apprentice Safe.png";
 
-  if (todaysBoostInfo.status === "FORCED") {
-    img = "Images/Builder Apprentice Forced.png";
-  }
-
-  if (todaysBoostInfo.status === "APPLIED") {
-    img = "Images/Builder Apprentice Applied.png";
-  }
-  if (
-  todaysBoostInfo &&
-  builderNumber &&
-  todaysBoostInfo.builder === builderNumber
-  ) {
-
-  badgeHTML = `
-    <img
-      src="${img}"
-      class="apprentice-badge ${
-        todaysBoostInfo.status === "APPLIED" ? "" : "clickable-boost"
-      }"
-      title="Apply Today’s Boost"
-      data-apply-boost="true"
-    />
-  `;
-}
-
-      
-       let img = "Images/Builder Apprentice Safe.png";
       if (todaysBoostInfo.status === "FORCED") {
-      img = "Images/Builder Apprentice Forced.png";
+        img = "Images/Builder Apprentice Forced.png";
+      } else if (todaysBoostInfo.status === "APPLIED") {
+        img = "Images/Builder Apprentice Applied.png";
       }
-      if (todaysBoostInfo.status === "APPLIED") {
-      img = "Images/Builder Apprentice Applied.png";
-      }
 
-
-    badgeHTML = `
-    <img
-    src="${img}"
-    class="apprentice-badge ${todaysBoostInfo.status === "APPLIED" ? "" : "clickable-boost"}"
-    title="Apply Today’s Boost"
-    data-apply-boost="true"
-    />
-    `;
-
+      badgeHTML = `
+        <img
+          src="${img}"
+          class="apprentice-badge ${
+            todaysBoostInfo.status === "APPLIED" ? "" : "clickable-boost"
+          }"
+          data-apply-boost="true"
+          title="Apply Today’s Boost"
+        />
+      `;
+    }
 
     const card = document.createElement("div");
     card.className = "builder-card";
-
-    if (finishTimeMs === earliestFinish) {
-      card.classList.add("next-finish");
-    }
+    if (finishMs === earliestFinish) card.classList.add("next-finish");
 
     card.innerHTML = `
       ${badgeHTML}
@@ -200,7 +173,7 @@ if (todaysBoostInfo && todaysBoostInfo.builder === builderNumber) {
 }
 
 /* =========================
-   ORCHESTRATOR (THE BOSS)
+   ORCHESTRATOR
    ========================= */
 async function refreshDashboard() {
   if (isRefreshing) return;
@@ -208,34 +181,60 @@ async function refreshDashboard() {
 
   try {
     await fetch(REFRESH_ENDPOINT);
-
-    await Promise.all([
-      loadCurrentWorkTable(),
-      loadTodaysBoost()
-    ]);
-
+    await Promise.all([loadCurrentWork(), loadTodaysBoost()]);
     renderBuilderCards();
     loadBoostPlan();
     updateLastRefreshed();
-  } catch (err) {
-    console.error("Dashboard refresh failed", err);
+  } catch (e) {
+    console.error("Refresh failed", e);
   } finally {
     isRefreshing = false;
   }
 }
-function wireApprenticeBoostClick() {
-document.addEventListener("click", async (e) => {
-const badge = e.target.closest("[data-apply-boost]");
-if (!badge) return;
-if (todaysBoostInfo?.status === "APPLIED") return;
-if (!confirm("Apply today’s boost to this builder?")) return;
-try {
-await fetch(API_BASE + "?action=apply_todays_boost");
-await refreshDashboard();
-} catch (err) {
-console.error("Failed to apply today’s boost", err);
-alert("Failed to apply today’s boost.");
-    }
+
+/* =========================
+   INTERACTIONS
+   ========================= */
+function wireApprenticeBoost() {
+  document.addEventListener("click", async e => {
+    const badge = e.target.closest("[data-apply-boost]");
+    if (!badge) return;
+    if (todaysBoostInfo?.status === "APPLIED") return;
+    if (!confirm("Apply today’s boost?")) return;
+
+    await fetch(APPLY_TODAYS_BOOST);
+    await refreshDashboard();
+  });
+}
+
+function wireImageButtons() {
+  document.getElementById("builderPotionBtn")?.addEventListener("click", async () => {
+    await fetch(BUILDER_POTION);
+    refreshDashboard();
+  });
+
+  document.getElementById("oneHourBoostBtn")?.addEventListener("click", async () => {
+    await fetch(BUILDER_SNACK);
+    refreshDashboard();
+  });
+
+  document.getElementById("battlePassBtn")?.addEventListener("click", async () => {
+    await fetch(BATTLE_PASS);
+    refreshDashboard();
+  });
+}
+
+function wireBoostSimulation() {
+  const btn = document.getElementById("runBoostSimBtn");
+  if (!btn) return;
+
+  btn.addEventListener("click", async () => {
+    btn.disabled = true;
+    btn.textContent = "Running…";
+    await fetch(RUN_BOOST_SIM);
+    await refreshDashboard();
+    btn.textContent = "Run Boost Simulation";
+    btn.disabled = false;
   });
 }
 
@@ -246,35 +245,13 @@ function startAutoRefresh() {
   setInterval(refreshDashboard, 45 * 1000);
 }
 
-   
-function wireRunBoostSimulation() {
-  const btn = document.getElementById("runBoostSimBtn");
-  if (!btn) return;
-
-  btn.addEventListener("click", async () => {
-    const original = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = "Running…";
-
-    try {
-      await fetch(API_BASE + "?action=run_boost_simulation");
-      await refreshDashboard();
-    } catch (err) {
-      console.error("Boost simulation failed", err);
-      alert("Boost simulation failed.");
-    } finally {
-      btn.textContent = original;
-      btn.disabled = false;
-    }
-  });
-}
-
 /* =========================
    INIT
    ========================= */
 document.addEventListener("DOMContentLoaded", async () => {
   await refreshDashboard();
   startAutoRefresh();
-  wireApprenticeBoostClick();
-  wireRunBoostSimulation();
+  wireApprenticeBoost();
+  wireImageButtons();
+  wireBoostSimulation();
 });
