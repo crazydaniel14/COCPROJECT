@@ -314,7 +314,7 @@ button:disabled {
   /* One card per row */
   .builders-container {
     grid-template-columns: 1fr;
-    gap: 5px;
+    gap: 16px;
   }
 
   /* Bigger card for readability */
