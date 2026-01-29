@@ -251,11 +251,11 @@ button:disabled {
 .builder-card {
   position: relative;
   height: 160px;
-  background: #000;
+  background: #19191ec7;
   border-radius: 22px;
   overflow: hidden;
   border-left: 8px solid #7d0606;
-  box-shadow: 0 6px 16px rgba(26,27,31,0.78);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
 }
 
 /* Builder character (visual only) */
