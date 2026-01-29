@@ -125,11 +125,31 @@ function renderBuilderCards() {
     const builderNumber = row[0].toString().replace(/[^0-9]/g, "");
     const finishTimeMs = new Date(row[2]).getTime();
 
-    let badgeHTML = "";
-    if (
-      todaysBoostInfo &&
-      todaysBoostInfo.builder === builderNumber
-    ) {
+   let badgeHTML = "";
+
+if (todaysBoostInfo && todaysBoostInfo.builder === builderNumber) {
+  let img = "Images/Builder Apprentice Safe.png";
+
+  if (todaysBoostInfo.status === "FORCED") {
+    img = "Images/Builder Apprentice Forced.png";
+  }
+
+  if (todaysBoostInfo.status === "APPLIED") {
+    img = "Images/Builder Apprentice Applied.png";
+  }
+
+  badgeHTML = `
+    <img
+      src="${img}"
+      class="apprentice-badge ${
+        todaysBoostInfo.status === "APPLIED" ? "" : "clickable-boost"
+      }"
+      title="Apply Today’s Boost"
+      data-apply-boost="true"
+    />
+  `;
+}
+
       
        let img = "Images/Builder Apprentice Safe.png";
       if (todaysBoostInfo.status === "FORCED") {
@@ -146,7 +166,6 @@ function renderBuilderCards() {
     class="apprentice-badge ${todaysBoostInfo.status === "APPLIED" ? "" : "clickable-boost"}"
     title="Apply Today’s Boost"
     data-apply-boost="true"
-    if (todaysBoostInfo?.status === "APPLIED") return;
     />
     `;
 
@@ -202,6 +221,7 @@ function wireApprenticeBoostClick() {
 document.addEventListener("click", async (e) => {
 const badge = e.target.closest("[data-apply-boost]");
 if (!badge) return;
+if (todaysBoostInfo?.status === "APPLIED") return;
 if (!confirm("Apply today’s boost to this builder?")) return;
 try {
 await fetch(API_BASE + "?action=apply_todays_boost");
