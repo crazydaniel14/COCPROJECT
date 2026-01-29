@@ -301,6 +301,27 @@ function startAutoRefresh() {
 
   }, 45 * 1000); // 45 seconds
 }
+let isRefreshing = false;
+
+function startAutoRefresh() {
+  setInterval(async () => {
+    if (isRefreshing) return;
+    isRefreshing = true;
+
+    try {
+      console.log("Auto-refreshing dashboard data…");
+      await fetch(REFRESH_ENDPOINT);
+
+      loadTodaysBoost();
+      loadCurrentWorkTable();
+      loadBoostPlan();
+      updateLastRefreshed();
+      updateBattlePassHover();
+    } finally {
+      isRefreshing = false;
+    }
+  }, 45 * 1000);
+}
 /* =========================
    PAGE LOAD + BUTTONS
    ========================= */
