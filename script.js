@@ -278,7 +278,7 @@ function loadBoostPlan() {
     .catch(err => console.error("Failed to load boost plan", err));
 }
 /* =========================
-   AUTO REFRESH (EVERY 1 MIN)
+   AUTO REFRESH (EVERY 45 sec)
    ========================= */
 function startAutoRefresh() {
   setInterval(async () => {
@@ -299,7 +299,7 @@ function startAutoRefresh() {
       console.error("Auto-refresh failed", err);
     }
 
-  }, 45 * 1000); // 1 minute
+  }, 45 * 1000); // 45 seconds
 }
 /* =========================
    PAGE LOAD + BUTTONS
