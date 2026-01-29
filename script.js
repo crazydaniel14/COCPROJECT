@@ -122,7 +122,8 @@ function renderBuilderCards() {
 
   for (let i = 1; i < currentWorkData.length; i++) {
     const row = currentWorkData[i];
-    const builderNumber = row[0].toString().replace(/[^0-9]/g, "");
+    const match = row[0].toString().match(/(\d+)/);
+    const builderNumber = match ? match[1] : null;
     const finishTimeMs = new Date(row[2]).getTime();
 
    let badgeHTML = "";
@@ -137,6 +138,11 @@ if (todaysBoostInfo && todaysBoostInfo.builder === builderNumber) {
   if (todaysBoostInfo.status === "APPLIED") {
     img = "Images/Builder Apprentice Applied.png";
   }
+  if (
+  todaysBoostInfo &&
+  builderNumber &&
+  todaysBoostInfo.builder === builderNumber
+  ) {
 
   badgeHTML = `
     <img
