@@ -299,7 +299,7 @@ function startAutoRefresh() {
       console.error("Auto-refresh failed", err);
     }
 
-  }, 30 * 1000); // 1 minute
+  }, 45 * 1000); // 1 minute
 }
 /* =========================
    PAGE LOAD + BUTTONS
