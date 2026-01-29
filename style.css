@@ -376,7 +376,7 @@ button:disabled {
 .apprentice-badge {
   position: absolute;
   top: 8px;
-  right: 3px;
+  right: 10px;
   width: 50px;
   height: auto;
   z-index: 3;
