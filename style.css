@@ -1,4 +1,8 @@
-console.log("Loaded Style.css version 1");
+@media (max-width: 768px) {
+  body {
+    background: red !important;
+  }
+}
 body {
   font-family: 'Lexend', system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
   background-color: #f4f6f8;
@@ -305,7 +309,7 @@ button:disabled {
    MOBILE: SINGLE COLUMN, BIGGER CARDS
    ================================================== */
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
 
   /* One card per row */
   .builders-container {
