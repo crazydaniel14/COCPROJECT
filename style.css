@@ -375,7 +375,7 @@ button:disabled {
 /* Builder Apprentice badge (Today's Boost indicator) */
 .apprentice-badge {
   position: absolute;
-  top: -10px;
+  top: 8px;
   right: -1px;
   width: 70px;
   height: auto;
