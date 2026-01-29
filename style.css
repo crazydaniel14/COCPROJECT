@@ -332,7 +332,7 @@ button:disabled {
   /* Text column wider */
   .builder-text {
     left: 42%;
-    width: 15%;
+    width: 100%;
   }
 
   /* Text scaling */
