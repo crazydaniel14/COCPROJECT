@@ -232,6 +232,11 @@ button:disabled {
    BUILDER CARDS — IMAGE-MATCHED DESIGN
    ================================================== */
 
+/* Highlight builder closest to finishing */
+.builder-card.next-finish {
+  box-shadow: 0 0 0 3px #f5d04c, 0 10px 24px rgba(36, 240, 22, 0.50);
+}
+
 /* Always 2 cards per row */
 .builders-container {
   display: grid;
