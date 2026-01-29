@@ -1,4 +1,4 @@
-console.log("Loaded script.js version 20");
+console.log("Loaded script.js version 21");
 
 /* =========================
    CONFIG (DEFINE FIRST)
@@ -42,6 +42,9 @@ function updateBattlePassHover() {
       btn.title = "Battle Pass Reduction";
     });
 }
+
+// Store today's boost info for UI use
+let todaysBoostInfo = null;
 
 /* =========================
    DAILY BOOST UI LOCK
@@ -101,22 +104,21 @@ function updateLastRefreshed() {
 function loadTodaysBoost() {
   fetch(TODAYS_BOOST_ENDPOINT)
     .then(r => r.json())
-    .then(data => {
-      const box = document.getElementById("todaysBoost");
-      if (!box) return;
+.then(data => {
+  // Save boost info globally for builder cards
+  if (data.builder && data.status) {
+    todaysBoostInfo = {
+      builder: data.builder.toString().replace(/[^0-9]/g, ""), // extract number
+      status: data.status // SAFE or FORCED
+    };
+  } else {
+    todaysBoostInfo = null;
+  }
 
-      box.innerHTML = `
-        <h3>TODAY’S BOOST</h3>
-        <div><strong>Upgrade:</strong> ${data.upgrade || "-"}</div>
-        <div><strong>Builder:</strong> ${data.builder || "-"}</div>
-        <div><strong>Status:</strong> ${data.status || "-"}</div>
-        ${
-          data.warning
-            ? `<div style="margin-top:6px;font-weight:bold;">⚠ ${data.warning}</div>`
-            : ""
-        }
-      `;
-    })
+  // We no longer need a visible TODAY'S BOOST block
+  const box = document.getElementById("todaysBoost");
+  if (box) box.innerHTML = "";
+})
     .catch(err => console.error("Failed to load today's boost", err));
 }
 /* =========================
@@ -178,17 +180,41 @@ const builderName = builderNumber
    }
 
 
-    card.innerHTML = `
-      <img src="Images/Builder.png" class="builder-character" />
+    let apprenticeBadge = "";
 
-      <div class="builder-text">
-        <div class="builder-name">${builderName}</div>
-        <div class="builder-upgrade">${currentUpgrade}</div>
-        <div class="builder-time-left">${timeLeft}</div>
-        <div class="builder-finish">Finishes: ${finishFormatted}</div>
-        <div class="builder-next">▶ Next: ${nextUpgrade}</div>
-      </div>
-    `;
+// Check if this builder gets today's boost
+if (
+  todaysBoostInfo &&
+  todaysBoostInfo.builder === builderNumber
+) {
+  const badgeImg =
+    todaysBoostInfo.status === "FORCED"
+      ? "Images/Builder Apprentice Forced.png"
+      : "Images/Builder Apprentice Safe.png";
+
+// BUILDER APPRENTICE
+   apprenticeBadge = `
+    <img
+      src="${badgeImg}"
+      class="apprentice-badge"
+      alt="Today's Boost"
+    />
+  `;
+}
+
+card.innerHTML = `
+  ${apprenticeBadge}
+
+  <img src="Images/Builder.png" class="builder-character" />
+
+  <div class="builder-text">
+    <div class="builder-name">${builderName}</div>
+    <div class="builder-upgrade">${currentUpgrade}</div>
+    <div class="builder-time-left">${timeLeft}</div>
+    <div class="builder-finish">Finishes: ${finishFormatted}</div>
+    <div class="builder-next">▶ Next: ${nextUpgrade}</div>
+  </div>
+`;
 
     container.appendChild(card);
   }
