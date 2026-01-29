@@ -222,6 +222,12 @@ button:disabled {
 .modal-actions button {
   flex: 1;
 }
+
+/* Hide legacy builder table (cards are now primary UI) */
+#builderTable {
+  display: none;
+}
+
 /* ==================================================
    BUILDER CARDS — IMAGE-MATCHED DESIGN
    ================================================== */
