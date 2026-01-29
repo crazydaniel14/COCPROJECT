@@ -324,9 +324,9 @@ button:disabled {
 
   /* Builder image bigger and lower */
   .builder-character {
-    left: 40px;
-    bottom: -4px;
-    height: 160px;
+    left: 20px;
+    bottom: 10px;
+    height: 120px;
   }
 
   /* Text column wider */
