@@ -302,47 +302,53 @@ button:disabled {
   opacity: 0.7;
 }
 /* ==================================================
-   MOBILE READABILITY TUNING
+   MOBILE: SINGLE COLUMN, BIGGER CARDS
    ================================================== */
 
 @media (max-width: 600px) {
 
-  /* Slightly taller cards for breathing room */
+  /* One card per row */
+  .builders-container {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* Bigger card for readability */
   .builder-card {
-    height: 175px;
+    height: 210px;
   }
 
-  /* Text column a bit wider */
+  /* Builder image bigger and lower */
+  .builder-character {
+    left: 40px;
+    bottom: -4px;
+    height: 160px;
+  }
+
+  /* Text column wider */
   .builder-text {
-    width: 52%;
+    left: 42%;
+    width: 54%;
   }
 
-  /* BUILDER NAME */
+  /* Text scaling */
   .builder-name {
-    font-size: 16px;
-    margin-bottom: 4px;
-  }
-
-  /* CURRENT UPGRADE */
-  .builder-upgrade {
-    font-size: 14px;
-    margin-bottom: 8px;
-  }
-
-  /* TIME LEFT — still the star, but controlled */
-  .builder-time-left {
     font-size: 20px;
-    margin-bottom: 2px;
   }
 
-  /* FINISH TIME */
+  .builder-upgrade {
+    font-size: 16px;
+  }
+
+  .builder-time-left {
+    font-size: 26px;
+  }
+
   .builder-finish {
-    font-size: 11px;
-    margin-bottom: 8px;
+    font-size: 13px;
   }
 
-  /* NEXT UPGRADE */
   .builder-next {
-    font-size: 12px;
+    font-size: 14px;
   }
 }
