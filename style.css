@@ -254,7 +254,7 @@ button:disabled {
 .builder-character {
   position: absolute;
   left: 100px;
-  bottom: 8px;
+  bottom: 10px;
   height: 130px;
   pointer-events: none;
 }
