@@ -1,8 +1,3 @@
-@media (max-width: 768px) {
-  body {
-    background: red !important;
-  }
-}
 body {
   font-family: 'Lexend', system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
   background-color: #f4f6f8;
