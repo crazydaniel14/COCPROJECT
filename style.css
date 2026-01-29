@@ -374,6 +374,8 @@ button:disabled {
 }
 /* Builder Apprentice badge (Today's Boost indicator) */
 .apprentice-badge {
+  pointer-events: auto;
+  cursor: pointer;
   position: absolute;
   top: 8px;
   right: 10px;
