@@ -1,4 +1,4 @@
-console.log("Loaded script.js version 18");
+console.log("Loaded script.js version 19");
 
 /* =========================
    CONFIG (DEFINE FIRST)
@@ -299,7 +299,7 @@ function startAutoRefresh() {
       console.error("Auto-refresh failed", err);
     }
 
-  }, 60 * 1000); // 1 minute
+  }, 30 * 1000); // 1 minute
 }
 /* =========================
    PAGE LOAD + BUTTONS
