@@ -1,4 +1,4 @@
-console.log("Loaded script.js version 16");
+console.log("Loaded script.js version 17");
 
 /* =========================
    CONFIG (DEFINE FIRST)
@@ -277,7 +277,21 @@ function loadBoostPlan() {
     })
     .catch(err => console.error("Failed to load boost plan", err));
 }
+/* =========================
+   AUTO REFRESH (EVERY 1 MIN)
+   ========================= */
+function startAutoRefresh() {
+  setInterval(() => {
+    console.log("Auto-refreshing dashboard data…");
 
+    loadTodaysBoost();
+    loadCurrentWorkTable();
+    loadBoostPlan();
+    updateLastRefreshed();
+    updateBattlePassHover();
+
+  }, 60 * 1000); // 1 minute
+}
 /* =========================
    PAGE LOAD + BUTTONS
    ========================= */
@@ -287,6 +301,8 @@ document.addEventListener("DOMContentLoaded", function () {
   loadBoostPlan();
   updateLastRefreshed();
   updateBattlePassHover();
+  startAutoRefresh();
+
 
   /* ---- APPLY DAILY BOOST ---- */
   const applyBtn = document.getElementById("applyBoostBtn");
