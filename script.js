@@ -119,7 +119,58 @@ function loadTodaysBoost() {
     })
     .catch(err => console.error("Failed to load today's boost", err));
 }
+/* =========================
+   render info for builder card
+   ========================= */
+function renderBuilderCardsFromTableData(data) {
+  const container = document.getElementById("builders-container");
+  if (!container) return;
 
+  container.innerHTML = "";
+
+  // skip header row (index 0)
+  for (let i = 1; i < data.length; i++) {
+    const row = data[i];
+
+    const builderName = row[0] || "";
+    const currentUpgrade = row[1] || "";
+    const finishTimeRaw = row[2] || "";
+    const timeLeft = row[3] || "";
+    const nextUpgrade = row[4] || "";
+
+    let finishFormatted = "";
+    if (finishTimeRaw) {
+      const d = new Date(finishTimeRaw);
+      if (!isNaN(d)) {
+        finishFormatted = d.toLocaleString("en-US", {
+          timeZone: "America/New_York",
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true
+        });
+      }
+    }
+
+    const card = document.createElement("div");
+    card.className = "builder-card";
+
+    card.innerHTML = `
+      <img src="Images/Builder.png" class="builder-character" />
+
+      <div class="builder-text">
+        <div class="builder-name">${builderName}</div>
+        <div class="builder-upgrade">${currentUpgrade}</div>
+        <div class="builder-time-left">${timeLeft}</div>
+        <div class="builder-finish">Finishes: ${finishFormatted}</div>
+        <div class="builder-next">▶ Next: ${nextUpgrade}</div>
+      </div>
+    `;
+
+    container.appendChild(card);
+  }
+}
 /* =========================
    LOAD CURRENT WORK TABLE
    ========================= */
@@ -178,7 +229,9 @@ function loadCurrentWorkTable() {
         }
 
         tbody.appendChild(tr);
-      }
+      }  
+      // NEW: render builder cards from same data
+      renderBuilderCardsFromTableData(data);
     })
     .catch(err => {
       console.error(err);
