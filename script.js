@@ -1,4 +1,4 @@
-console.log("Loaded script.js version 17");
+console.log("Loaded script.js version 18");
 
 /* =========================
    CONFIG (DEFINE FIRST)
@@ -281,14 +281,23 @@ function loadBoostPlan() {
    AUTO REFRESH (EVERY 1 MIN)
    ========================= */
 function startAutoRefresh() {
-  setInterval(() => {
+  setInterval(async () => {
     console.log("Auto-refreshing dashboard data…");
 
-    loadTodaysBoost();
-    loadCurrentWorkTable();
-    loadBoostPlan();
-    updateLastRefreshed();
-    updateBattlePassHover();
+    try {
+      // 1️⃣ Force spreadsheet recalculation
+      await fetch(REFRESH_ENDPOINT);
+
+      // 2️⃣ Re-fetch updated data
+      loadTodaysBoost();
+      loadCurrentWorkTable();
+      loadBoostPlan();
+      updateLastRefreshed();
+      updateBattlePassHover();
+
+    } catch (err) {
+      console.error("Auto-refresh failed", err);
+    }
 
   }, 60 * 1000); // 1 minute
 }
