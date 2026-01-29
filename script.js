@@ -135,8 +135,15 @@ function renderBuilderCards() {
           ? "Images/Builder Apprentice Forced.png"
           : "Images/Builder Apprentice Safe.png";
 
-      badgeHTML = `<img src="${img}" class="apprentice-badge" />`;
-    }
+    badgeHTML = `
+    <img
+    src="${img}"
+    class="apprentice-badge clickable-boost"
+    title="Apply Today’s Boost"
+    data-apply-boost="true"
+    />
+    `;
+
 
     const card = document.createElement("div");
     card.className = "builder-card";
