@@ -130,17 +130,23 @@ function renderBuilderCards() {
       todaysBoostInfo &&
       todaysBoostInfo.builder === builderNumber
     ) {
-      const img =
-        todaysBoostInfo.status === "FORCED"
-          ? "Images/Builder Apprentice Forced.png"
-          : "Images/Builder Apprentice Safe.png";
+      
+       let img = "Images/Builder Apprentice Safe.png";
+      if (todaysBoostInfo.status === "FORCED") {
+      img = "Images/Builder Apprentice Forced.png";
+      }
+      if (todaysBoostInfo.status === "APPLIED") {
+      img = "Images/Builder Apprentice Applied.png";
+      }
+
 
     badgeHTML = `
     <img
     src="${img}"
-    class="apprentice-badge clickable-boost"
+    class="apprentice-badge ${todaysBoostInfo.status === "APPLIED" ? "" : "clickable-boost"}"
     title="Apply Today’s Boost"
     data-apply-boost="true"
+    if (todaysBoostInfo?.status === "APPLIED") return;
     />
     `;
 
@@ -192,6 +198,20 @@ async function refreshDashboard() {
     isRefreshing = false;
   }
 }
+function wireApprenticeBoostClick() {
+document.addEventListener("click", async (e) => {
+const badge = e.target.closest("[data-apply-boost]");
+if (!badge) return;
+if (!confirm("Apply today’s boost to this builder?")) return;
+try {
+await fetch(API_BASE + "?action=apply_todays_boost");
+await refreshDashboard();
+} catch (err) {
+console.error("Failed to apply today’s boost", err);
+alert("Failed to apply today’s boost.");
+    }
+  });
+}
 
 /* =========================
    AUTO REFRESH
@@ -200,10 +220,35 @@ function startAutoRefresh() {
   setInterval(refreshDashboard, 45 * 1000);
 }
 
+   
+function wireRunBoostSimulation() {
+  const btn = document.getElementById("runBoostSimBtn");
+  if (!btn) return;
+
+  btn.addEventListener("click", async () => {
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Running…";
+
+    try {
+      await fetch(API_BASE + "?action=run_boost_simulation");
+      await refreshDashboard();
+    } catch (err) {
+      console.error("Boost simulation failed", err);
+      alert("Boost simulation failed.");
+    } finally {
+      btn.textContent = original;
+      btn.disabled = false;
+    }
+  });
+}
+
 /* =========================
    INIT
    ========================= */
 document.addEventListener("DOMContentLoaded", async () => {
   await refreshDashboard();
   startAutoRefresh();
+  wireApprenticeBoostClick();
+  wireRunBoostSimulation();
 });
