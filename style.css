@@ -332,20 +332,20 @@ button:disabled {
   /* Text column wider */
   .builder-text {
     left: 42%;
-    width: 100%;
+    width: 54%;
   }
 
   /* Text scaling */
   .builder-name {
-    font-size: 20px;
+    font-size: 17px;
   }
 
   .builder-upgrade {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .builder-time-left {
-    font-size: 26px;
+    font-size: 20px;
   }
 
   .builder-finish {
@@ -353,6 +353,6 @@ button:disabled {
   }
 
   .builder-next {
-    font-size: 14px;
+    font-size: 13px;
   }
 }
