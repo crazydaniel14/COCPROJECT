@@ -345,7 +345,7 @@ button:disabled {
   }
 
   .builder-time-left {
-    font-size: 20px;
+    font-size: 17px;
   }
 
   .builder-finish {
@@ -353,6 +353,6 @@ button:disabled {
   }
 
   .builder-next {
-    font-size: 13px;
+    font-size: 10px;
   }
 }
