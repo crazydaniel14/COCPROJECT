@@ -86,6 +86,22 @@ async function loadBoostPlan() {
   }
 }
 
+//Helper*
+function formatFinishTime(raw) {
+  const d = new Date(raw);
+  if (isNaN(d)) return "-";
+
+  return d.toLocaleString("en-US", {
+    timeZone: "America/New_York",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true
+  }).replace(",", " at");
+}
+
+
 /* =========================
    RENDER BUILDER CARDS
    ========================= */
@@ -136,7 +152,7 @@ function renderBuilderCards() {
         <div class="builder-name">BUILDER ${builderNumber}</div>
         <div class="builder-upgrade">${row[1]}</div>
         <div class="builder-time-left">${row[3]}</div>
-        <div class="builder-finish">Finishes: ${row[2]}</div>
+        <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}</div>
         <div class="builder-next">▶ Next: ${row[4]}</div>
       </div>
     `;
