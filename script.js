@@ -132,7 +132,15 @@ function renderBuilderCardsFromTableData(data) {
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
 
-    const builderName = row[0] || "";
+    let builderRaw = row[0] || "";
+// Normalize builder name for display
+let builderNumber = builderRaw
+  .toString()
+  .replace(/[^0-9]/g, ""); // extract number
+const builderName = builderNumber
+  ? `BUILDER ${builderNumber}`
+  : "BUILDER";
+
     const currentUpgrade = row[1] || "";
     const finishTimeRaw = row[2] || "";
     const timeLeft = row[3] || "";
