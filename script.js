@@ -1,4 +1,4 @@
-console.log("Loaded script.js version 19");
+console.log("Loaded script.js version 20");
 
 /* =========================
    CONFIG (DEFINE FIRST)
@@ -127,6 +127,15 @@ function renderBuilderCardsFromTableData(data) {
   if (!container) return;
 
   container.innerHTML = "";
+// Find earliest finish time
+let earliestFinish = Infinity;
+for (let i = 1; i < data.length; i++) {
+  const t = new Date(data[i][2]).getTime();
+  if (!isNaN(t) && t < earliestFinish) {
+    earliestFinish = t;
+  }
+}
+
 
   // skip header row (index 0)
   for (let i = 1; i < data.length; i++) {
@@ -161,8 +170,13 @@ const builderName = builderNumber
       }
     }
 
-    const card = document.createElement("div");
-    card.className = "builder-card";
+   const card = document.createElement("div");
+   card.className = "builder-card";
+   const finishTimeMs = new Date(finishTimeRaw).getTime();
+   if (!isNaN(finishTimeMs) && finishTimeMs === earliestFinish) {
+   card.classList.add("next-finish");
+   }
+
 
     card.innerHTML = `
       <img src="Images/Builder.png" class="builder-character" />
