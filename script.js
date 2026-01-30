@@ -456,5 +456,4 @@ document.addEventListener("DOMContentLoaded", async () => {
   wireBoostSimulation();
   wireBuilderPotionModal();
   wireBuilderSnackModal();
-  wireBattlePassButton();
 });
