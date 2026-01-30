@@ -411,14 +411,14 @@ function wireBuilderSnackModal() {
     currentApplyAction = "apply_one_hour_boost";
 
     // Reset modal UI
-    const previewBox = document.getElementById("builderPotionPreview");
-    const confirmBtn = document.getElementById("confirmPotionBtn");
+    const previewBox = document.getElementById("builderSnackPreview");
+    const confirmBtn = document.getElementById("confirmSnackBtn");
 
     if (previewBox) previewBox.innerHTML = "";
     if (confirmBtn) confirmBtn.disabled = true;
 
     // Make sure input is enabled (multiple times allowed)
-    const input = document.getElementById("potionCount");
+    const input = document.getElementById("SnackCount");
     if (input) {
       input.disabled = false;
       input.value = 1;
@@ -426,7 +426,7 @@ function wireBuilderSnackModal() {
 
     // Open the SAME modal
     document
-      .getElementById("builderPotionModal")
+      .getElementById("builderSnackModal")
       .classList.remove("hidden");
   });
 }
