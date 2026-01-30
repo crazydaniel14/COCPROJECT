@@ -402,46 +402,32 @@ function wireBuilderPotionModal() {
 }
 
 function wireBuilderSnackModal() {
-  const openBtn = document.getElementById("oneHourBoostBtn");
-  if (!openBtn) return;
-
-  openBtn.addEventListener("click", async () => {
-    if (!confirm("Apply 1-Hour Builder Snack boost?")) return;
-
-    try {
-      await fetch(`${API_BASE}?action=apply_one_hour_boost`);
-      await refreshDashboard();
-    } catch (err) {
-      console.error("Builder Snack failed", err);
-      alert("Failed to apply Builder Snack.");
-    }
-  });
-}
-
-function wireBattlePassButton() {
-  const btn = document.getElementById("battlePassBtn");
+  const btn = document.getElementById("oneHourBoostBtn");
   if (!btn) return;
 
-  btn.addEventListener("click", async () => {
-    try {
-      const status = await (await fetch(`${API_BASE}?action=battle_pass_status`)).json();
-      const preview = await (await fetch(`${API_BASE}?action=preview_battle_pass`)).json();
+  btn.addEventListener("click", () => {
+    // Point modal to Builder Snack backend actions
+    currentPreviewAction = "preview_one_hour_boost";
+    currentApplyAction = "apply_one_hour_boost";
 
-      const msg =
-        `Battle Pass Reduction\n\n` +
-        `Current: ${status.currentLevel}%\n` +
-        `Next: ${status.nextLevel}%\n\n` +
-        `Upgrades affected: ${preview.upgradesAffected}\n\n` +
-        `Apply reduction?`;
+    // Reset modal UI
+    const previewBox = document.getElementById("builderPotionPreview");
+    const confirmBtn = document.getElementById("confirmPotionBtn");
 
-      if (!confirm(msg)) return;
+    if (previewBox) previewBox.innerHTML = "";
+    if (confirmBtn) confirmBtn.disabled = true;
 
-      await fetch(`${API_BASE}?action=apply_battle_pass`);
-      await refreshDashboard();
-    } catch (err) {
-      console.error("Battle Pass failed", err);
-      alert("Battle Pass action failed.");
+    // Make sure input is enabled (multiple times allowed)
+    const input = document.getElementById("potionCount");
+    if (input) {
+      input.disabled = false;
+      input.value = 1;
     }
+
+    // Open the SAME modal
+    document
+      .getElementById("builderPotionModal")
+      .classList.remove("hidden");
   });
 }
 /* =========================
