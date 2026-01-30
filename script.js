@@ -125,34 +125,41 @@ function renderBuilderCards() {
     const builderNumber = row[0].toString().match(/(\d+)/)?.[1] || null;
     const finishMs = new Date(row[2]).getTime();
 
-    let badgeHTML = "";
+ let badgeHTML = "";
 
-    if (
-      todaysBoostInfo &&
-      builderNumber &&
-      todaysBoostInfo.builder === builderNumber
-    ) {
-      let img = "Images/Builder Apprentice Safe.png";
+if (
+  todaysBoostInfo &&
+  builderNumber &&
+  todaysBoostInfo.builder === builderNumber
+) {
+  let img;
 
-      if (todaysBoostInfo.status === "FORCED") {
-        img = "Images/Builder Apprentice Forced.png";
-      } else if (todaysBoostInfo.status === "APPLIED") {
-        img = "Images/Builder Apprentice Applied.png";
-      }
+  switch (todaysBoostInfo.status) {
+    case "FORCED":
+      img = "Images/Builder Apprentice Forced.png";
+      break;
+    case "APPLIED":
+      img = "Images/Builder Apprentice Applied.png";
+      break;
+    default:
+      img = "Images/Builder Apprentice Safe.png";
+  }
 
-      badgeHTML = `
-        <img
-          src="${img}"
-          class="apprentice-badge ${
-            todaysBoostInfo.status === "APPLIED" ? "" : "clickable-boost"
-          }"
-          data-apply-boost="true"
-          title="Apply Today’s Boost"
-        />
-      `;
-    }
-
-    const card = document.createElement("div");
+  badgeHTML = `
+    <img
+      src="${img}"
+      class="apprentice-badge ${
+        todaysBoostInfo.status === "APPLIED" ? "" : "clickable-boost"
+      }"
+      data-apply-boost="true"
+      title="${
+        todaysBoostInfo.status === "APPLIED"
+          ? "Today’s boost already applied"
+          : "Apply Today’s Boost"
+      }"
+    />
+  `;
+}
     card.className = "builder-card";
     if (finishMs === earliestFinish) card.classList.add("next-finish");
 
@@ -199,13 +206,22 @@ function wireApprenticeBoost() {
   document.addEventListener("click", async e => {
     const badge = e.target.closest("[data-apply-boost]");
     if (!badge) return;
+
+    // Backend is the source of truth
     if (todaysBoostInfo?.status === "APPLIED") return;
+
     if (!confirm("Apply today’s boost?")) return;
 
-    await fetch(APPLY_TODAYS_BOOST);
-    await refreshDashboard();
+    try {
+      await fetch(APPLY_TODAYS_BOOST);
+      await refreshDashboard();
+    } catch (e) {
+      console.error("Failed to apply today's boost", e);
+      alert("Failed to apply today’s boost.");
+    }
   });
 }
+
 
 function wireImageButtons() {
   document.getElementById("builderPotionBtn")?.addEventListener("click", async () => {
