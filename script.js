@@ -400,6 +400,50 @@ function wireBuilderPotionModal() {
     }
   });
 }
+
+function wireBuilderSnackModal() {
+  const openBtn = document.getElementById("oneHourBoostBtn");
+  if (!openBtn) return;
+
+  openBtn.addEventListener("click", async () => {
+    if (!confirm("Apply 1-Hour Builder Snack boost?")) return;
+
+    try {
+      await fetch(`${API_BASE}?action=apply_one_hour_boost`);
+      await refreshDashboard();
+    } catch (err) {
+      console.error("Builder Snack failed", err);
+      alert("Failed to apply Builder Snack.");
+    }
+  });
+}
+
+function wireBattlePassButton() {
+  const btn = document.getElementById("battlePassBtn");
+  if (!btn) return;
+
+  btn.addEventListener("click", async () => {
+    try {
+      const status = await (await fetch(`${API_BASE}?action=battle_pass_status`)).json();
+      const preview = await (await fetch(`${API_BASE}?action=preview_battle_pass`)).json();
+
+      const msg =
+        `Battle Pass Reduction\n\n` +
+        `Current: ${status.currentLevel}%\n` +
+        `Next: ${status.nextLevel}%\n\n` +
+        `Upgrades affected: ${preview.upgradesAffected}\n\n` +
+        `Apply reduction?`;
+
+      if (!confirm(msg)) return;
+
+      await fetch(`${API_BASE}?action=apply_battle_pass`);
+      await refreshDashboard();
+    } catch (err) {
+      console.error("Battle Pass failed", err);
+      alert("Battle Pass action failed.");
+    }
+  });
+}
 /* =========================
    INIT
    ========================= */
@@ -407,7 +451,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   await refreshDashboard();
   startAutoRefresh();
   wireApprenticeBoost();
-  wireImageButtons();
   wireBoostSimulation();
   wireBuilderPotionModal();
+  wireBuilderSnackModal();
+  wireBattlePassButton();
 });
