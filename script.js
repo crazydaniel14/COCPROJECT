@@ -125,41 +125,45 @@ function renderBuilderCards() {
     const builderNumber = row[0].toString().match(/(\d+)/)?.[1] || null;
     const finishMs = new Date(row[2]).getTime();
 
- let badgeHTML = "";
+    let badgeHTML = "";
 
-if (
-  todaysBoostInfo &&
-  builderNumber &&
-  todaysBoostInfo.builder === builderNumber
-) {
-  let img;
+    if (
+      todaysBoostInfo &&
+      builderNumber &&
+      todaysBoostInfo.builder === builderNumber
+    ) {
+      let img;
 
-  switch (todaysBoostInfo.status) {
-    case "FORCED":
-      img = "Images/Builder Apprentice Forced.png";
-      break;
-    case "APPLIED":
-      img = "Images/Builder Apprentice Applied.png";
-      break;
-    default:
-      img = "Images/Builder Apprentice Safe.png";
-  }
+      switch (todaysBoostInfo.status) {
+        case "FORCED":
+          img = "Images/Builder Apprentice Forced.png";
+          break;
+        case "APPLIED":
+          img = "Images/Builder Apprentice Applied.png";
+          break;
+        default:
+          img = "Images/Builder Apprentice Safe.png";
+      }
 
-  badgeHTML = `
-    <img
-      src="${img}"
-      class="apprentice-badge ${
-        todaysBoostInfo.status === "APPLIED" ? "" : "clickable-boost"
-      }"
-      data-apply-boost="true"
-      title="${
-        todaysBoostInfo.status === "APPLIED"
-          ? "Today’s boost already applied"
-          : "Apply Today’s Boost"
-      }"
-    />
-  `;
-}
+      badgeHTML = `
+        <img
+          src="${img}"
+          class="apprentice-badge ${
+            todaysBoostInfo.status === "APPLIED" ? "" : "clickable-boost"
+          }"
+          data-apply-boost="true"
+          title="${
+            todaysBoostInfo.status === "APPLIED"
+              ? "Today’s boost already applied"
+              : "Apply Today’s Boost"
+          }"
+        />
+      `;
+    }
+
+    // ✅ THIS LINE WAS MISSING
+    const card = document.createElement("div");
+
     card.className = "builder-card";
     if (finishMs === earliestFinish) card.classList.add("next-finish");
 
