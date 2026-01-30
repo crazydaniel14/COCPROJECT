@@ -381,7 +381,7 @@ button:disabled {
   right: 10px;
   width: 50px;
   height: auto;
-  z-index: 3;
+  z-index: 5;
   pointer-events: none;
 }
 
