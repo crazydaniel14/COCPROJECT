@@ -245,6 +245,161 @@ function startAutoRefresh() {
   setInterval(refreshDashboard, 45 * 1000);
 }
 
+function wireBuilderPotionModal() {
+  const modal = document.getElementById("builderPotionModal");
+  const openBtn = document.getElementById("builderPotionBtn");
+  const cancelBtn = document.getElementById("cancelPotionBtn");
+  const previewBtn = document.getElementById("previewPotionBtn");
+  const confirmBtn = document.getElementById("confirmPotionBtn");
+  const countInput = document.getElementById("potionCount");
+  const previewBox = document.getElementById("builderPotionPreview");
+
+  if (!modal || !openBtn) {
+    console.warn("Builder Potion modal elements not found");
+    return;
+  }
+
+  // Open modal
+  openBtn.addEventListener("click", () => {
+    modal.classList.remove("hidden");
+    previewBox.innerHTML = "";
+    confirmBtn.disabled = true;
+  });
+
+  // Cancel
+  cancelBtn.addEventListener("click", () => {
+    modal.classList.add("hidden");
+  });
+
+  // Preview
+  previewBtn.addEventListener("click", async () => {
+    const times = Number(countInput.value);
+    if (!times || times <= 0) {
+      alert("Please enter a valid number.");
+      return;
+    }
+
+    previewBox.innerHTML = "Loading preview…";
+
+    try {
+      const res = await fetch(
+        `${API_BASE}?action=preview_builder_potion&times=${times}`
+      );
+      const data = await res.json();
+
+      let html = `<strong>Applying ${times} potion(s):</strong><br><br>`;
+      data.preview.forEach(row => {
+        html += `
+          ${row.builder}:<br>
+          ${new Date(row.oldTime).toLocaleString()} →
+          ${new Date(row.newTime).toLocaleString()}<br><br>
+        `;
+      });
+
+      previewBox.innerHTML = html;
+      confirmBtn.disabled = false;
+    } catch (err) {
+      console.error(err);
+      previewBox.innerHTML = "Failed to load preview.";
+    }
+  });
+
+  // Confirm
+  confirmBtn.addEventListener("click", async () => {
+    const times = Number(countInput.value);
+    confirmBtn.disabled = true;
+    previewBox.innerHTML = "Applying…";
+
+    try {
+      await fetch(
+        `${API_BASE}?action=apply_builder_potion&times=${times}`
+      );
+      modal.classList.add("hidden");
+      await refreshDashboard();
+    } catch (err) {
+      console.error(err);
+      previewBox.innerHTML = "Failed to apply potion.";
+    }
+  });
+}
+
+function wireBuilderPotionModal() {
+  const modal = document.getElementById("builderPotionModal");
+  const openBtn = document.getElementById("builderPotionBtn");
+  const cancelBtn = document.getElementById("cancelPotionBtn");
+  const previewBtn = document.getElementById("previewPotionBtn");
+  const confirmBtn = document.getElementById("confirmPotionBtn");
+  const countInput = document.getElementById("potionCount");
+  const previewBox = document.getElementById("builderPotionPreview");
+
+  if (!modal || !openBtn) {
+    console.warn("Builder Potion modal elements not found");
+    return;
+  }
+
+  // Open modal
+  openBtn.addEventListener("click", () => {
+    modal.classList.remove("hidden");
+    previewBox.innerHTML = "";
+    confirmBtn.disabled = true;
+  });
+
+  // Cancel
+  cancelBtn.addEventListener("click", () => {
+    modal.classList.add("hidden");
+  });
+
+  // Preview
+  previewBtn.addEventListener("click", async () => {
+    const times = Number(countInput.value);
+    if (!times || times <= 0) {
+      alert("Please enter a valid number.");
+      return;
+    }
+
+    previewBox.innerHTML = "Loading preview…";
+
+    try {
+      const res = await fetch(
+        `${API_BASE}?action=preview_builder_potion&times=${times}`
+      );
+      const data = await res.json();
+
+      let html = `<strong>Applying ${times} potion(s):</strong><br><br>`;
+      data.preview.forEach(row => {
+        html += `
+          ${row.builder}:<br>
+          ${new Date(row.oldTime).toLocaleString()} →
+          ${new Date(row.newTime).toLocaleString()}<br><br>
+        `;
+      });
+
+      previewBox.innerHTML = html;
+      confirmBtn.disabled = false;
+    } catch (err) {
+      console.error(err);
+      previewBox.innerHTML = "Failed to load preview.";
+    }
+  });
+
+  // Confirm
+  confirmBtn.addEventListener("click", async () => {
+    const times = Number(countInput.value);
+    confirmBtn.disabled = true;
+    previewBox.innerHTML = "Applying…";
+
+    try {
+      await fetch(
+        `${API_BASE}?action=apply_builder_potion&times=${times}`
+      );
+      modal.classList.add("hidden");
+      await refreshDashboard();
+    } catch (err) {
+      console.error(err);
+      previewBox.innerHTML = "Failed to apply potion.";
+    }
+  });
+}
 /* =========================
    INIT
    ========================= */
