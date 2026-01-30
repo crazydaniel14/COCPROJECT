@@ -381,8 +381,8 @@ button:disabled {
   right: 10px;
   width: 50px;
   height: auto;
-  z-index: 5;
-  pointer-events: none;
+  z-index: 999;
+  pointer-events: auto;
 }
 
 /* Extra emphasis if FORCED */
