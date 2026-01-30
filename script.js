@@ -254,4 +254,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   wireApprenticeBoost();
   wireImageButtons();
   wireBoostSimulation();
+  wireBuilderPotionModal();
 });
