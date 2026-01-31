@@ -238,13 +238,11 @@ button:disabled {
   display: none;
 }
 
-/* ==================================================
-   BUILDER CARDS — IMAGE-MATCHED DESIGN
-   ================================================== */
+//BUILDER CARDS — IMAGE-MATCHED DESIGN//
 
 /* Highlight builder closest to finishing */
 .builder-card.next-finish {
-  box-shadow: 0 0 0 0px #24f016, 0 10px 24px rgba(36, 240, 22, 0.50);
+  box-shadow: 0 0 0 1px #24f016, 0 5px 10px rgba(46, 232, 51, 0.75);
 }
 
 /* Always 2 cards per row */
