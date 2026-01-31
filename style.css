@@ -242,7 +242,7 @@ button:disabled {
 
 /* Highlight builder closest to finishing */
 .builder-card.next-finish {
-  box-shadow: 0 0 0 2px #24f016, 0 10px 25px rgba(46,232,51,0.25);
+  box-shadow: 0 0 0 5px #24f016, 0 10px 25px rgba(46,232,51,0.25);
 }
 
 /* Always 2 cards per row */
