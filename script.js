@@ -136,13 +136,13 @@ function renderBuilderCards() {
 
       switch (todaysBoostInfo.status) {
         case "FORCED":
-          img = "Images/Builder Apprentice Forced.png";
+          img = "Images/Builder Apprentice forced.png";
           break;
         case "APPLIED":
           img = "Images/Builder Apprentice Applied.png";
           break;
         default:
-          img = "Images/Builder Apprentice Safe.png";
+          img = "Images/Builder Apprentice safe.png";
       }
 
       badgeHTML = `
