@@ -262,7 +262,7 @@ button:disabled {
   background: #19191ec7;
   border-radius: 22px;
   overflow: hidden;
-  border-left: 8px solid #7d0606;
+  border-left: 8px solid #f5d04c;
   box-shadow: 0 6px 16px rgba(0,0,0,0.4);
 }
 
