@@ -139,7 +139,7 @@ function renderBuilderCards() {
           img = "Images/Builder Apprentice Forced.png";
           break;
         case "APPLIED":
-          img = "Images/Builder Apprentice Applied.png";
+          img = "Images/Builder Apprentice applied.png";
           break;
         default:
           img = "Images/Builder Apprentice Safe.png";
@@ -211,21 +211,27 @@ function wireApprenticeBoost() {
     const badge = e.target.closest("[data-apply-boost]");
     if (!badge) return;
 
-    // Backend is the source of truth
+    // Prevent double-apply
     if (todaysBoostInfo?.status === "APPLIED") return;
 
     if (!confirm("Apply today’s boost?")) return;
 
     try {
       await fetch(APPLY_TODAYS_BOOST);
-      await refreshDashboard();
-    } catch (e) {
-      console.error("Failed to apply today's boost", e);
+
+      // 🔥 IMMEDIATE UI STATE UPDATE
+      if (todaysBoostInfo) {
+        todaysBoostInfo.status = "APPLIED";
+      }
+
+      renderBuilderCards(); // swap image + lock click
+      await refreshDashboard(); // backend sync
+    } catch (err) {
+      console.error("Failed to apply today’s boost", err);
       alert("Failed to apply today’s boost.");
     }
   });
 }
-
 
 function wireImageButtons() {
   document.getElementById("builderPotionBtn")?.addEventListener("click", async () => {
