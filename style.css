@@ -451,6 +451,17 @@ button:disabled {
   font-weight: 600;
 }
 
+.boost-extra {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.boost-finish .value {
+  color: #ffffff;
+  font-weight: 500;
+}
+
 /* SAFE */
 .boost-mode.safe {
   background: rgba(80, 200, 120, 0.15);
@@ -463,7 +474,7 @@ button:disabled {
   color: #ff6b6b;
 }
 
-//mobile section//
+/* mobile section */
 @media (max-width: 768px) {
   #boostFocusWrapper {
     gap: 10px;
