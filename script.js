@@ -23,6 +23,8 @@ const BATTLE_PASS = API_BASE + "?action=apply_battle_pass";
 let currentWorkData = null;
 let todaysBoostInfo = null;
 let isRefreshing = false;
+let boostPlanData = [];
+let currentBoostIndex = 0;
 
 /* =========================
    HELPERS
@@ -81,23 +83,19 @@ async function loadTodaysBoost() {
 }
 
 async function loadBoostPlan() {
-  const table = document.getElementById("boost-plan-table");
-  if (!table) return;
-
   try {
     const res = await fetch(BOOST_PLAN_ENDPOINT);
     const data = await res.json();
-    table.innerHTML = "";
 
-    data.table.forEach((row, i) => {
-      const tr = document.createElement("tr");
-      row.forEach(cell => {
-        const el = document.createElement(i === 0 ? "th" : "td");
-        el.textContent = cell;
-        tr.appendChild(el);
-      });
-      table.appendChild(tr);
-    });
+    // Expected backend structure:
+    // data.plan = [
+    //   { day, hasBoost, builder, newFinishTime, mode }
+    // ]
+
+    boostPlanData = data.plan || [];
+    currentBoostIndex = 0;
+
+    renderBoostFocusCard();
   } catch (e) {
     console.error("Boost plan failed", e);
   }
@@ -159,6 +157,53 @@ function renderBuilderCards() {
         />
       `;
     }
+
+   // boost cards
+   function renderBoostFocusCard() {
+  if (!boostPlanData.length) return;
+
+  const day = boostPlanData[currentBoostIndex];
+
+  const dayEl = document.querySelector(".boost-day");
+  const statusEl = document.querySelector(".boost-status");
+  const builderEl = document.querySelector(".boost-builder");
+  const extraEl = document.querySelector(".boost-extra");
+  const finishEl = document.getElementById("boostFinishTime");
+  const modeEl = document.getElementById("boostMode");
+
+  if (!dayEl) return; // UI not present yet
+
+  dayEl.textContent = day.day;
+
+  if (day.hasBoost) {
+    statusEl.textContent = "⚡ Boost Planned";
+    statusEl.classList.add("boost-active");
+
+    builderEl.textContent = day.builder;
+    builderEl.style.display = "block";
+
+    extraEl.style.display = "block";
+    finishEl.textContent = day.newFinishTime;
+
+    modeEl.textContent = day.mode; // SAFE / FORCED
+    modeEl.className = "boost-mode " + day.mode.toLowerCase();
+
+  } else {
+    statusEl.textContent = "No Boost";
+    statusEl.classList.remove("boost-active");
+
+    builderEl.style.display = "none";
+    extraEl.style.display = "none";
+  }
+
+  // Arrow state
+  document.getElementById("boostPrev").disabled =
+    currentBoostIndex === 0;
+
+  document.getElementById("boostNext").disabled =
+    currentBoostIndex === boostPlanData.length - 1;
+}
+
 
     // ✅ THIS LINE WAS MISSING
     const card = document.createElement("div");
@@ -455,6 +500,23 @@ function wireBuilderSnackModal() {
       .classList.remove("hidden");
   });
 }
+
+function wireBoostFocusNavigation() {
+  document.getElementById("boostPrev")?.addEventListener("click", () => {
+    if (currentBoostIndex > 0) {
+      currentBoostIndex--;
+      renderBoostFocusCard();
+    }
+  });
+
+  document.getElementById("boostNext")?.addEventListener("click", () => {
+    if (currentBoostIndex < boostPlanData.length - 1) {
+      currentBoostIndex++;
+      renderBoostFocusCard();
+    }
+  });
+}
+
 /* =========================
    INIT
    ========================= */
@@ -465,4 +527,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   wireBoostSimulation();
   wireBuilderPotionModal();
   wireBuilderSnackModal();
+  wireBoostFocusNavigation();
 });
