@@ -387,6 +387,7 @@ button:disabled {
 }
 
 // boost ui// 
+
 #boostFocusWrapper {
   display: flex;
   align-items: center;
@@ -397,7 +398,7 @@ button:disabled {
 
 /* Focus card */
 #boostFocusCard {
-  background: #2f2f2f;
+  background: ##ffffff;
   border-radius: 16px;
   padding: 20px 28px;
   min-width: 220px;
