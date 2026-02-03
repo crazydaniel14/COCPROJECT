@@ -442,6 +442,27 @@ button:disabled {
   opacity: 0.25;
   cursor: default;
 }
+.boost-mode {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* SAFE */
+.boost-mode.safe {
+  background: rgba(80, 200, 120, 0.15);
+  color: #6adf9c;
+}
+
+/* FORCED */
+.boost-mode.forced {
+  background: rgba(255, 90, 90, 0.15);
+  color: #ff6b6b;
+}
+
 //mobile section//
 @media (max-width: 768px) {
   #boostFocusWrapper {
