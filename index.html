@@ -56,15 +56,16 @@
 
   <button id="refreshSheetBtn">Refresh Spreadsheet</button>
 
-  <h4>Boost Plan (Next 7 Days)</h4>
-  
-  <div id="boostFocusWrapper">
+  <h4>Boost Plan</h4>
+
+<div id="boostFocusWrapper">
 
   <button class="boost-nav" id="boostPrev" disabled>
     ←
   </button>
 
   <div id="boostFocusCard">
+
     <div class="boost-day">TODAY</div>
 
     <div class="boost-status boost-active">
@@ -74,30 +75,25 @@
     <div class="boost-builder">
       Builder 3
     </div>
-  </div>
-  <div class="boost-extra">
 
-  <div class="boost-finish">
-    <span class="label">New finish</span>
-    <span class="value" id="boostFinishTime"></span>
+    <!-- ✅ MUST BE INSIDE THE CARD -->
+    <div class="boost-extra">
+
+      <div class="boost-finish">
+        <span class="label">New finish</span>
+        <span class="value" id="boostFinishTime"></span>
+      </div>
+
+      <div class="boost-mode" id="boostMode"></div>
+
+    </div>
   </div>
 
-  <div class="boost-mode" id="boostMode"></div>
-  </div>
-    
   <button class="boost-nav" id="boostNext">
     →
   </button>
 
 </div>
-
-  <button id="runBoostSimBtn">
-    Run Boost Simulation
-  </button>
-
-  <div class="table-wrapper">
-    <table id="boost-plan-table"></table>
-  </div>
 
   <div id="lastRefreshed" style="margin: 10px 0; font-size: 13px; color: #555;">
     Last refreshed: —
