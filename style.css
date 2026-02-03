@@ -386,6 +386,74 @@ button:disabled {
   pointer-events: auto;
 }
 
+// boost ui// 
+#boostFocusWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* Focus card */
+#boostFocusCard {
+  background: #2f2f2f;
+  border-radius: 16px;
+  padding: 20px 28px;
+  min-width: 220px;
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+}
+
+/* Day label */
+.boost-day {
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  opacity: 0.75;
+  margin-bottom: 8px;
+}
+
+/* Status */
+.boost-status {
+  font-size: 1.1rem;
+  margin-bottom: 6px;
+}
+
+.boost-active {
+  color: #f5c84c; /* same boost accent */
+}
+
+/* Builder */
+.boost-builder {
+  font-size: 0.95rem;
+  opacity: 0.85;
+}
+
+/* Arrows */
+.boost-nav {
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.boost-nav:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+//mobile section//
+@media (max-width: 768px) {
+  #boostFocusWrapper {
+    gap: 10px;
+  }
+
+  #boostFocusCard {
+    min-width: 200px;
+  }
+}
+//until here// 
+
 /* Extra emphasis if FORCED */
 .builder-card .apprentice-badge[src*="Forced"] {
   filter: drop-shadow(0 0 10px rgba(255, 80, 80, 0.8));
