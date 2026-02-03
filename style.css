@@ -386,7 +386,7 @@ button:disabled {
   pointer-events: auto;
 }
 
-// boost ui// 
+
 #boostFocusWrapper {
   display: flex;
   align-items: center;
@@ -473,7 +473,7 @@ button:disabled {
     min-width: 200px;
   }
 }
-//until here// 
+ 
 
 /* Extra emphasis if FORCED */
 .builder-card .apprentice-badge[src*="Forced"] {
