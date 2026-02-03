@@ -102,6 +102,52 @@ async function loadBoostPlan() {
 }
 
 /* =========================
+   RENDER BOOST FOCUS CARD
+   ========================= */
+function renderBoostFocusCard() {
+  if (!boostPlanData.length) return;
+
+  const day = boostPlanData[currentBoostIndex];
+
+  const dayEl = document.querySelector(".boost-day");
+  const statusEl = document.querySelector(".boost-status");
+  const builderEl = document.querySelector(".boost-builder");
+  const extraEl = document.querySelector(".boost-extra");
+  const finishEl = document.getElementById("boostFinishTime");
+  const modeEl = document.getElementById("boostMode");
+
+  if (!dayEl) return;
+
+  dayEl.textContent = day.day;
+
+  if (day.hasBoost) {
+    statusEl.textContent = "⚡ Boost Planned";
+    statusEl.classList.add("boost-active");
+
+    builderEl.textContent = day.builder;
+    builderEl.style.display = "block";
+
+    extraEl.style.display = "block";
+    finishEl.textContent = day.newFinishTime;
+
+    modeEl.textContent = day.mode;
+    modeEl.className = "boost-mode " + day.mode.toLowerCase();
+  } else {
+    statusEl.textContent = "No Boost";
+    statusEl.classList.remove("boost-active");
+
+    builderEl.style.display = "none";
+    extraEl.style.display = "none";
+  }
+
+  document.getElementById("boostPrev").disabled =
+    currentBoostIndex === 0;
+
+  document.getElementById("boostNext").disabled =
+    currentBoostIndex === boostPlanData.length - 1;
+}
+
+/* =========================
    RENDER BUILDER CARDS
    ========================= */
 function renderBuilderCards() {
@@ -157,54 +203,7 @@ function renderBuilderCards() {
         />
       `;
     }
-
-   // boost cards
-   function renderBoostFocusCard() {
-  if (!boostPlanData.length) return;
-
-  const day = boostPlanData[currentBoostIndex];
-
-  const dayEl = document.querySelector(".boost-day");
-  const statusEl = document.querySelector(".boost-status");
-  const builderEl = document.querySelector(".boost-builder");
-  const extraEl = document.querySelector(".boost-extra");
-  const finishEl = document.getElementById("boostFinishTime");
-  const modeEl = document.getElementById("boostMode");
-
-  if (!dayEl) return; // UI not present yet
-
-  dayEl.textContent = day.day;
-
-  if (day.hasBoost) {
-    statusEl.textContent = "⚡ Boost Planned";
-    statusEl.classList.add("boost-active");
-
-    builderEl.textContent = day.builder;
-    builderEl.style.display = "block";
-
-    extraEl.style.display = "block";
-    finishEl.textContent = day.newFinishTime;
-
-    modeEl.textContent = day.mode; // SAFE / FORCED
-    modeEl.className = "boost-mode " + day.mode.toLowerCase();
-
-  } else {
-    statusEl.textContent = "No Boost";
-    statusEl.classList.remove("boost-active");
-
-    builderEl.style.display = "none";
-    extraEl.style.display = "none";
-  }
-
-  // Arrow state
-  document.getElementById("boostPrev").disabled =
-    currentBoostIndex === 0;
-
-  document.getElementById("boostNext").disabled =
-    currentBoostIndex === boostPlanData.length - 1;
-}
-
-
+     
     // ✅ THIS LINE WAS MISSING
     const card = document.createElement("div");
 
@@ -238,7 +237,7 @@ async function refreshDashboard() {
     await fetch(REFRESH_ENDPOINT);
     await Promise.all([loadCurrentWork(), loadTodaysBoost()]);
     renderBuilderCards();
-    loadBoostPlan();
+    await loadBoostPlan();
     updateLastRefreshed();
   } catch (e) {
     console.error("Refresh failed", e);
@@ -393,84 +392,6 @@ function wireBuilderPotionModal() {
   });
 }
 
-function wireBuilderPotionModal() {
-  const modal = document.getElementById("builderPotionModal");
-  const openBtn = document.getElementById("builderPotionBtn");
-  const cancelBtn = document.getElementById("cancelPotionBtn");
-  const previewBtn = document.getElementById("previewPotionBtn");
-  const confirmBtn = document.getElementById("confirmPotionBtn");
-  const countInput = document.getElementById("potionCount");
-  const previewBox = document.getElementById("builderPotionPreview");
-
-  if (!modal || !openBtn) {
-    console.warn("Builder Potion modal elements not found");
-    return;
-  }
-
-  // Open modal
-  openBtn.addEventListener("click", () => {
-    modal.classList.remove("hidden");
-    previewBox.innerHTML = "";
-    confirmBtn.disabled = true;
-  });
-
-  // Cancel
-  cancelBtn.addEventListener("click", () => {
-    modal.classList.add("hidden");
-  });
-
-  // Preview
-  previewBtn.addEventListener("click", async () => {
-    const times = Number(countInput.value);
-    if (!times || times <= 0) {
-      alert("Please enter a valid number.");
-      return;
-    }
-
-    previewBox.innerHTML = "Loading preview…";
-
-    try {
-      const res = await fetch(
-        `${API_BASE}?action=preview_builder_potion&times=${times}`
-      );
-      const data = await res.json();
-
-      let html = `<strong>Applying ${times} potion(s):</strong><br><br>`;
-      data.preview.forEach(row => {
-        html += `
-          ${row.builder}:<br>
-          ${new Date(row.oldTime).toLocaleString()} →
-          ${new Date(row.newTime).toLocaleString()}<br><br>
-        `;
-      });
-
-      previewBox.innerHTML = html;
-      confirmBtn.disabled = false;
-    } catch (err) {
-      console.error(err);
-      previewBox.innerHTML = "Failed to load preview.";
-    }
-  });
-
-  // Confirm
-  confirmBtn.addEventListener("click", async () => {
-    const times = Number(countInput.value);
-    confirmBtn.disabled = true;
-    previewBox.innerHTML = "Applying…";
-
-    try {
-      await fetch(
-        `${API_BASE}?action=apply_builder_potion&times=${times}`
-      );
-      modal.classList.add("hidden");
-      await refreshDashboard();
-    } catch (err) {
-      console.error(err);
-      previewBox.innerHTML = "Failed to apply potion.";
-    }
-  });
-}
-
 function wireBuilderSnackModal() {
   const btn = document.getElementById("oneHourBoostBtn");
   if (!btn) return;
@@ -521,6 +442,31 @@ function wireBoostFocusNavigation() {
    INIT
    ========================= */
 document.addEventListener("DOMContentLoaded", async () => {
+
+  // 🔧 TEMP TEST DATA (remove later)
+  boostPlanData = [
+    {
+      day: "TODAY",
+      hasBoost: true,
+      builder: "Builder 3",
+      newFinishTime: "Jan 12 · 6:42 PM",
+      mode: "SAFE"
+    },
+    {
+      day: "TUE",
+      hasBoost: false
+    },
+    {
+      day: "WED",
+      hasBoost: true,
+      builder: "Builder 1",
+      newFinishTime: "Jan 14 · 9:10 AM",
+      mode: "FORCED"
+    }
+  ];
+
+  renderBoostFocusCard();
+
   await refreshDashboard();
   startAutoRefresh();
   wireApprenticeBoost();
