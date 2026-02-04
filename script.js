@@ -289,7 +289,7 @@ for (let i = 1; i < currentWorkData.length; i++) {
 
   container.appendChild(card);
 }
-
+}
 /* =========================
    ORCHESTRATOR
    ========================= */
