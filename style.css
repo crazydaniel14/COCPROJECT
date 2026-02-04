@@ -275,6 +275,98 @@ button:disabled {
   box-shadow: 0 6px 16px rgba(0,0,0,0.4);
 }
 
+/* EXPANDED BUILDER CARD */
+
+.builder-card.expanded {
+  grid-column: 1 / -1;   /* full width */
+  height: auto;         /* wider, less tall */
+}
+
+/* PINNED BUILDER CARD */
+
+.builder-card.pinned {
+  outline: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+/* BUILDER DETAILS (UPGRADE LIST) */
+
+.builder-details {
+  grid-column: 1 / -1;
+  background: #16161b;
+  border-radius: 18px;
+  padding: 16px 20px;
+  margin-top: -8px;   /* visually attached to card */
+  color: #ffffff;
+}
+
+.upgrade-headers {
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.8;
+  margin-bottom: 12px;
+  color: #ffffff;
+}
+
+.upgrade-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Single upgrade */
+.upgrade-item {
+  display: grid;
+  grid-template-columns: 2fr 1fr 2fr;
+  align-items: center;
+  font-size: 14px;
+  color: #ffffff;
+}
+/* Upgrade name */
+.upgrade-name {
+  font-weight: 600;
+}
+
+/* Duration */
+.upgrade-duration {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Time row */
+.upgrade-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.builder-card.pinned + .builder-details {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+/* ================================
+   PLACEHOLDER (GRID BALANCE)
+   ================================ */
+
+.builder-placeholder {
+  visibility: hidden;
+}
+
+.pin-builder {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #ffffff;
+}
+
+.pin-builder input {
+  accent-color: #ffffff;
+}
+
 /* Builder character (visual only) */
 .builder-character {
   position: absolute;
@@ -529,8 +621,28 @@ button:disabled {
     min-width: 200px;
   }
 }
- 
+/* Mobile structure */
+@media (max-width: 768px) {
+  .builder-card.expanded {
+    height: auto;
+  }
 
+  .builder-details {
+    padding: 14px;
+  }
+
+  .upgrade-headers,
+  .upgrade-item {
+    grid-template-columns: 1fr;
+    row-gap: 6px;
+  }
+
+  .upgrade-time {
+    justify-content: flex-start;
+  }
+}
+
+/* End Mobile structure */
 /* Extra emphasis if FORCED */
 .builder-card .apprentice-badge[src*="Forced"] {
   filter: drop-shadow(0 0 10px rgba(255, 80, 80, 0.8));
