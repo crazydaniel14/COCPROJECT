@@ -1,4 +1,4 @@
-console.log("Loaded script.js – CLEAN STABLE BUILD");
+console.log("Loaded script.js – CLEAN STABLE BUILD 2");
 
 /* =========================
    CONFIG
