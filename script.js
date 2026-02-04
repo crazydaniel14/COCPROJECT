@@ -138,7 +138,7 @@ function renderBoostFocusCard() {
   dayEl.textContent = day.day;
 
   if (day.hasBoost) {
-    statusEl.textContent = "⚡ Boost Planned";
+    statusEl.textContent = "Boost Planned For";
     statusEl.classList.add("boost-active");
 
     builderEl.textContent = day.builder;
