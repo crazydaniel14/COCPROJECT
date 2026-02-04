@@ -574,3 +574,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   wireBuilderSnackModal();
   wireBoostFocusNavigation();
 });
+
+async function loadCurrentWork() {
+  const res = await fetch(TABLE_ENDPOINT);
+  console.log("current_work_table status:", res.status);
+  currentWorkData = await res.json();
+  console.log("currentWorkData:", currentWorkData);
+}
+
