@@ -16,6 +16,7 @@ const RUN_BOOST_SIM = API_BASE + "?action=run_boost_simulation";
 const BUILDER_POTION = API_BASE + "?action=apply_builder_potion";
 const BUILDER_SNACK = API_BASE + "?action=apply_one_hour_boost";
 const BATTLE_PASS = API_BASE + "?action=apply_battle_pass";
+const BUILDER_DETAILS_ENDPOINT = API_BASE + "?action=builder_details&builder=";
 
 /* =========================
    GLOBAL STATE
@@ -25,6 +26,8 @@ let todaysBoostInfo = null;
 let isRefreshing = false;
 let boostPlanData = [];
 let currentBoostIndex = 0;
+let expandedBuilder = null;
+let pinnedBuilders = []; // holds builder numbers as strings
 
 /* =========================
    HELPERS
@@ -167,6 +170,45 @@ function renderBoostFocusCard() {
 /* =========================
    RENDER BUILDER CARDS
    ========================= */
+
+async function fetchBuilderDetails(builderNumber) {
+  const res = await fetch(
+    BUILDER_DETAILS_ENDPOINT + "Builder_" + builderNumber
+  );
+  return await res.json();
+}
+
+function renderBuilderDetails(details) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "builder-details";
+  wrapper.dataset.builder = details.builder;
+
+  wrapper.innerHTML = `
+    <div class="upgrade-headers">
+      <span>Upgrade</span>
+      <span>Duration</span>
+      <span>Start Time → End Time</span>
+    </div>
+    <div class="upgrade-list">
+      ${details.upgrades.map(upg => `
+        <div class="upgrade-item"
+             data-builder="${upg.builder}"
+             data-row="${upg.row}">
+          <div class="upgrade-name">${upg.upgrade}</div>
+          <div class="upgrade-duration">${upg.duration}</div>
+          <div class="upgrade-time">
+            <span>${upg.start}</span>
+            <span>→</span>
+            <span>${upg.end}</span>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+
+  return wrapper;
+}
+
 function renderBuilderCards() {
   if (!currentWorkData) return;
 
@@ -174,78 +216,78 @@ function renderBuilderCards() {
   if (!container) return;
   container.innerHTML = "";
 
-  let earliestFinish = Infinity;
-  for (let i = 1; i < currentWorkData.length; i++) {
-    const t = new Date(currentWorkData[i][2]).getTime();
-    if (!isNaN(t) && t < earliestFinish) earliestFinish = t;
-  }
+let earliestFinish = Infinity;
 
-  for (let i = 1; i < currentWorkData.length; i++) {
-    const row = currentWorkData[i];
-    const builderNumber = row[0].toString().match(/(\d+)/)?.[1] || null;
-    const finishMs = new Date(row[2]).getTime();
+for (let i = 1; i < currentWorkData.length; i++) {
+  const t = new Date(currentWorkData[i][2]).getTime();
+  if (!isNaN(t) && t < earliestFinish) earliestFinish = t;
+}
+ 
+for (let i = 1; i < currentWorkData.length; i++) {
+  const row = currentWorkData[i];
+  const builderNumber = row[0].toString().match(/(\d+)/)?.[1] || null;
+  const finishMs = new Date(row[2]).getTime();
 
-    let badgeHTML = "";
+  let badgeHTML = "";
 
-    if (
-      todaysBoostInfo &&
-      builderNumber &&
-      todaysBoostInfo.builder === builderNumber
-    ) {
-      let img;
+  if (
+    todaysBoostInfo &&
+    builderNumber &&
+    todaysBoostInfo.builder === builderNumber
+  ) {
+    let img;
 
-      switch (todaysBoostInfo.status) {
-        case "FORCED":
-          img = "Images/Builder Apprentice Forced.png";
-          break;
-        case "APPLIED":
-          img = "Images/Builder Apprentice applied.png";
-          break;
-        default:
-          img = "Images/Builder Apprentice Safe.png";
-      }
-
-      badgeHTML = `
-        <img
-          src="${img}"
-          class="apprentice-badge ${
-            todaysBoostInfo.status === "APPLIED" ? "" : "clickable-boost"
-          }"
-          data-apply-boost="true"
-          title="${
-            todaysBoostInfo.status === "APPLIED"
-              ? "Today’s boost already applied"
-              : "Apply Today’s Boost"
-          }"
-        />
-      `;
+    switch (todaysBoostInfo.status) {
+      case "FORCED":
+        img = "Images/Builder Apprentice Forced.png";
+        break;
+      case "APPLIED":
+        img = "Images/Builder Apprentice applied.png";
+        break;
+      default:
+        img = "Images/Builder Apprentice Safe.png";
     }
-     
-    // ✅ THIS LINE WAS MISSING
-    const card = document.createElement("div");
 
-    card.className = "builder-card";
-    if (finishMs === earliestFinish) card.classList.add("next-finish");
-
-    card.innerHTML = `
-    ${badgeHTML}
-     <img 
-     src="Images/Builder ${builderNumber}.png" 
-     class="builder-character" 
-     alt="Builder ${builderNumber}"
-     />
-     <div class="builder-text">
-     <div class="builder-name">BUILDER ${builderNumber}</div>
-     <div class="builder-upgrade">${row[1]}</div>
-     <div class="builder-time-left">${row[3]}</div>
-     <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}</div>
-     <div class="builder-next">▶ Next: ${row[4]}</div>
-     </div>
-     `;
-
-
-    container.appendChild(card);
+    badgeHTML = `
+      <img
+        src="${img}"
+        class="apprentice-badge"
+        data-apply-boost="true"
+      />
+    `;
   }
+
+  const card = document.createElement("div");
+  card.className = "builder-card";
+  card.dataset.builder = builderNumber;
+
+  if (finishMs === earliestFinish) {
+    card.classList.add("next-finish");
+  }
+
+  card.innerHTML = `
+    ${badgeHTML}
+    <img 
+      src="Images/Builder ${builderNumber}.png" 
+      class="builder-character" 
+      alt="Builder ${builderNumber}"
+    />
+    <div class="builder-text">
+      <div class="builder-name">BUILDER ${builderNumber}</div>
+
+      <label class="pin-builder">
+        <input type="checkbox" />
+        <span>Pin builder</span>
+      </label>
+
+      <div class="builder-upgrade">${row[1]}</div>
+      <div class="builder-time-left">${row[3]}</div>
+      <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}</div>
+      <div class="builder-next">▶ Next: ${row[4]}</div>
+    </div>
+  `;
+
+  container.appendChild(card);
 }
 
 /* =========================
@@ -459,6 +501,65 @@ function wireBoostFocusNavigation() {
     }
   });
 }
+
+document.addEventListener("change", e => {
+  if (!e.target.matches(".pin-builder input")) return;
+
+  const card = e.target.closest(".builder-card");
+  if (!card) return;
+
+  const builder = card.dataset.builder;
+
+  if (e.target.checked) {
+    if (pinnedBuilders.length >= 1) {
+      pinnedBuilders.shift();
+    }
+    pinnedBuilders.push(builder);
+    card.classList.add("pinned");
+  } else {
+    pinnedBuilders = pinnedBuilders.filter(b => b !== builder);
+    card.classList.remove("pinned");
+  }
+});
+
+document.addEventListener("click", async e => {
+  const card = e.target.closest(".builder-card");
+  if (!card) return;
+  if (e.target.matches("input[type='checkbox']")) return;
+
+  const builder = card.dataset.builder;
+  if (!builder) return;
+
+  const container = document.getElementById("builders-container");
+
+  // Clear old expanded state
+  container.querySelectorAll(".builder-card.expanded")
+    .forEach(c => c.classList.remove("expanded"));
+
+  container.querySelectorAll(".builder-details, .builder-placeholder")
+    .forEach(el => el.remove());
+
+  if (expandedBuilder === builder) {
+    expandedBuilder = null;
+    return;
+  }
+
+  if (expandedBuilder && pinnedBuilders.length) {
+    pinnedBuilders = [];
+  }
+
+  expandedBuilder = builder;
+  card.classList.add("expanded");
+
+  const details = await fetchBuilderDetails(builder);
+  const detailsEl = renderBuilderDetails(details);
+
+  card.after(detailsEl);
+
+  const placeholder = document.createElement("div");
+  placeholder.className = "builder-placeholder";
+  container.insertBefore(placeholder, card.nextSibling);
+});
 
 /* =========================
    INIT
