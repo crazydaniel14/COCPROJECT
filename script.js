@@ -229,16 +229,21 @@ function renderBuilderCards() {
     if (finishMs === earliestFinish) card.classList.add("next-finish");
 
     card.innerHTML = `
-      ${badgeHTML}
-      <img src="Images/Builder.png" class="builder-character" />
-      <div class="builder-text">
-        <div class="builder-name">BUILDER ${builderNumber}</div>
-        <div class="builder-upgrade">${row[1]}</div>
-        <div class="builder-time-left">${row[3]}</div>
-        <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}</div>
-        <div class="builder-next">▶ Next: ${row[4]}</div>
-      </div>
-    `;
+    ${badgeHTML}
+     <img 
+     src="Images/Builder ${builderNumber}.png" 
+     class="builder-character" 
+     alt="Builder ${builderNumber}"
+     />
+     <div class="builder-text">
+     <div class="builder-name">BUILDER ${builderNumber}</div>
+     <div class="builder-upgrade">${row[1]}</div>
+     <div class="builder-time-left">${row[3]}</div>
+     <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}</div>
+     <div class="builder-next">▶ Next: ${row[4]}</div>
+     </div>
+     `;
+
 
     container.appendChild(card);
   }
