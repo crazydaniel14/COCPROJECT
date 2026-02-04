@@ -1,4 +1,4 @@
-console.log("Loaded script.js – CLEAN STABLE BUILD");
+console.log("Loaded script.js – CLEAN STABLE BUILD 2");
 
 /* =========================
    CONFIG
@@ -338,7 +338,6 @@ function wireApprenticeBoost() {
         todaysBoostInfo.status = "APPLIED";
       }
 
-      renderBuilderCards(); // swap image + lock click
       await refreshDashboard(); // backend sync
     } catch (err) {
       console.error("Failed to apply today’s boost", err);
