@@ -464,6 +464,27 @@ button:disabled {
   font-weight: 500;
 }
 
+.boost-finish {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+/* Clock icon */
+.boost-clock {
+  width: 14px;       /* matches text height */
+  height: 14px;
+  opacity: 0.9;
+}
+
+/* Text */
+.boost-finish-text {
+  color: #ffffff;    /* ← white */
+  font-size: 0.9rem;
+}
+
+
 /* SAFE */
 .boost-mode.safe {
   background: rgba(80, 200, 120, 0.15);
