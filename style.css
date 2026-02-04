@@ -280,7 +280,7 @@ button:disabled {
   position: absolute;
   left: 100px;
   bottom: 10px;
-  height: 130px;
+  height: 100px;
   transform: scale(1.3);
   transform-origin: bottom left;
   pointer-events: none;
