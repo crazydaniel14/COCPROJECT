@@ -291,6 +291,7 @@ button:disabled {
   .builder-character {
     height: 90px;   /* smaller than desktop */
     left: 90px;      /* optional: pull it in */
+    transform: scale(1); /* 🔑 reset scaling */
   }
 }
 
