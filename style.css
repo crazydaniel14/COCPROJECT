@@ -286,6 +286,14 @@ button:disabled {
   pointer-events: none;
 }
 
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .builder-character {
+    height: 90px;   /* smaller than desktop */
+    left: 90px;      /* optional: pull it in */
+  }
+}
+
 /* Text column */
 .builder-text {
   position: absolute;
