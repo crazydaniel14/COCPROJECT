@@ -536,17 +536,23 @@ document.addEventListener("click", async e => {
 
   const container = document.getElementById("builders-container");
 
-  // Clear old expanded state
-  container.querySelectorAll(".builder-card.expanded")
-    .forEach(c => c.classList.remove("expanded"));
-
-  container.querySelectorAll(".builder-details, .builder-placeholder")
-    .forEach(el => el.remove());
-
   if (expandedBuilder === builder) {
-    expandedBuilder = null;
-    return;
+  expandedBuilder = null;
+
+  container.querySelectorAll(".builder-details")
+  .forEach(el => {
+    if (el.dataset.builder !== builder) el.remove();
+  });
+
+  container.querySelectorAll(".builder-card.expanded")
+  .forEach(c => {
+    if (c.dataset.builder !== builder) c.classList.remove("expanded");
+  });
+
+  card.classList.remove("expanded");
+  return;
   }
+
 
   if (expandedBuilder && pinnedBuilders.length) {
     pinnedBuilders = [];
