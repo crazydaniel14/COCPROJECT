@@ -184,22 +184,24 @@ function renderBuilderDetails(details) {
   wrapper.dataset.builder = details.builder;
 
   wrapper.innerHTML = `
+    <div class="builder-details-header">
+      <label class="pin-builder">
+        <input type="checkbox" />
+        <span>Pin this builder</span>
+      </label>
+    </div>
+
     <div class="upgrade-headers">
       <span>Upgrade</span>
       <span>Duration</span>
-      <span>Start Time → End Time</span>
+      <span>Start → End</span>
     </div>
+
     <div class="upgrade-list">
       ${details.upgrades.map(upg => `
         <div class="upgrade-item"
              data-builder="${upg.builder}"
              data-row="${upg.row}">
-          <div class="builder-details-header">
-          <label class="pin-builder">
-          <input type="checkbox" />
-          <span>Pin this builder</span>
-          </label>
-          </div>
           <div class="upgrade-name">${upg.upgrade}</div>
           <div class="upgrade-duration">${upg.duration}</div>
           <div class="upgrade-time">
@@ -219,6 +221,7 @@ function renderBuilderCards() {
   if (!currentWorkData) return;
 
   const container = document.getElementById("builders-container");
+  // Remove existing details before opening another
   if (!container) return;
   container.innerHTML = "";
 
@@ -509,21 +512,20 @@ function wireBoostFocusNavigation() {
 document.addEventListener("change", e => {
   if (!e.target.matches(".pin-builder input")) return;
 
-  const card = e.target.closest(".builder-card");
-  if (!card) return;
+  const details = e.target.closest(".builder-details");
+  if (!details) return;
 
-  const builder = card.dataset.builder;
+  const builder = details.dataset.builder;
 
   if (e.target.checked) {
-    if (pinnedBuilders.length >= 1) {
-      pinnedBuilders.shift();
+    if (!pinnedBuilders.includes(builder)) {
+      pinnedBuilders.push(builder);
     }
-    pinnedBuilders.push(builder);
-    card.classList.add("pinned");
   } else {
     pinnedBuilders = pinnedBuilders.filter(b => b !== builder);
-    card.classList.remove("pinned");
   }
+
+  console.log("Pinned builders:", pinnedBuilders);
 });
 
 document.addEventListener("click", async e => {
@@ -535,24 +537,18 @@ document.addEventListener("click", async e => {
   if (!builder) return;
 
   const container = document.getElementById("builders-container");
+  // Remove previous expanded state
+  container.querySelectorAll(".builder-details").forEach(el => el.remove());
+  container.querySelectorAll(".builder-card.expanded")
+  .forEach(c => c.classList.remove("expanded"));
+
 
   if (expandedBuilder === builder) {
   expandedBuilder = null;
-
-  container.querySelectorAll(".builder-details")
-  .forEach(el => {
-    if (el.dataset.builder !== builder) el.remove();
-  });
-
-  container.querySelectorAll(".builder-card.expanded")
-  .forEach(c => {
-    if (c.dataset.builder !== builder) c.classList.remove("expanded");
-  });
-
   card.classList.remove("expanded");
+  container.querySelectorAll(".builder-details").forEach(el => el.remove());
   return;
-  }
-
+  }   
 
   if (expandedBuilder && pinnedBuilders.length) {
     pinnedBuilders = [];
@@ -565,10 +561,6 @@ document.addEventListener("click", async e => {
   const detailsEl = renderBuilderDetails(details);
 
   card.after(detailsEl);
-
-  const placeholder = document.createElement("div");
-  placeholder.className = "builder-placeholder";
-  container.insertBefore(placeholder, card.nextSibling);
 });
 
 /* =========================
