@@ -87,15 +87,33 @@ async function loadBoostPlan() {
     const res = await fetch(BOOST_PLAN_ENDPOINT);
     const data = await res.json();
 
-    // Expected backend structure:
-    // data.plan = [
-    //   { day, hasBoost, builder, newFinishTime, mode }
-    // ]
+    if (!data?.table || data.table.length <= 1) {
+      boostPlanData = [];
+      return;
+    }
 
-    boostPlanData = data.plan || [];
+    // Remove header row
+    const rows = data.table.slice(1);
+
+    boostPlanData = rows.map((row, index) => {
+      const boostDate = row[0];      // "Feb 3"
+      const upgrade = row[1];
+      const builder = row[2];        // "Builder_6"
+      const newFinish = row[4];      // "Feb 9 10:46 PM"
+      const mode = row[5];           // SAFE / FORCED
+
+      return {
+        day: index === 0 ? "TODAY" : boostDate,
+        hasBoost: true,
+        builder,
+        newFinishTime: newFinish.replace(" ", " · "),
+        mode
+      };
+    });
+
     currentBoostIndex = 0;
-
     renderBoostFocusCard();
+
   } catch (e) {
     console.error("Boost plan failed", e);
   }
@@ -442,30 +460,6 @@ function wireBoostFocusNavigation() {
    INIT
    ========================= */
 document.addEventListener("DOMContentLoaded", async () => {
-
-  // 🔧 TEMP TEST DATA (remove later)
-  boostPlanData = [
-    {
-      day: "TODAY",
-      hasBoost: true,
-      builder: "Builder 3",
-      newFinishTime: "Jan 12 · 6:42 PM",
-      mode: "SAFE"
-    },
-    {
-      day: "TUE",
-      hasBoost: false
-    },
-    {
-      day: "WED",
-      hasBoost: true,
-      builder: "Builder 1",
-      newFinishTime: "Jan 14 · 9:10 AM",
-      mode: "FORCED"
-    }
-  ];
-
-  renderBoostFocusCard();
 
   await refreshDashboard();
   startAutoRefresh();
