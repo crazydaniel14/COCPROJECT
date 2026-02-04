@@ -194,6 +194,12 @@ function renderBuilderDetails(details) {
         <div class="upgrade-item"
              data-builder="${upg.builder}"
              data-row="${upg.row}">
+          <div class="builder-details-header">
+          <label class="pin-builder">
+          <input type="checkbox" />
+          <span>Pin this builder</span>
+          </label>
+          </div>
           <div class="upgrade-name">${upg.upgrade}</div>
           <div class="upgrade-duration">${upg.duration}</div>
           <div class="upgrade-time">
@@ -276,12 +282,6 @@ function renderBuilderCards() {
       />
       <div class="builder-text">
         <div class="builder-name">BUILDER ${builderNumber}</div>
-
-        <label class="pin-builder">
-          <input type="checkbox" />
-          <span>Pin builder</span>
-        </label>
-
         <div class="builder-upgrade">${row[1]}</div>
         <div class="builder-time-left">${row[3]}</div>
         <div class="builder-finish">
