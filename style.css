@@ -409,9 +409,10 @@ button:disabled {
 .boost-day {
   font-size: 0.85rem;
   letter-spacing: 1px;
-  opacity: 0.75;
   margin-bottom: 8px;
-}
+  color: #ffffff;     
+  opacity: 1;
+ }
 
 /* Status */
 .boost-status {
@@ -426,7 +427,8 @@ button:disabled {
 /* Builder */
 .boost-builder {
   font-size: 0.95rem;
-  opacity: 0.85;
+  color: #ffffff;   
+  opacity: 1;
 }
 
 /* Arrows */
