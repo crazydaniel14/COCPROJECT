@@ -289,8 +289,8 @@ button:disabled {
 /* Mobile adjustments */
 @media (max-width: 768px) {
   .builder-character {
-    height: 10px;   /* smaller than desktop */
-    left: 10px;      /* optional: pull it in */
+    height: 30px;   /* smaller than desktop */
+    left: 30px;      /* optional: pull it in */
     transform: scale(1); /* 🔑 reset scaling */
   }
 }
