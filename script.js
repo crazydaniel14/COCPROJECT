@@ -216,52 +216,168 @@ function renderBuilderCards() {
   if (!container) return;
   container.innerHTML = "";
 
-let earliestFinish = Infinity;
-
-for (let i = 1; i < currentWorkData.length; i++) {
-  const t = new Date(currentWorkData[i][2]).getTime();
-  if (!isNaN(t) && t < earliestFinish) earliestFinish = t;
-}
- 
-for (let i = 1; i < currentWorkData.length; i++) {
-  const row = currentWorkData[i];
-  const builderNumber = row[0].toString().match(/(\d+)/)?.[1] || null;
-  const finishMs = new Date(row[2]).getTime();
-
-  let badgeHTML = "";
-
-  if (
-    todaysBoostInfo &&
-    builderNumber &&
-    todaysBoostInfo.builder === builderNumber
-  ) {
-    let img;
-
-    switch (todaysBoostInfo.status) {
-      case "FORCED":
-        img = "Images/Builder Apprentice Forced.png";
-        break;
-      case "APPLIED":
-        img = "Images/Builder Apprentice applied.png";
-        break;
-      default:
-        img = "Images/Builder Apprentice Safe.png";
+  // 1️⃣ Find earliest finish time
+  let earliestFinish = Infinity;
+  for (let i = 1; i < currentWorkData.length; i++) {
+    const t = new Date(currentWorkData[i][2]).getTime();
+    if (!isNaN(t) && t < earliestFinish) {
+      earliestFinish = t;
     }
-
-    badgeHTML = `
-      <img
-        src="${img}"
-        class="apprentice-badge"
-        data-apply-boost="true"
-      />
-    `;
   }
 
-  const card = document.createElement("div");
-  card.className = "builder-card";
-  card.dataset.builder = builderNumber;
+  // 2️⃣ Render builder cards
+  for (let i = 1; i < currentWorkData.length; i++) {
+    const row = currentWorkData[i];
+    const builderNumber = row[0].toString().match(/(\d+)/)?.[1];
+    const finishMs = new Date(row[2]).getTime();
 
-  if (finishMs === earliestFinish) {
+    let badgeHTML = "";
+
+    if (
+      todaysBoostInfo &&
+      builderNumber &&
+      todaysBoostInfo.builder === builderNumber
+    ) {
+      let img;
+      switch (todaysBoostInfo.status) {
+        case "FORCED":
+          img = "Images/Builder Apprentice Forced.png";
+          break;
+        case "APPLIED":
+          img = "Images/Builder Apprentice applied.png";
+          break;
+        default:
+          img = "Images/Builder Apprentice Safe.png";
+      }
+
+      badgeHTML = `
+        <img
+          src="${img}"
+          class="apprentice-badge"
+          data-apply-boost="true"
+        />
+      `;
+    }
+
+    const card = document.createElement("div");
+    card.className = "builder-card";
+    card.dataset.builder = builderNumber;
+
+    if (finishMs === earliestFinish) {
+      card.classList.add("next-finish");
+    }
+
+    card.innerHTML = `
+      ${badgeHTML}
+      <img 
+        src="Images/Builder ${builderNumber}.png" 
+        class="builder-character" 
+        alt="Builder ${builderNumber}"
+      />
+      <div class="builder-text">
+        <div class="builder-name">BUILDER ${builderNumber}</div>
+
+        <label class="pin-builder">
+          <input type="checkbox" />
+          <span>Pin builder</span>
+        </label>
+
+        <div class="builder-upgrade">${row[1]}</div>
+        <div class="builder-time-left">${row[3]}</div>
+        <div class="builder-finish">
+          Finishes: ${formatFinishTime(row[2])}
+        </div>
+        <div class="builder-next">▶ Next: ${row[4]}</div>
+      </div>
+    `;
+
+    container.appendChild(card);
+  }
+}
+    card.classList.add("next-finish");
+  }
+
+  card.innerHTML = `
+    ${badgeHTML}
+    <img 
+      src="Images/Builder ${builderNumber}.png" 
+      class="builder-character" 
+      alt="Builder ${builderNumber}"
+    />
+    <div class="builder-text">
+      <div class="builder-name">BUILDER ${builderNumber}</div>
+
+      <label class="pin-builder">
+        <input type="checkbox" />
+        <span>Pin builder</span>
+      </label>
+
+      <div class="builder-upgrade">${row[1]}</div>
+      <div class="builder-time-left">${row[3]}</div>
+      <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}</div>
+      <div class="builder-next">▶ Next: ${row[4]}</div>
+    </div>
+  `;
+
+  container.appendChild(card);
+}
+}
+    card.classList.add("next-finish");
+  }
+
+  card.innerHTML = `
+    ${badgeHTML}
+    <img 
+      src="Images/Builder ${builderNumber}.png" 
+      class="builder-character" 
+      alt="Builder ${builderNumber}"
+    />
+    <div class="builder-text">
+      <div class="builder-name">BUILDER ${builderNumber}</div>
+
+      <label class="pin-builder">
+        <input type="checkbox" />
+        <span>Pin builder</span>
+      </label>
+
+      <div class="builder-upgrade">${row[1]}</div>
+      <div class="builder-time-left">${row[3]}</div>
+      <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}</div>
+      <div class="builder-next">▶ Next: ${row[4]}</div>
+    </div>
+  `;
+
+  container.appendChild(card);
+}
+}
+    card.classList.add("next-finish");
+  }
+
+  card.innerHTML = `
+    ${badgeHTML}
+    <img 
+      src="Images/Builder ${builderNumber}.png" 
+      class="builder-character" 
+      alt="Builder ${builderNumber}"
+    />
+    <div class="builder-text">
+      <div class="builder-name">BUILDER ${builderNumber}</div>
+
+      <label class="pin-builder">
+        <input type="checkbox" />
+        <span>Pin builder</span>
+      </label>
+
+      <div class="builder-upgrade">${row[1]}</div>
+      <div class="builder-time-left">${row[3]}</div>
+      <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}</div>
+      <div class="builder-next">▶ Next: ${row[4]}</div>
+    </div>
+  `;
+
+  container.appendChild(card);
+}
+}
     card.classList.add("next-finish");
   }
 
@@ -574,11 +690,3 @@ document.addEventListener("DOMContentLoaded", async () => {
   wireBuilderSnackModal();
   wireBoostFocusNavigation();
 });
-
-async function loadCurrentWork() {
-  const res = await fetch(TABLE_ENDPOINT);
-  console.log("current_work_table status:", res.status);
-  currentWorkData = await res.json();
-  console.log("currentWorkData:", currentWorkData);
-}
-
