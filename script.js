@@ -106,7 +106,7 @@ async function loadBoostPlan() {
         day: index === 0 ? "TODAY" : boostDate,
         hasBoost: true,
         builder,
-        newFinishTime: newFinish.replace(" ", " · "),
+        newFinishTime: newFinish,
         mode
       };
     });
