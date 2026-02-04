@@ -149,6 +149,12 @@ button:disabled {
 /* ==================================================
    BUILDER POTION IMAGE BUTTON
    ================================================== */
+.action-button {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 12px 0;
+}
 
 .image-button {
   width: 50px;
