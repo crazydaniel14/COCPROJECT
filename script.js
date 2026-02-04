@@ -96,19 +96,18 @@ async function loadBoostPlan() {
     const rows = data.table.slice(1);
 
     boostPlanData = rows.map((row, index) => {
-      const boostDate = row[0];      // "Feb 3"
-      const upgrade = row[1];
-      const builder = row[2];        // "Builder_6"
-      const newFinish = row[4];      // "Feb 9 10:46 PM"
-      const mode = row[5];           // SAFE / FORCED
+    const boostDate = row[0];
+    const builderRaw = row[2];   // "Builder_6"
+    const newFinish = row[4];
+    const mode = row[5];
 
-      return {
-        day: index === 0 ? "TODAY" : boostDate,
-        hasBoost: true,
-        builder,
-        newFinishTime: newFinish,
-        mode
-      };
+    return {
+    day: index === 0 ? "TODAY" : boostDate,
+    hasBoost: true,
+    builder: builderRaw.replace("_", " "), // ← FIX
+    newFinishTime: newFinish,
+    mode
+    };
     });
 
     currentBoostIndex = 0;
