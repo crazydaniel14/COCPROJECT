@@ -618,14 +618,16 @@ button:disabled {
 }
 /* Mobile structure */
 @media (max-width: 768px) {
-  .builder-card.expanded {
-    height: auto;
+ .builder-card.expanded {
+    height: 210px;   /* same as normal mobile card */
+    min-height: 210px;
   }
+}
 
   .builder-details {
-    padding: 14px;
-    grid-column: 1 / -1;
+    margin-top: 8px;   /* normal spacing on mobile */
   }
+}
 
   .upgrade-headers,
   .upgrade-item {
