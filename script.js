@@ -1,4 +1,4 @@
-console.log("Loaded script.js – CLEAN STABLE BUILD");
+console.log("Loaded script.js – CLEAN STABLE BUILD 2");
 
 /* =========================
    CONFIG
@@ -538,37 +538,21 @@ document.addEventListener("click", async e => {
   if (!builder) return;
 
   const container = document.getElementById("builders-container");
+
   // Collapse if clicking the same builder
   if (expandedBuilder === builder) {
-  expandedBuilder = null;
-  card.classList.remove("expanded");
-  container.querySelectorAll(".builder-details").forEach(el => el.remove());
-  return;
+    expandedBuilder = null;
+    card.classList.remove("expanded");
+    container.querySelectorAll(".builder-details").forEach(el => el.remove());
+    return;
   }
 
-  // Otherwise, collapse others
+  // Collapse others
   container.querySelectorAll(".builder-details").forEach(el => el.remove());
   container.querySelectorAll(".builder-card.expanded")
-  .forEach(c => c.classList.remove("expanded"));
+    .forEach(c => c.classList.remove("expanded"));
 
-  expandedBuilder = builder;
-  card.classList.add("expanded");
-
-  const builderDetails = await fetchBuilderDetails(builder);
-  const detailsEl = renderBuilderDetails(builderDetails);
-  card.after(detailsEl);
-
-  if (expandedBuilder === builder) {
-  expandedBuilder = null;
-  card.classList.remove("expanded");
-  container.querySelectorAll(".builder-details").forEach(el => el.remove());
-  return;
-  }   
-
-  if (expandedBuilder && pinnedBuilders.length) {
-    pinnedBuilders = [];
-  }
-
+  // Expand clicked builder
   expandedBuilder = builder;
   card.classList.add("expanded");
 
