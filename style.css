@@ -260,9 +260,11 @@ button:disabled {
 .builders-container {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: auto;       
   gap: 14px;
   margin-top: 16px;
 }
+
 
 /* Card shell */
 .builder-card {
@@ -278,10 +280,10 @@ button:disabled {
 /* EXPANDED BUILDER CARD */
 
 .builder-card.expanded {
+  grid-column: 1 / -1; 
   background: #14143d;
   outline: 2px solid rgba(255,255,255,0.25);
 }
-
 
 /* PINNED BUILDER CARD */
 
@@ -292,7 +294,7 @@ button:disabled {
 /* BUILDER DETAILS (UPGRADE LIST) */
 
 .builder-details {
-  grid-column: 1 / -1;
+  grid-column: span 2;
   background: #16161b;
   border-radius: 18px;
   padding: 16px 20px;
@@ -346,14 +348,6 @@ button:disabled {
 .builder-card.pinned + .builder-details {
   max-height: 220px;
   overflow-y: auto;
-}
-
-/* ================================
-   PLACEHOLDER (GRID BALANCE)
-   ================================ */
-
-.builder-placeholder {
-  visibility: hidden;
 }
 
 .pin-builder {
