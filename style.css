@@ -278,8 +278,7 @@ button:disabled {
 /* EXPANDED BUILDER CARD */
 
 .builder-card.expanded {
-  grid-column: 1 / -1;   /* full width */
-  height: auto;         /* wider, less tall */
+  outline: 2px solid rgba(255,255,255,0.15);
 }
 
 /* PINNED BUILDER CARD */
@@ -629,6 +628,7 @@ button:disabled {
 
   .builder-details {
     padding: 14px;
+    grid-column: 1 / -1;
   }
 
   .upgrade-headers,
