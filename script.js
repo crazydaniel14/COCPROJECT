@@ -21,6 +21,7 @@ const BUILDER_DETAILS_ENDPOINT = API_BASE + "?action=builder_details&builder=";
 /* =========================
    GLOBAL STATE
    ========================= */
+let isBuilderOpening = false;
 let currentWorkData = null;
 let todaysBoostInfo = null;
 let isRefreshing = false;
@@ -533,6 +534,9 @@ document.addEventListener("click", async e => {
   const card = e.target.closest(".builder-card");
   if (!card) return;
   if (e.target.matches("input[type='checkbox']")) return;
+  // 🚫 BLOCK SPAM CLICKS
+  if (isBuilderOpening) return;
+  isBuilderOpening = true;
 
   const builder = card.dataset.builder;
   if (!builder) return;
@@ -541,10 +545,11 @@ document.addEventListener("click", async e => {
 
   // Collapse if clicking the same builder
   if (expandedBuilder === builder) {
-    expandedBuilder = null;
-    card.classList.remove("expanded");
-    container.querySelectorAll(".builder-details").forEach(el => el.remove());
-    return;
+  expandedBuilder = null;
+  card.classList.remove("expanded");
+  container.querySelectorAll(".builder-details").forEach(el => el.remove());
+  isBuilderOpening = false; // 🔓 unlock clicks
+  return;
   }
 
   // Collapse others
@@ -556,11 +561,14 @@ document.addEventListener("click", async e => {
   expandedBuilder = builder;
   card.classList.add("expanded");
 
+try {
   const builderDetails = await fetchBuilderDetails(builder);
   const detailsEl = renderBuilderDetails(builderDetails);
   card.after(detailsEl);
+} finally {
+  isBuilderOpening = false; // 🔓 always unlock
+}
 });
-
 /* =========================
    INIT
    ========================= */
