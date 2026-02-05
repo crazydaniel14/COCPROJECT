@@ -1,4 +1,4 @@
-console.log("Loaded script.js – CLEAN STABLE BUILD 2");
+console.log("Loaded script.js – CLEAN STABLE BUILD");
 
 /* =========================
    CONFIG
@@ -223,8 +223,10 @@ function renderBuilderCards() {
   const container = document.getElementById("builders-container");
   // Remove existing details before opening another
   if (!container) return;
-  container.innerHTML = "";
+  // ✅ Do not re-render cards if they already exist
+  if (container.children.length > 0) return;
 
+   
   // 1️⃣ Find earliest finish time
   let earliestFinish = Infinity;
   for (let i = 1; i < currentWorkData.length; i++) {
@@ -536,10 +538,25 @@ document.addEventListener("click", async e => {
   if (!builder) return;
 
   const container = document.getElementById("builders-container");
-  // Remove previous expanded state
+  // Collapse if clicking the same builder
+  if (expandedBuilder === builder) {
+  expandedBuilder = null;
+  card.classList.remove("expanded");
+  container.querySelectorAll(".builder-details").forEach(el => el.remove());
+  return;
+  }
+
+  // Otherwise, collapse others
   container.querySelectorAll(".builder-details").forEach(el => el.remove());
   container.querySelectorAll(".builder-card.expanded")
   .forEach(c => c.classList.remove("expanded"));
+
+  expandedBuilder = builder;
+  card.classList.add("expanded");
+
+  const details = await fetchBuilderDetails(builder);
+  const detailsEl = renderBuilderDetails(details);
+  card.after(detailsEl);
 
 
   if (expandedBuilder === builder) {
