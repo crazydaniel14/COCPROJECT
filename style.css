@@ -278,8 +278,10 @@ button:disabled {
 /* EXPANDED BUILDER CARD */
 
 .builder-card.expanded {
-  outline: 2px solid rgba(255,255,255,0.15);
+  background: #14143d;
+  outline: 2px solid rgba(255,255,255,0.25);
 }
+
 
 /* PINNED BUILDER CARD */
 
