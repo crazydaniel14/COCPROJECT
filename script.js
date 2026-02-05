@@ -554,10 +554,9 @@ document.addEventListener("click", async e => {
   expandedBuilder = builder;
   card.classList.add("expanded");
 
-  const details = await fetchBuilderDetails(builder);
-  const detailsEl = renderBuilderDetails(details);
+  const builderDetails = await fetchBuilderDetails(builder);
+  const detailsEl = renderBuilderDetails(builderDetails);
   card.after(detailsEl);
-
 
   if (expandedBuilder === builder) {
   expandedBuilder = null;
