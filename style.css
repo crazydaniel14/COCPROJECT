@@ -27,6 +27,8 @@ h3 {
 }
 h4 {
   color: #babac0;
+  text-align: center;
+  font-weight: bold;
 }
 /* ===== TABLEBASE ===== */
 table {
