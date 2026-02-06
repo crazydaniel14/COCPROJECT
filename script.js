@@ -545,38 +545,38 @@ document.addEventListener("click", async e => {
   const card = e.target.closest(".builder-card");
   if (!card) return;
 
-  // Ignore clicks from pin UI
+  // Ignore pin UI clicks
   if (e.target.closest(".pin-builder")) return;
 
-  // 🔒 HARD LOCK
+  // Lock
   if (isBuilderOpening) return;
   isBuilderOpening = true;
 
   const builder = card.dataset.builder;
-  const pinnedBuilder = pinnedBuilders[0] || null;
   const container = document.getElementById("builders-container");
+  const pinnedBuilder = pinnedBuilders[0] || null;
 
   /* =========================
      CASE 1 — PINNED BUILDER
      ========================= */
   if (builder === pinnedBuilder) {
-    // ❌ pinned builder NEVER closes on click
+    // pinned builders never close by card click
     isBuilderOpening = false;
     return;
   }
 
   /* =========================
-     CASE 2 — CLOSE UNPINNED
+     CASE 2 — CLOSE (UNPINNED)
      ========================= */
   if (expandedBuilder === builder) {
     expandedBuilder = null;
     card.classList.remove("expanded");
 
+    // 🔥 ALWAYS remove its details
     container
       .querySelectorAll(`.builder-details[data-builder="${builder}"]`)
       .forEach(el => el.remove());
 
-    // 🔑 IMPORTANT: do NOT allow reopen on same click
     isBuilderOpening = false;
     return;
   }
@@ -585,12 +585,12 @@ document.addEventListener("click", async e => {
      CASE 3 — OPEN NEW BUILDER
      ========================= */
 
-  // Remove ONLY non-pinned details
+  // Remove all NON-PINNED details
   container.querySelectorAll(".builder-details").forEach(el => {
     if (el.dataset.builder !== pinnedBuilder) el.remove();
   });
 
-  // Remove expanded state from non-pinned cards
+  // Remove expanded state from NON-PINNED cards
   container.querySelectorAll(".builder-card.expanded").forEach(c => {
     if (c.dataset.builder !== pinnedBuilder) {
       c.classList.remove("expanded");
