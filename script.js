@@ -1,4 +1,4 @@
-console.log("Loaded script.js – CLEAN STABLE BUILD 2");
+console.log("Loaded script.js – CLEAN STABLE BUILD");
 
 /* =========================
    CONFIG
@@ -568,18 +568,22 @@ document.addEventListener("click", async e => {
   /* =========================
      CASE 2 — CLOSE (UNPINNED)
      ========================= */
+ const detailsEl = container.querySelector(
+  `.builder-details[data-builder="${builder}"]`
+);
+
+if (detailsEl) {
+  // CLOSE builder
+  detailsEl.remove();
+  card.classList.remove("expanded");
+
   if (expandedBuilder === builder) {
     expandedBuilder = null;
-    card.classList.remove("expanded");
-
-    // 🔥 ALWAYS remove its details
-    container
-      .querySelectorAll(`.builder-details[data-builder="${builder}"]`)
-      .forEach(el => el.remove());
-
-    isBuilderOpening = false;
-    return;
   }
+
+  isBuilderOpening = false;
+  return;
+}
 
   /* =========================
      CASE 3 — OPEN NEW BUILDER
