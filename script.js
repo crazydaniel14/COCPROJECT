@@ -1,4 +1,4 @@
-console.log("Loaded script.js – CLEAN STABLE BUILD after stable");
+console.log("Loaded script.js – CLEAN STABLE BUILD new changes");
 
 /* =========================
    CONFIG
@@ -29,7 +29,6 @@ let boostPlanData = [];
 let currentBoostIndex = 0;
 let expandedBuilder = null;
 let pinnedBuilders = []; // holds builder numbers as strings
-let ignoreNextBuilderClick = false;
 
 /* =========================
    HELPERS
@@ -522,22 +521,20 @@ document.addEventListener("click", e => {
 document.addEventListener("change", e => {
   if (!e.target.matches(".pin-builder input")) return;
 
+  e.stopPropagation();
+
   const details = e.target.closest(".builder-details");
   if (!details) return;
 
   const builder = details.dataset.builder;
 
-  // 🔒 Only ONE pinned builder allowed
   if (e.target.checked) {
-    // Uncheck any other pin checkboxes
     document.querySelectorAll(".pin-builder input").forEach(cb => {
       if (cb !== e.target) cb.checked = false;
     });
-
     pinnedBuilders = [builder];
   } else {
     pinnedBuilders = [];
-    ignoreNextBuilderClick = true;
   }
 
   console.log("Pinned builder:", pinnedBuilders);
@@ -546,37 +543,26 @@ document.addEventListener("change", e => {
 document.addEventListener("click", async e => {
   const card = e.target.closest(".builder-card");
   if (!card) return;
-   if (ignoreNextBuilderClick) {
-    ignoreNextBuilderClick = false;
-    return;
-  }
   if (e.target.matches("input[type='checkbox']")) return;
 
   // 🚫 block spam clicks
   if (isBuilderOpening) return;
   isBuilderOpening = true;
-
+  
   const builder = card.dataset.builder;
   if (!builder) {
     isBuilderOpening = false;
     return;
   }
-
-  const container = document.getElementById("builders-container");
+ 
   const pinnedBuilder = pinnedBuilders[0] || null;
   // 🔒 HARD LOCK: pinned builders can never be closed by clicking the card
-  if (pinnedBuilders.includes(builder)) {
+  if (builder === pinnedBuilder) {
   isBuilderOpening = false;
   return;
-  }
-
-
-  // 🧠 CASE 1: clicking the PINNED builder → do nothing
-  if (pinnedBuilders.includes(builder)) {
-    // pinned builder is locked open
-    isBuilderOpening = false;
-    return;
-  }
+}
+   
+  const container = document.getElementById("builders-container");
 
  // 🧠 CASE 2: clicking already-open NON-pinned builder → close ONLY it
 if (expandedBuilder === builder && !pinnedBuilders.includes(builder)) {
@@ -615,10 +601,7 @@ if (expandedBuilder === builder && !pinnedBuilders.includes(builder)) {
 });
 
 // If there is a pinned builder, keep expandedBuilder pointing to the pinned one
-if (pinnedBuilder) {
-  expandedBuilder = pinnedBuilder;
-}
-   
+ 
 expandedBuilder = builder;
 
 // mark expanded visually
