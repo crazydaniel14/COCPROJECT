@@ -187,8 +187,8 @@ function renderBuilderDetails(details) {
   wrapper.innerHTML = `
     <div class="builder-details-header">
       <label class="pin-builder">
-        <input type="checkbox" />
-        <span>Pin this builder</span>
+      <input type="checkbox" ${pinnedBuilders.includes(details.builder) ? "checked" : ""} />     
+      <span>Pin this builder</span>
       </label>
     </div>
 
@@ -578,13 +578,20 @@ document.addEventListener("click", async e => {
   });
 
   container.querySelectorAll(".builder-card.expanded").forEach(c => {
-    if (c.dataset.builder !== pinnedBuilder) {
-      c.classList.remove("expanded");
-    }
-  });
+  if (!pinnedBuilders.includes(c.dataset.builder)) {
+    c.classList.remove("expanded");
+  }
+});
 
-  expandedBuilder = builder;
-  card.classList.add("expanded");
+// If there is a pinned builder, keep expandedBuilder pointing to the pinned one
+if (pinnedBuilder) {
+  expandedBuilder = pinnedBuilder;
+}
+   
+expandedBuilder = builder;
+
+// mark expanded visually
+card.classList.add("expanded");
 
   try {
     const builderDetails = await fetchBuilderDetails(builder);
