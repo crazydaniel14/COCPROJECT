@@ -1,4 +1,4 @@
-console.log("Loaded script.js – CLEAN STABLE BUILD 2");
+console.log("Loaded script.js – CLEAN STABLE BUILD after safe");
 
 /* =========================
    CONFIG
@@ -29,6 +29,7 @@ let boostPlanData = [];
 let currentBoostIndex = 0;
 let expandedBuilder = null;
 let pinnedBuilders = []; // holds builder numbers as strings
+let ignoreNextBuilderClick = false;
 
 /* =========================
    HELPERS
@@ -529,6 +530,7 @@ document.addEventListener("change", e => {
     pinnedBuilders = [builder];
   } else {
     pinnedBuilders = [];
+    ignoreNextBuilderClick = true;
   }
 
   console.log("Pinned builder:", pinnedBuilders);
@@ -537,6 +539,10 @@ document.addEventListener("change", e => {
 document.addEventListener("click", async e => {
   const card = e.target.closest(".builder-card");
   if (!card) return;
+   if (ignoreNextBuilderClick) {
+    ignoreNextBuilderClick = false;
+    return;
+  }
   if (e.target.matches("input[type='checkbox']")) return;
 
   // 🚫 block spam clicks
