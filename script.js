@@ -1,4 +1,4 @@
-console.log("Loaded script.js – CLEAN STABLE BUILD come back");
+console.log("Loaded script.js – CLEAN STABLE BUILD after stable");
 
 /* =========================
    CONFIG
@@ -512,6 +512,13 @@ function wireBoostFocusNavigation() {
   });
 }
 
+// 🚫 Prevent pin clicks from reaching builder cards
+document.addEventListener("click", e => {
+  if (e.target.closest(".pin-builder")) {
+    e.stopPropagation();
+  }
+});
+
 document.addEventListener("change", e => {
   if (!e.target.matches(".pin-builder input")) return;
 
@@ -559,7 +566,7 @@ document.addEventListener("click", async e => {
   const pinnedBuilder = pinnedBuilders[0] || null;
 
   // 🧠 CASE 1: clicking the PINNED builder → do nothing
-   if (builder === pinnedBuilder) {
+  if (pinnedBuilders.includes(builder)) {
     // pinned builder is locked open
     isBuilderOpening = false;
     return;
