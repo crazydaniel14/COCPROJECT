@@ -568,23 +568,17 @@ document.addEventListener("click", async e => {
   /* =========================
      CASE 2 — CLOSE (UNPINNED)
      ========================= */
- const detailsEl = container.querySelector(
-  `.builder-details[data-builder="${builder}"]`
-);
-
-if (detailsEl) {
-  // CLOSE builder
-  detailsEl.remove();
+ if (expandedBuilder === builder) {
+  expandedBuilder = null;
   card.classList.remove("expanded");
 
-  if (expandedBuilder === builder) {
-    expandedBuilder = null;
-  }
+  container
+    .querySelectorAll(`.builder-details[data-builder="${builder}"]`)
+    .forEach(el => el.remove());
 
   isBuilderOpening = false;
   return;
 }
-
   /* =========================
      CASE 3 — OPEN NEW BUILDER
      ========================= */
