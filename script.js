@@ -1,4 +1,4 @@
-console.log("Loaded script.js – CLEAN STABLE BUILD");
+console.log("Loaded script.js – CLEAN STABLE BUILD 2");
 
 /* =========================
    CONFIG
@@ -544,72 +544,61 @@ document.addEventListener("click", e => {
 document.addEventListener("click", async e => {
   const card = e.target.closest(".builder-card");
   if (!card) return;
-  if (e.target.matches("input[type='checkbox']")) return;
 
-  // 🚫 block spam clicks
+  // Ignore clicks from pin UI
+  if (e.target.closest(".pin-builder")) return;
+
+  // 🔒 HARD LOCK
   if (isBuilderOpening) return;
   isBuilderOpening = true;
 
   const builder = card.dataset.builder;
-  if (!builder) {
-    isBuilderOpening = false;
-    return;
-  }
-
-  const container = document.getElementById("builders-container");
   const pinnedBuilder = pinnedBuilders[0] || null;
+  const container = document.getElementById("builders-container");
 
-  // 🧠 CASE 1: clicking the PINNED builder → do nothing
+  /* =========================
+     CASE 1 — PINNED BUILDER
+     ========================= */
   if (builder === pinnedBuilder) {
+    // ❌ pinned builder NEVER closes on click
     isBuilderOpening = false;
     return;
   }
 
- // 🧠 CASE 2: clicking already-open NON-pinned builder → close ONLY it
-if (expandedBuilder === builder && builder !== pinnedBuilder) {
-  expandedBuilder = null;
+  /* =========================
+     CASE 2 — CLOSE UNPINNED
+     ========================= */
+  if (expandedBuilder === builder) {
+    expandedBuilder = null;
+    card.classList.remove("expanded");
 
-  // remove highlight
-  card.classList.remove("expanded");
+    container
+      .querySelectorAll(`.builder-details[data-builder="${builder}"]`)
+      .forEach(el => el.remove());
 
-  container.querySelectorAll(".builder-details").forEach(el => {
-  const detailsBuilder = el.dataset.builder
-    ?.toString()
-    .replace("Builder_", "")
-    .replace("Builder ", "")
-    .trim();
-
-  if (detailsBuilder === builder) {
-    el.remove();
+    // 🔑 IMPORTANT: do NOT allow reopen on same click
+    isBuilderOpening = false;
+    return;
   }
-});
 
-  isBuilderOpening = false;
-  return;
- }
+  /* =========================
+     CASE 3 — OPEN NEW BUILDER
+     ========================= */
 
-
-  // 🧠 CASE 3: opening a new builder
-  // Remove only NON-pinned details
+  // Remove ONLY non-pinned details
   container.querySelectorAll(".builder-details").forEach(el => {
     if (el.dataset.builder !== pinnedBuilder) el.remove();
   });
 
+  // Remove expanded state from non-pinned cards
   container.querySelectorAll(".builder-card.expanded").forEach(c => {
-  if (!pinnedBuilders.includes(c.dataset.builder)) {
-    c.classList.remove("expanded");
-  }
-});
+    if (c.dataset.builder !== pinnedBuilder) {
+      c.classList.remove("expanded");
+    }
+  });
 
-// If there is a pinned builder, keep expandedBuilder pointing to the pinned one
-if (pinnedBuilder) {
-  expandedBuilder = pinnedBuilder;
-}
-   
-expandedBuilder = builder;
-
-// mark expanded visually
-card.classList.add("expanded");
+  expandedBuilder = builder;
+  card.classList.add("expanded");
 
   try {
     const builderDetails = await fetchBuilderDetails(builder);
