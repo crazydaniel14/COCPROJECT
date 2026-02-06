@@ -564,6 +564,12 @@ document.addEventListener("click", async e => {
 
   const container = document.getElementById("builders-container");
   const pinnedBuilder = pinnedBuilders[0] || null;
+  // 🔒 HARD LOCK: pinned builders can never be closed by clicking the card
+  if (pinnedBuilders.includes(builder)) {
+  isBuilderOpening = false;
+  return;
+  }
+
 
   // 🧠 CASE 1: clicking the PINNED builder → do nothing
   if (pinnedBuilders.includes(builder)) {
