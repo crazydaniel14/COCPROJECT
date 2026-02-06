@@ -1,4 +1,4 @@
-console.log("Loaded script.js – CLEAN STABLE BUILD after safe");
+console.log("Loaded script.js – CLEAN STABLE BUILD come back");
 
 /* =========================
    CONFIG
@@ -559,13 +559,14 @@ document.addEventListener("click", async e => {
   const pinnedBuilder = pinnedBuilders[0] || null;
 
   // 🧠 CASE 1: clicking the PINNED builder → do nothing
-  if (builder === pinnedBuilder) {
+   if (builder === pinnedBuilder) {
+    // pinned builder is locked open
     isBuilderOpening = false;
     return;
   }
 
  // 🧠 CASE 2: clicking already-open NON-pinned builder → close ONLY it
-if (expandedBuilder === builder && builder !== pinnedBuilder) {
+if (expandedBuilder === builder && !pinnedBuilders.includes(builder)) {
   expandedBuilder = null;
 
   // remove highlight
