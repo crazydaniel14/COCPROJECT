@@ -565,15 +565,17 @@ if (expandedBuilder === builder && builder !== pinnedBuilder) {
   // remove highlight
   card.classList.remove("expanded");
 
-  /container.querySelectorAll(".builder-details")
-  .forEach(el => {
-    // normalize both sides to numbers
-    const detailsBuilder = el.dataset.builder?.toString().match(/(\d+)/)?.[1];
-    if (detailsBuilder === builder) {
-      el.remove();
-    }
-  });
+  container.querySelectorAll(".builder-details").forEach(el => {
+  const detailsBuilder = el.dataset.builder
+    ?.toString()
+    .replace("Builder_", "")
+    .replace("Builder ", "")
+    .trim();
 
+  if (detailsBuilder === builder) {
+    el.remove();
+  }
+});
 
   isBuilderOpening = false;
   return;
