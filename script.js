@@ -558,20 +558,25 @@ document.addEventListener("click", async e => {
     return;
   }
 
- // 🧠 CASE 2: clicking already-open NON-pinned builder → close it
+ // 🧠 CASE 2: clicking already-open NON-pinned builder → close ONLY it
 if (expandedBuilder === builder && builder !== pinnedBuilder) {
   expandedBuilder = null;
 
   // remove highlight
   card.classList.remove("expanded");
 
-  // 🔥 ALWAYS remove its details list
+  // 🔥 remove ONLY this builder’s list
   container.querySelectorAll(".builder-details")
-    .forEach(el => el.remove());
+    .forEach(el => {
+      if (el.dataset.builder === builder) {
+        el.remove();
+      }
+    });
 
   isBuilderOpening = false;
   return;
-}
+ }
+
 
   // 🧠 CASE 3: opening a new builder
   // Remove only NON-pinned details
