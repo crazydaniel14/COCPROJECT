@@ -1,4 +1,4 @@
-console.log("Loaded script.js – CLEAN STABLE BUILD new changes");
+console.log("Loaded script.js – CLEAN STABLE BUILD previous works, test");
 
 /* =========================
    CONFIG
@@ -565,7 +565,7 @@ document.addEventListener("click", async e => {
   const container = document.getElementById("builders-container");
 
  // 🧠 CASE 2: clicking already-open NON-pinned builder → close ONLY it
-if (expandedBuilder === builder && !pinnedBuilders.includes(builder)) {
+if (expandedBuilder === builder) {
   expandedBuilder = null;
 
   // remove highlight
