@@ -514,14 +514,15 @@ function wireBoostFocusNavigation() {
 document.addEventListener("change", e => {
   if (!e.target.matches(".pin-builder input")) return;
 
+  // 🛑 STOP event from reaching builder-card
+  e.stopPropagation();
+
   const details = e.target.closest(".builder-details");
   if (!details) return;
 
   const builder = details.dataset.builder;
 
-  // 🔒 Only ONE pinned builder allowed
   if (e.target.checked) {
-    // Uncheck any other pin checkboxes
     document.querySelectorAll(".pin-builder input").forEach(cb => {
       if (cb !== e.target) cb.checked = false;
     });
@@ -532,6 +533,12 @@ document.addEventListener("change", e => {
   }
 
   console.log("Pinned builder:", pinnedBuilders);
+});
+
+document.addEventListener("click", e => {
+  if (e.target.closest(".pin-builder")) {
+    e.stopPropagation();
+  }
 });
 
 document.addEventListener("click", async e => {
