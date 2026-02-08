@@ -1,4 +1,4 @@
-console.log("Loaded script.js – CLEAN STABLE BUILD previous works, test");
+console.log("Loaded script.js – stable v1);
 
 /* =========================
    CONFIG
@@ -21,15 +21,13 @@ const BUILDER_DETAILS_ENDPOINT = API_BASE + "?action=builder_details&builder=";
 /* =========================
    GLOBAL STATE
    ========================= */
-let isBuilderOpening = false;
 let currentWorkData = null;
 let todaysBoostInfo = null;
 let isRefreshing = false;
 let boostPlanData = [];
 let currentBoostIndex = 0;
 let expandedBuilder = null;
-let pinnedBuilders = []; // holds builder numbers as strings
-
+let openBuilders = []; // max 2 builders open at once
 /* =========================
    HELPERS
    ========================= */
@@ -182,16 +180,10 @@ async function fetchBuilderDetails(builderNumber) {
 function renderBuilderDetails(details) {
   const wrapper = document.createElement("div");
   wrapper.className = "builder-details";
-  wrapper.dataset.builder = details.builder;
+ wrapper.dataset.builder = details.builder.toString().match(/(\d+)/)[1];
 
   wrapper.innerHTML = `
-    <div class="builder-details-header">
-      <label class="pin-builder">
-      <input type="checkbox" ${pinnedBuilders.includes(details.builder) ? "checked" : ""} />     
-      <span>Pin this builder</span>
-      </label>
-    </div>
-
+    <div class="builder-details-header"></div>
     <div class="upgrade-headers">
       <span>Upgrade</span>
       <span>Duration</span>
@@ -327,7 +319,8 @@ function wireApprenticeBoost() {
   document.addEventListener("click", async e => {
     const badge = e.target.closest("[data-apply-boost]");
     if (!badge) return;
-
+    e.stopPropagation();
+     
     // Prevent double-apply
     if (todaysBoostInfo?.status === "APPLIED") return;
 
@@ -511,109 +504,48 @@ function wireBoostFocusNavigation() {
   });
 }
 
-// 🚫 Prevent pin clicks from reaching builder cards
-document.addEventListener("click", e => {
-  if (e.target.closest(".pin-builder")) {
-    e.stopPropagation();
-  }
-});
-
-document.addEventListener("change", e => {
-  if (!e.target.matches(".pin-builder input")) return;
-
-  e.stopPropagation();
-
-  const details = e.target.closest(".builder-details");
-  if (!details) return;
-
-  const builder = details.dataset.builder;
-
-  if (e.target.checked) {
-    document.querySelectorAll(".pin-builder input").forEach(cb => {
-      if (cb !== e.target) cb.checked = false;
-    });
-    pinnedBuilders = [builder];
-  } else {
-    pinnedBuilders = [];
-  }
-
-  console.log("Pinned builder:", pinnedBuilders);
-});
-
 document.addEventListener("click", async e => {
   const card = e.target.closest(".builder-card");
   if (!card) return;
-  if (e.target.matches("input[type='checkbox']")) return;
 
-  // 🚫 block spam clicks
-  if (isBuilderOpening) return;
-  isBuilderOpening = true;
-  
   const builder = card.dataset.builder;
-  if (!builder) {
-    isBuilderOpening = false;
-    return;
-  }
- 
-  const pinnedBuilder = pinnedBuilders[0] || null;
-  // 🔒 HARD LOCK: pinned builders can never be closed by clicking the card
-  if (builder === pinnedBuilder) {
-  isBuilderOpening = false;
-  return;
-}
-   
+  if (!builder) return;
+
   const container = document.getElementById("builders-container");
 
- // 🧠 CASE 2: clicking already-open NON-pinned builder → close ONLY it
-if (expandedBuilder === builder) {
-  expandedBuilder = null;
+  // 🔁 CASE 1: Builder already open → CLOSE it
+  if (openBuilders.includes(builder)) {
+    openBuilders = openBuilders.filter(b => b !== builder);
 
-  // remove highlight
-  card.classList.remove("expanded");
-
-  container.querySelectorAll(".builder-details").forEach(el => {
-  const detailsBuilder = el.dataset.builder
-    ?.toString()
-    .replace("Builder_", "")
-    .replace("Builder ", "")
-    .trim();
-
-  if (detailsBuilder === builder) {
-    el.remove();
+    card.classList.remove("expanded");
+    container
+    .querySelectorAll(`.builder-details[data-builder="${builder}"]`)
+    .forEach(el => el.remove());
+    return;
   }
-});
 
-  isBuilderOpening = false;
-  return;
- }
+  // 🔓 CASE 2: Opening a new builder
 
+  // If already 2 open → close the oldest
+  if (openBuilders.length === 2) {
+    const oldest = openBuilders.shift();
 
-  // 🧠 CASE 3: opening a new builder
-  // Remove only NON-pinned details
-  container.querySelectorAll(".builder-details").forEach(el => {
-    if (el.dataset.builder !== pinnedBuilder) el.remove();
-  });
+    document
+      .querySelector(`.builder-card[data-builder="${oldest}"]`)
+      ?.classList.remove("expanded");
 
-  container.querySelectorAll(".builder-card.expanded").forEach(c => {
-  if (!pinnedBuilders.includes(c.dataset.builder)) {
-    c.classList.remove("expanded");
+    container
+      .querySelectorAll(`.builder-details[data-builder="${oldest}"]`)
+      .forEach(el => el.remove());
   }
-});
 
-// If there is a pinned builder, keep expandedBuilder pointing to the pinned one
- 
-expandedBuilder = builder;
+  // Open this builder
+  openBuilders.push(builder);
+  card.classList.add("expanded");
 
-// mark expanded visually
-card.classList.add("expanded");
-
-  try {
-    const builderDetails = await fetchBuilderDetails(builder);
-    const detailsEl = renderBuilderDetails(builderDetails);
-    card.after(detailsEl);
-  } finally {
-    isBuilderOpening = false;
-  }
+  const builderDetails = await fetchBuilderDetails(builder);
+  const detailsEl = renderBuilderDetails(builderDetails);
+  card.after(detailsEl);
 });
 
 /* =========================
