@@ -21,14 +21,12 @@ const BUILDER_DETAILS_ENDPOINT = API_BASE + "?action=builder_details&builder=";
 /* =========================
    GLOBAL STATE
    ========================= */
-let isBuilderOpening = false;
 let currentWorkData = null;
 let todaysBoostInfo = null;
 let isRefreshing = false;
 let boostPlanData = [];
 let currentBoostIndex = 0;
 let expandedBuilder = null;
-let pinnedBuilders = []; // holds builder numbers as strings
 
 /* =========================
    HELPERS
@@ -185,13 +183,7 @@ function renderBuilderDetails(details) {
   wrapper.dataset.builder = details.builder;
 
   wrapper.innerHTML = `
-    <div class="builder-details-header">
-      <label class="pin-builder">
-      <input type="checkbox" ${pinnedBuilders.includes(details.builder) ? "checked" : ""} />     
-      <span>Pin this builder</span>
-      </label>
-    </div>
-
+    <div class="builder-details-header"></div>
     <div class="upgrade-headers">
       <span>Upgrade</span>
       <span>Duration</span>
@@ -511,109 +503,28 @@ function wireBoostFocusNavigation() {
   });
 }
 
-// 🚫 Prevent pin clicks from reaching builder cards
-document.addEventListener("click", e => {
-  if (e.target.closest(".pin-builder")) {
-    e.stopPropagation();
-  }
-});
-
-document.addEventListener("change", e => {
-  if (!e.target.matches(".pin-builder input")) return;
-
-  e.stopPropagation();
-
-  const details = e.target.closest(".builder-details");
-  if (!details) return;
-
-  const builder = details.dataset.builder;
-
-  if (e.target.checked) {
-    document.querySelectorAll(".pin-builder input").forEach(cb => {
-      if (cb !== e.target) cb.checked = false;
-    });
-    pinnedBuilders = [builder];
-  } else {
-    pinnedBuilders = [];
-  }
-
-  console.log("Pinned builder:", pinnedBuilders);
-});
-
 document.addEventListener("click", async e => {
   const card = e.target.closest(".builder-card");
   if (!card) return;
-  if (e.target.matches("input[type='checkbox']")) return;
 
-  // 🚫 block spam clicks
-  if (isBuilderOpening) return;
-  isBuilderOpening = true;
-  
   const builder = card.dataset.builder;
-  if (!builder) {
-    isBuilderOpening = false;
-    return;
-  }
- 
-  const pinnedBuilder = pinnedBuilders[0] || null;
-  // 🔒 HARD LOCK: pinned builders can never be closed by clicking the card
-  if (builder === pinnedBuilder) {
-  isBuilderOpening = false;
-  return;
-}
-   
+  if (!builder) return;
+
   const container = document.getElementById("builders-container");
 
- // 🧠 CASE 2: clicking already-open NON-pinned builder → close ONLY it
-if (expandedBuilder === builder) {
-  expandedBuilder = null;
+  // 🔹 If another builder is open, close it first
+  container.querySelectorAll(".builder-details").forEach(el => el.remove());
+  document
+    .querySelectorAll(".builder-card.expanded")
+    .forEach(c => c.classList.remove("expanded"));
 
-  // remove highlight
-  card.classList.remove("expanded");
+  // 🔹 Open this builder
+  expandedBuilder = builder;
+  card.classList.add("expanded");
 
-  container.querySelectorAll(".builder-details").forEach(el => {
-  const detailsBuilder = el.dataset.builder
-    ?.toString()
-    .replace("Builder_", "")
-    .replace("Builder ", "")
-    .trim();
-
-  if (detailsBuilder === builder) {
-    el.remove();
-  }
-});
-
-  isBuilderOpening = false;
-  return;
- }
-
-
-  // 🧠 CASE 3: opening a new builder
-  // Remove only NON-pinned details
-  container.querySelectorAll(".builder-details").forEach(el => {
-    if (el.dataset.builder !== pinnedBuilder) el.remove();
-  });
-
-  container.querySelectorAll(".builder-card.expanded").forEach(c => {
-  if (!pinnedBuilders.includes(c.dataset.builder)) {
-    c.classList.remove("expanded");
-  }
-});
-
-// If there is a pinned builder, keep expandedBuilder pointing to the pinned one
- 
-expandedBuilder = builder;
-
-// mark expanded visually
-card.classList.add("expanded");
-
-  try {
-    const builderDetails = await fetchBuilderDetails(builder);
-    const detailsEl = renderBuilderDetails(builderDetails);
-    card.after(detailsEl);
-  } finally {
-    isBuilderOpening = false;
-  }
+  const builderDetails = await fetchBuilderDetails(builder);
+  const detailsEl = renderBuilderDetails(builderDetails);
+  card.after(detailsEl);
 });
 
 /* =========================
