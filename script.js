@@ -319,7 +319,8 @@ function wireApprenticeBoost() {
   document.addEventListener("click", async e => {
     const badge = e.target.closest("[data-apply-boost]");
     if (!badge) return;
-
+    e.stopPropagation();
+     
     // Prevent double-apply
     if (todaysBoostInfo?.status === "APPLIED") return;
 
@@ -512,13 +513,12 @@ document.addEventListener("click", async e => {
 
   const container = document.getElementById("builders-container");
 
-  // 🔹 If another builder is open, close it first
-  container.querySelectorAll(".builder-details").forEach(el => el.remove());
-  document
-    .querySelectorAll(".builder-card.expanded")
-    .forEach(c => c.classList.remove("expanded"));
+  // 🟢 If already expanded, do nothing
+  if (card.classList.contains("expanded")) {
+    return;
+  }
 
-  // 🔹 Open this builder
+  // 🟢 Open this builder (do NOT close others)
   expandedBuilder = builder;
   card.classList.add("expanded");
 
