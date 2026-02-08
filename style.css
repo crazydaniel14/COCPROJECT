@@ -296,10 +296,12 @@ button:disabled {
 /* BUILDER DETAILS (UPGRADE LIST) */
 
 .builder-details {
+  padding: 0 12px;
+  margin: 20px auto;
+  max-width: 900px;
   grid-column: span 2;
   background: #16161b;
   border-radius: 18px;
-  padding: 16px 20px;
   margin-top: -8px;   /* visually attached to card */
   color: #ffffff;
 }
@@ -307,11 +309,15 @@ button:disabled {
 .upgrade-headers {
   display: grid;
   grid-template-columns: 2fr 1fr 2fr;
-  font-size: 12px;
-  font-weight: 600;
+  align-items: center;
+ 
+  text-align: center;
+  font-size: 15px;
+  font-weight: bold;
   opacity: 0.8;
+  padding: 12px 10px;
   margin-bottom: 12px;
-  color: #ffffff;
+  color: #f5d04c;
 }
 
 .upgrade-list {
@@ -328,9 +334,14 @@ button:disabled {
   font-size: 14px;
   color: #ffffff;
 }
+/* Alternating background */
+.upgrade-item:nth-child(odd) {
+  background-color: #2f2f38;
+}
 /* Upgrade name */
 .upgrade-name {
   font-weight: 600;
+  text-align: left;
 }
 
 /* Duration */
@@ -628,17 +639,26 @@ button:disabled {
 
   .builder-details {
     margin-top: 8px;   /* normal spacing on mobile */
+    max-width: 100%;
+    padding: 0 8px;
   }
 }
 
   .upgrade-headers,
   .upgrade-item {
+    font-size: 11px;
     grid-template-columns: 1fr;
     row-gap: 6px;
   }
 
   .upgrade-time {
     justify-content: flex-start;
+    font-size: 9px;
+    padding: 8px;
+    border-radius: 6px;
+  }
+ .upgrade-time span {
+    display: block;   /* stack time nicely on mobile */
   }
 }
 
