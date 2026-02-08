@@ -4,7 +4,7 @@ console.log("Loaded script.js – v1");
    CONFIG
    ========================= */
 const API_BASE = 
-   "https://script.google.com/macros/s/AKfycbycmSvqeMj_GpuALxs8HTEf5GiI09nQI6fm04RtsA3stKbSW-d6zbm8bzWNWszl1GzQpw/exec"
+    "https://script.google.com/macros/s/AKfycbycmSvqeMj_GpuALxs8HTEf5GiI09nQI6fm04RtsA3stKbSW-d6zbm8bzWNWszl1GzQpw/exec"
 const TABLE_ENDPOINT = API_BASE + "?action=current_work_table";
 const REFRESH_ENDPOINT = API_BASE + "?action=refresh_sheet";
 const TODAYS_BOOST_ENDPOINT = API_BASE + "?action=todays_boost";
