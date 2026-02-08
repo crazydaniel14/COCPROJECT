@@ -185,9 +185,9 @@ function renderBuilderDetails(details) {
   wrapper.innerHTML = `
     <div class="builder-details-header"></div>
     <div class="upgrade-headers">
-      <span>Upgrade</span>
+      <span>Future Upgrades</span>
       <span>Duration</span>
-      <span>Start → End</span>
+      <span>Start and End dates</span>
     </div>
 
     <div class="upgrade-list">
