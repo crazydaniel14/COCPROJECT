@@ -180,7 +180,7 @@ async function fetchBuilderDetails(builderNumber) {
 function renderBuilderDetails(details) {
   const wrapper = document.createElement("div");
   wrapper.className = "builder-details";
-  wrapper.dataset.builder = details.builder;
+ wrapper.dataset.builder = details.builder.toString().match(/(\d+)/)[1];
 
   wrapper.innerHTML = `
     <div class="builder-details-header"></div>
@@ -519,9 +519,8 @@ document.addEventListener("click", async e => {
 
     card.classList.remove("expanded");
     container
-      .querySelectorAll(`.builder-details[data-builder="${builder}"]`)
-      .forEach(el => el.remove());
-
+    .querySelectorAll(`.builder-details[data-builder="${builder}"]`)
+    .forEach(el => el.remove());
     return;
   }
 
