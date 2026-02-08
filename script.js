@@ -1,4 +1,4 @@
-console.log("Loaded script.js – CLEAN STABLE BUILD previous works, test");
+console.log("Loaded script.js – CLEAN STABLE BUILD final?");
 
 /* =========================
    CONFIG
@@ -27,7 +27,7 @@ let isRefreshing = false;
 let boostPlanData = [];
 let currentBoostIndex = 0;
 let expandedBuilder = null;
-
+let openBuilders = []; // max 2 builders open at once
 /* =========================
    HELPERS
    ========================= */
@@ -513,13 +513,35 @@ document.addEventListener("click", async e => {
 
   const container = document.getElementById("builders-container");
 
-  // 🟢 If already expanded, do nothing
-  if (card.classList.contains("expanded")) {
+  // 🔁 CASE 1: Builder already open → CLOSE it
+  if (openBuilders.includes(builder)) {
+    openBuilders = openBuilders.filter(b => b !== builder);
+
+    card.classList.remove("expanded");
+    container
+      .querySelectorAll(`.builder-details[data-builder="${builder}"]`)
+      .forEach(el => el.remove());
+
     return;
   }
 
-  // 🟢 Open this builder (do NOT close others)
-  expandedBuilder = builder;
+  // 🔓 CASE 2: Opening a new builder
+
+  // If already 2 open → close the oldest
+  if (openBuilders.length === 2) {
+    const oldest = openBuilders.shift();
+
+    document
+      .querySelector(`.builder-card[data-builder="${oldest}"]`)
+      ?.classList.remove("expanded");
+
+    container
+      .querySelectorAll(`.builder-details[data-builder="${oldest}"]`)
+      .forEach(el => el.remove());
+  }
+
+  // Open this builder
+  openBuilders.push(builder);
   card.classList.add("expanded");
 
   const builderDetails = await fetchBuilderDetails(builder);
