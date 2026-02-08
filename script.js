@@ -180,7 +180,8 @@ async function fetchBuilderDetails(builderNumber) {
 function renderBuilderDetails(details) {
   const wrapper = document.createElement("div");
   wrapper.className = "builder-details";
- wrapper.dataset.builder = details.builder.toString().match(/(\d+)/)[1];
+const match = details.builder.toString().match(/(\d+)/);
+wrapper.dataset.builder = match ? match[1] : "";
 
   wrapper.innerHTML = `
     <div class="builder-details-header"></div>
