@@ -344,7 +344,7 @@ button:disabled {
 .upgrade-name {
   font-weight: 600;
   text-align: left;
-  padding-left: -10px;
+  padding-left: 2px;
   line-height: 1.3;
 }
 
@@ -365,7 +365,6 @@ button:disabled {
   text-align: center;
   min-width: 220px;
   line-height: 1.3;
-  right: 100px;
 }
 
 /* Builder character (visual only) */
@@ -379,6 +378,62 @@ button:disabled {
   pointer-events: none;
 }
 
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .builder-character {
+    height: 30px;   /* smaller than desktop */
+    left: 30px;      /* optional: pull it in */
+    transform: scale(1); /* 🔑 reset scaling */
+  }
+}
+
+/* Text column */
+.builder-text {
+  position: absolute;
+  left: 46%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48%;
+  color: #ffffff;
+}
+
+/* BUILDER NAME */
+.builder-name {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+/* CURRENT UPGRADE */
+.builder-upgrade {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+/* TIME LEFT (PRIMARY) */
+.builder-time-left {
+  font-size: 22px;
+  font-weight: 800;
+  color: #f5d04c;
+  margin-bottom: 4px;
+  font-weight: bold;
+}
+
+/* FINISH TIME */
+.builder-finish {
+  font-size: 12px;
+  opacity: 0.85;
+  margin-bottom: 10px;
+}
+
+/* NEXT UPGRADE */
+.builder-next {
+  font-size: 13px;
+  opacity: 0.7;
+}
 /* ==================================================
    MOBILE: SINGLE COLUMN, BIGGER CARDS
    ================================================== */
@@ -556,64 +611,8 @@ button:disabled {
   color: #ff6b6b;
 }
 
-/* Mobile structure */
+/* mobile section */
 @media (max-width: 768px) {
-  
-  .builder-character {
-    height: 30px;   /* smaller than desktop */
-    left: 30px;      /* optional: pull it in */
-    transform: scale(1); /* 🔑 reset scaling */
-  }
-}
-
-/* Text column */
-.builder-text {
-  position: absolute;
-  left: 46%;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 48%;
-  color: #ffffff;
-}
-
-/* BUILDER NAME */
-.builder-name {
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  color: #ffffff;
-  margin-bottom: 6px;
-}
-
-/* CURRENT UPGRADE */
-.builder-upgrade {
-  font-size: 15px;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-/* TIME LEFT (PRIMARY) */
-.builder-time-left {
-  font-size: 22px;
-  font-weight: 800;
-  color: #f5d04c;
-  margin-bottom: 4px;
-  font-weight: bold;
-}
-
-/* FINISH TIME */
-.builder-finish {
-  font-size: 12px;
-  opacity: 0.85;
-  margin-bottom: 10px;
-}
-
-/* NEXT UPGRADE */
-.builder-next {
-  font-size: 13px;
-  opacity: 0.7;
-}
-    
   #boostFocusWrapper {
     gap: 10px;
   }
@@ -622,17 +621,21 @@ button:disabled {
     min-width: 200px;
   }
 }
+/* Mobile structure */
+@media (max-width: 768px) {
  .builder-card.expanded {
     height: 210px;   /* same as normal mobile card */
     min-height: 210px;
   }
 }
+
   .builder-details {
     margin-top: 8px;   /* normal spacing on mobile */
     max-width: 100%;
     padding: 0 8px;
   }
 }
+
   .upgrade-headers,
   .upgrade-item {
     font-size: 11px;
