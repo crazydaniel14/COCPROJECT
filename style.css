@@ -404,7 +404,7 @@ button:disabled {
 
 /* FIX #2: Shift text left when card is expanded */
 .builder-card.expanded .builder-text {
-  left: 40%;  /* 🔧 Moved from 46% to 38% when expanded */
+  left: 42%;  /* 🔧 Moved from 46% to 38% when expanded */
   width: 56%;  /* 🔧 Increased width to accommodate */
 }
 
