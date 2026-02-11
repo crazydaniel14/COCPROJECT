@@ -438,8 +438,10 @@ button:disabled {
 
 /* Move icon when expanded too */
 .builder-card.expanded .current-upgrade-icon {
-  left: 30%;/* 🔧 Shift icon left when expanded */
+  left: 40%;/* 🔧 Shift icon left when expanded */
   top: 50%;
+  width: 100px;
+  height: 100px;
 }
 
 /* BUILDER NAME */
