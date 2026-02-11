@@ -533,21 +533,22 @@ button:disabled {
   }
 
   /* Current upgrade icon on mobile */
+  .@media (max-width: 768px) {
   .current-upgrade-icon {
-    left: 30%;  /* 🔧 Adjusted for mobile */
-    width: 90px;
-    height: 90px;
+    width: 45px !important;  /* Now this WILL override desktop */
+    height: 45px !important;
   }
 
+  /* For expanded state on mobile */
+  .builder-card.expanded .current-upgrade-icon {
+    width: 60px !important;  /* Your custom size */
+    height: 60px !important;
+  }
+}
   /* Mobile structure */
   .builder-card.expanded {
     height: 210px;   /* same as normal mobile card */
     min-height: 210px;
-  }
-
-  .builder-card.expanded .current-upgrade-icon {
-    width: 60px;
-    height: 60px;
   }
 
   .builder-details {
