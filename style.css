@@ -348,7 +348,7 @@ button:disabled {
 .upgrade-name {
   font-weight: 600;
   text-align: left;
-  padding-left: 10px;  /* 🔧 Increased from 2px to 8px to shift right */
+  padding-left: 8px;  /* 🔧 Increased from 2px to 8px to shift right */
   line-height: 1.3;
 }
 
