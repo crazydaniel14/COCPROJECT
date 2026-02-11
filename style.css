@@ -432,13 +432,14 @@ button:disabled {
 
 /* FIX #2: Shift text left when card is expanded */
 .builder-card.expanded .builder-text {
-  left: 38%;  /* 🔧 Moved from 46% to 38% when expanded */
+  left: 43%;  /* 🔧 Moved from 46% to 38% when expanded */
   width: 56%;  /* 🔧 Increased width to accommodate */
 }
 
 /* Move icon when expanded too */
 .builder-card.expanded .current-upgrade-icon {
-  left: 30%;  /* 🔧 Shift icon left when expanded */
+  left: 30%;/* 🔧 Shift icon left when expanded */
+  top: 50%;
 }
 
 /* BUILDER NAME */
