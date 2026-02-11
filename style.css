@@ -535,8 +535,8 @@ button:disabled {
   /* Current upgrade icon on mobile */
   .@media (max-width: 768px) {
   .current-upgrade-icon {
-    width: 45px !important;  /* Now this WILL override desktop */
-    height: 45px !important;
+    width: 50px !important;  /* Now this WILL override desktop */
+    height: 50px !important;
   }
 
   /* For expanded state on mobile */
