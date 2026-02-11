@@ -420,13 +420,14 @@ button:disabled {
 /* Current upgrade icon - positioned to the left of text */
 .current-upgrade-icon {
   position: absolute;
-  left: 33%;  /* 🔧 Position to the left of the text column */
-  top: 70%;
+  left: 32%;  /* 🔧 Position to the left of the text column */
+  top: 65%;
   transform: translateY(-50%);
   width: 70px;  /* 🔧 Adjusted size */
   height: 70px;
   object-fit: contain;
   z-index: 1;
+  filter: drop-shadow(0 0 8px rgba(245, 208, 76, 0.6));
 }
 
 /* FIX #2: Shift text left when card is expanded */
