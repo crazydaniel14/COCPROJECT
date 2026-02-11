@@ -1,9 +1,10 @@
-console.log("Loaded script.js – stable v1");
+console.log("Loaded script.js – v1");
 
 /* =========================
    CONFIG
    ========================= */
-const API_BASE = "https://script.google.com/macros/s/AKfycbycmSvqeMj_GpuALxs8HTEf5GiI09nQI6fm04RtsA3stKbSW-d6zbm8bzWNWszl1GzQpw/exec"
+const API_BASE = 
+    "https://script.google.com/macros/s/AKfycbwdK5Ynu-8_noqHwHXv5p0629SxDinFPr1crkiX4tL2yl5HDpTXLjx7ij2EkBk25Li3VA/exec"
 const TABLE_ENDPOINT = API_BASE + "?action=current_work_table";
 const REFRESH_ENDPOINT = API_BASE + "?action=refresh_sheet";
 const TODAYS_BOOST_ENDPOINT = API_BASE + "?action=todays_boost";
@@ -179,14 +180,15 @@ async function fetchBuilderDetails(builderNumber) {
 function renderBuilderDetails(details) {
   const wrapper = document.createElement("div");
   wrapper.className = "builder-details";
- wrapper.dataset.builder = details.builder.toString().match(/(\d+)/)[1];
+const match = details.builder.toString().match(/(\d+)/);
+wrapper.dataset.builder = match ? match[1] : "";
 
   wrapper.innerHTML = `
     <div class="builder-details-header"></div>
     <div class="upgrade-headers">
-      <span>Upgrade</span>
+      <span>Future Upgrades</span>
       <span>Duration</span>
-      <span>Start → End</span>
+      <span>Start and End dates</span>
     </div>
 
     <div class="upgrade-list">
