@@ -19,6 +19,46 @@ const BATTLE_PASS = API_BASE + "?action=apply_battle_pass";
 const BUILDER_DETAILS_ENDPOINT = API_BASE + "?action=builder_details&builder=";
 
 /* =========================
+   IMAGE MATCHING
+   ========================= */
+const HERO_NAMES = [
+  "Archer Queen",
+  "Barbarian King",
+  "Grand Warden",
+  "Minion Prince",
+  "Royal Champion"
+];
+
+function getUpgradeImage(upgradeName) {
+  const basePath = "Images/Upgrades/";
+  
+  // 1. Check if it's a hero (ignore level)
+  for (const hero of HERO_NAMES) {
+    if (upgradeName.includes(hero)) {
+      return basePath + hero + ".png";
+    }
+  }
+  
+  // 2. Extract base name and level
+  // Example: "Mortar #3 Lvl 17" → "Mortar Lvl 17"
+  // Example: "Air Bomb #5 Lvl 11" → "Air Bomb Lvl 11"
+  const match = upgradeName.match(/^(.+?)\s*(?:#\d+)?\s+(Lvl\s+\d+)/);
+  
+  if (!match) {
+    return basePath + "PH.png"; // Placeholder if pattern doesn't match
+  }
+  
+  const baseName = match[1].trim();
+  const levelPart = match[2]; // "Lvl 17"
+  const exactMatch = baseName + " " + levelPart + ".png";
+  
+  // 3. Return the image path
+  // If image doesn't exist, browser will show broken image
+  // We'll handle with onerror to show placeholder
+  return basePath + exactMatch;
+}
+
+/* =========================
    GLOBAL STATE
    ========================= */
 let currentWorkData = null;
@@ -192,19 +232,28 @@ wrapper.dataset.builder = match ? match[1] : "";
     </div>
 
     <div class="upgrade-list">
-      ${details.upgrades.map(upg => `
-        <div class="upgrade-item"
-             data-builder="${upg.builder}"
-             data-row="${upg.row}">
-          <div class="upgrade-name">${upg.upgrade}</div>
-          <div class="upgrade-duration">${upg.duration}</div>
-          <div class="upgrade-time">
-            <span>${upg.start}</span>
-            <span>→</span>
-            <span>${upg.end}</span>
+      ${details.upgrades.map(upg => {
+        const imgSrc = getUpgradeImage(upg.upgrade);
+        return `
+          <div class="upgrade-item"
+               data-builder="${upg.builder}"
+               data-row="${upg.row}">
+            <div class="upgrade-name">
+              <img src="${imgSrc}" 
+                   class="upgrade-icon" 
+                   alt="${upg.upgrade}"
+                   onerror="this.src='Images/Upgrades/PH.png'" />
+              <span>${upg.upgrade}</span>
+            </div>
+            <div class="upgrade-duration">${upg.duration}</div>
+            <div class="upgrade-time">
+              <span>${upg.start}</span>
+              <span>→</span>
+              <span>${upg.end}</span>
+            </div>
           </div>
-        </div>
-      `).join("")}
+        `;
+      }).join("")}
     </div>
   `;
 
@@ -235,6 +284,10 @@ function renderBuilderCards() {
     const row = currentWorkData[i];
     const builderNumber = row[0].toString().match(/(\d+)/)?.[1];
     const finishMs = new Date(row[2]).getTime();
+    
+    // Get upgrade images for current and next
+    const currentUpgradeImg = getUpgradeImage(row[1]);
+    const nextUpgradeImg = getUpgradeImage(row[4]);
 
     let badgeHTML = "";
 
@@ -281,12 +334,20 @@ function renderBuilderCards() {
       />
       <div class="builder-text">
         <div class="builder-name">BUILDER ${builderNumber}</div>
-        <div class="builder-upgrade">${row[1]}</div>
+        <div class="builder-upgrade">
+          <img src="${currentUpgradeImg}" 
+               class="current-upgrade-icon" 
+               alt="${row[1]}"
+               onerror="this.src='Images/Upgrades/PH.png'" />
+          <span>${row[1]}</span>
+        </div>
         <div class="builder-time-left">${row[3]}</div>
         <div class="builder-finish">
           Finishes: ${formatFinishTime(row[2])}
         </div>
-        <div class="builder-next">▶ Next: ${row[4]}</div>
+        <div class="builder-next">
+          ▶ Next: ${row[4]}
+        </div>
       </div>
     `;
 
@@ -325,7 +386,7 @@ function wireApprenticeBoost() {
     // Prevent double-apply
     if (todaysBoostInfo?.status === "APPLIED") return;
 
-    if (!confirm("Apply today’s boost?")) return;
+    if (!confirm("Apply today's boost?")) return;
 
     try {
       await fetch(APPLY_TODAYS_BOOST);
@@ -337,8 +398,8 @@ function wireApprenticeBoost() {
 
       await refreshDashboard(); // backend sync
     } catch (err) {
-      console.error("Failed to apply today’s boost", err);
-      alert("Failed to apply today’s boost.");
+      console.error("Failed to apply today's boost", err);
+      alert("Failed to apply today's boost.");
     }
   });
 }
