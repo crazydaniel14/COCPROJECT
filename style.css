@@ -417,10 +417,27 @@ button:disabled {
   color: #ffffff;
 }
 
+/* Current upgrade icon - positioned to the left of text */
+.current-upgrade-icon {
+  position: absolute;
+  left: 38%;  /* 🔧 Position to the left of the text column */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 50px;  /* 🔧 Adjusted size */
+  height: 50px;
+  object-fit: contain;
+  z-index: 1;
+}
+
 /* FIX #2: Shift text left when card is expanded */
 .builder-card.expanded .builder-text {
   left: 38%;  /* 🔧 Moved from 46% to 38% when expanded */
   width: 56%;  /* 🔧 Increased width to accommodate */
+}
+
+/* Move icon when expanded too */
+.builder-card.expanded .current-upgrade-icon {
+  left: 30%;  /* 🔧 Shift icon left when expanded */
 }
 
 /* BUILDER NAME */
@@ -437,19 +454,6 @@ button:disabled {
   font-size: 15px;
   font-weight: 600;
   margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Current upgrade icon in collapsed card */
-.current-upgrade-icon {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 4px;
 }
 
 /* TIME LEFT (PRIMARY) */
@@ -522,6 +526,13 @@ button:disabled {
 
   .builder-next {
     font-size: 10px;
+  }
+
+  /* Current upgrade icon on mobile */
+  .current-upgrade-icon {
+    left: 30%;  /* 🔧 Adjusted for mobile */
+    width: 45px;
+    height: 45px;
   }
 
   /* Mobile structure */
