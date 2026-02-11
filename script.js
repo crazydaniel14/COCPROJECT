@@ -44,6 +44,7 @@ const IMAGE_MAP = {
   "Gold Mine": ["Lvl 17"],
   "Gold Storage": ["Lvl 18"],
   "Monolith": ["Lvl 2"],
+  "Hidden Tesla": ["Lvl 16"],
   "Mortar": ["Lvl 17"],
   "Scattershot": ["Lvl 6&7&8"],
   "Seeking Air Mine": ["Lvl 5&6"],
