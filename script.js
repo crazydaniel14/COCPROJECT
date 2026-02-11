@@ -29,6 +29,31 @@ const HERO_NAMES = [
   "Royal Champion"
 ];
 
+// Map of available images with level ranges
+const IMAGE_MAP = {
+  "Air Bomb": ["Lvl 11"],
+  "Archer Tower": ["Lvl 21"],
+  "Blacksmith": ["Lvl 9"],
+  "Bomb": ["Lvl 11&12", "Lvl 13&14"],
+  "Builder Hut": ["Level 7&8&9"],
+  "Dark Elixir Drill": ["Lvl 10", "Lvl 11"],
+  "Dark Elixir Storage": ["Lvl 12"],
+  "Elixir Collector": ["Lvl 17"],
+  "Elixir Storage": ["Lvl 18"],
+  "Giant Bomb": ["Lvl 7&8", "Lvl 9&10"],
+  "Gold Mine": ["Lvl 17"],
+  "Gold Storage": ["Lvl 18"],
+  "Monolith": ["Lvl 2"],
+  "Mortar": ["Lvl 17"],
+  "Scattershot": ["Lvl 6&7&8"],
+  "Seeking Air Mine": ["Lvl 5&6"],
+  "Spring Trap": ["Lvl 7&8", "Lvl 9&10"],
+  "Town Hall": ["Lvl 18"],
+  "Wizard Tower": ["Lvl 17"],
+  "Workshop": ["Lvl 8"],
+  "X-Bow": ["Lvl 12&13&14"]
+};
+
 function getUpgradeImage(upgradeName) {
   const basePath = "Images/Upgrades/";
   
@@ -39,23 +64,40 @@ function getUpgradeImage(upgradeName) {
     }
   }
   
-  // 2. Extract base name and level
-  // Example: "Mortar #3 Lvl 17" → "Mortar Lvl 17"
-  // Example: "Air Bomb #5 Lvl 11" → "Air Bomb Lvl 11"
-  const match = upgradeName.match(/^(.+?)\s*(?:#\d+)?\s+(Lvl\s+\d+)/);
+  // 2. Extract base name and level number
+  // Example: "Mortar #3 Lvl 17" → baseName: "Mortar", level: 17
+  const match = upgradeName.match(/^(.+?)\s*(?:#\d+)?\s+(?:Level|Lvl)\s+(\d+)/i);
   
   if (!match) {
-    return basePath + "PH.png"; // Placeholder if pattern doesn't match
+    return basePath + "PH.png";
   }
   
   const baseName = match[1].trim();
-  const levelPart = match[2]; // "Lvl 17"
-  const exactMatch = baseName + " " + levelPart + ".png";
+  const levelNum = parseInt(match[2]);
   
-  // 3. Return the image path
-  // If image doesn't exist, browser will show broken image
-  // We'll handle with onerror to show placeholder
-  return basePath + exactMatch;
+  // 3. Check if we have this building in our map
+  if (!IMAGE_MAP[baseName]) {
+    return basePath + "PH.png";
+  }
+  
+  // 4. Find matching image (exact or range)
+  for (const levelStr of IMAGE_MAP[baseName]) {
+    // Check for exact match first
+    if (levelStr === `Lvl ${levelNum}` || levelStr === `Level ${levelNum}`) {
+      return basePath + baseName + " " + levelStr + ".png";
+    }
+    
+    // Check for range match (e.g., "Lvl 7&8" or "Level 7&8&9")
+    if (levelStr.includes("&")) {
+      const levels = levelStr.match(/\d+/g).map(Number);
+      if (levels.includes(levelNum)) {
+        return basePath + baseName + " " + levelStr + ".png";
+      }
+    }
+  }
+  
+  // 5. No match found
+  return basePath + "PH.png";
 }
 
 /* =========================
@@ -332,15 +374,13 @@ function renderBuilderCards() {
         class="builder-character" 
         alt="Builder ${builderNumber}"
       />
+      <img src="${currentUpgradeImg}" 
+           class="current-upgrade-icon" 
+           alt="${row[1]}"
+           onerror="this.src='Images/Upgrades/PH.png'" />
       <div class="builder-text">
         <div class="builder-name">BUILDER ${builderNumber}</div>
-        <div class="builder-upgrade">
-          <img src="${currentUpgradeImg}" 
-               class="current-upgrade-icon" 
-               alt="${row[1]}"
-               onerror="this.src='Images/Upgrades/PH.png'" />
-          <span>${row[1]}</span>
-        </div>
+        <div class="builder-upgrade">${row[1]}</div>
         <div class="builder-time-left">${row[3]}</div>
         <div class="builder-finish">
           Finishes: ${formatFinishTime(row[2])}
