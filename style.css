@@ -535,14 +535,14 @@ button:disabled {
   /* Current upgrade icon on mobile */
   .current-upgrade-icon {
     left: 30%;  /* 🔧 Adjusted for mobile */
-    width: 70px;
-    height: 70px;
+    width: 90px;
+    height: 90px;
   }
 
   /* Mobile structure */
   .builder-card.expanded {
-    height: 250px;   /* same as normal mobile card */
-    min-height: 250px;
+    height: 210px;   /* same as normal mobile card */
+    min-height: 210px;
   }
 
   .builder-card.expanded .current-upgrade-icon {
