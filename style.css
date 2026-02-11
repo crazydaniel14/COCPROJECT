@@ -323,7 +323,7 @@ button:disabled {
 .upgrade-list {
   display: flex;
   flex-direction: column;
-  gap: 0px;  /* 🔧 Removed gap so rows touch each other */
+  gap: 2px;  /* 🔧 Removed gap so rows touch each other */
 }
 
 /* FIX #2 & #4: Uniform row heights with consistent backgrounds */
