@@ -348,7 +348,7 @@ button:disabled {
 .upgrade-name {
   font-weight: 600;
   text-align: left;
-  padding-left: 8px;  /* 🔧 Increased from 2px to 8px to shift right */
+  padding-left: 12px;  /* 🔧 Increased from 2px to 8px to shift right */
   line-height: 1.3;
 }
 
@@ -405,7 +405,7 @@ button:disabled {
 
 /* FIX #2: Shift text left when card is expanded */
 .builder-card.expanded .builder-text {
-  left: 38%;  /* 🔧 Moved from 46% to 38% when expanded */
+  left: 42%;  /* 🔧 Moved from 46% to 38% when expanded */
   width: 56%;  /* 🔧 Increased width to accommodate */
 }
 
