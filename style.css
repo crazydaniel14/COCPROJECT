@@ -348,8 +348,22 @@ button:disabled {
 .upgrade-name {
   font-weight: 600;
   text-align: left;
-  padding-left: 40px;  /* 🔧 Increased from 2px to 8px to shift right */
+  padding-left: 8px;  /* 🔧 Increased from 2px to 8px to shift right */
   line-height: 1.3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Upgrade icon in expanded list */
+.upgrade-icon {
+  width: 35px;
+  height: 35px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 3px;
+  flex-shrink: 0;
 }
 
 /* Duration */
@@ -405,7 +419,7 @@ button:disabled {
 
 /* FIX #2: Shift text left when card is expanded */
 .builder-card.expanded .builder-text {
-  left: 43%;  /* 🔧 Moved from 46% to 38% when expanded */
+  left: 38%;  /* 🔧 Moved from 46% to 38% when expanded */
   width: 56%;  /* 🔧 Increased width to accommodate */
 }
 
@@ -423,6 +437,19 @@ button:disabled {
   font-size: 15px;
   font-weight: 600;
   margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Current upgrade icon in collapsed card */
+.current-upgrade-icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px;
 }
 
 /* TIME LEFT (PRIMARY) */
@@ -533,6 +560,19 @@ button:disabled {
     font-weight: 700;
     padding-left: 0;  /* 🔧 Remove left padding on mobile */
     width: 100%;
+    gap: 8px;  /* Space between icon and text */
+  }
+  
+  /* Upgrade icons on mobile */
+  .upgrade-icon {
+    width: 30px;
+    height: 30px;
+  }
+  
+  /* Current upgrade icon on mobile */
+  .current-upgrade-icon {
+    width: 35px;
+    height: 35px;
   }
 
   /* Duration row */
