@@ -31,10 +31,28 @@ const HERO_NAMES = [
 
 // Map of available images with level ranges
 const IMAGE_MAP = {
-  "Air Bomb": ["Lvl 11"],"Archer Tower": ["Lvl 21"],"Blacksmith": ["Lvl 9"],"Bomb": ["Lvl 11&12", "Lvl 13&14"],"Builder Hut": ["Level 7&8&9"],"Dark Elixir Drill": ["Lvl 10", "Lvl 11"],
-  "Dark Elixir Storage": ["Lvl 12"],"Elixir Collector": ["Lvl 17"],"Elixir Storage": ["Lvl 18"],"Giant Bomb": ["Lvl 6", "Lvl 7&8", "Lvl 9&10"],"Gold Mine": ["Lvl 17"],"Gold Storage": ["Lvl 18"],
-  "Monolith": ["Lvl 2"],"Hidden Tesla": ["Lvl 16"],"Mortar": ["Lvl 17"],"Scattershot": ["Lvl 6&7&8"],"Seeking Air Mine": ["Lvl 5&6"],"Spring Trap": ["Lvl 7&8", "Lvl 9&10"],
-  "Town Hall": ["Lvl 18"],"Wizard Tower": ["Lvl 17"],"Workshop": ["Lvl 8"],"X-Bow": ["Lvl 12&13&14"]
+  "Air Bomb": ["Lvl 11"],
+  "Archer Tower": ["Lvl 21"],
+  "Blacksmith": ["Lvl 9"],
+  "Bomb": ["Lvl 11&12", "Lvl 13&14"],
+  "Builder Hut": ["Level 7&8&9"],
+  "Dark Elixir Drill": ["Lvl 10", "Lvl 11"],
+  "Dark Elixir Storage": ["Lvl 12"],
+  "Elixir Collector": ["Lvl 17"],
+  "Elixir Storage": ["Lvl 18"],
+  "Giant Bomb": ["Lvl 6", "Lvl 7&8", "Lvl 9&10"],
+  "Gold Mine": ["Lvl 17"],
+  "Gold Storage": ["Lvl 18"],
+  "Hidden Tesla": ["Lvl 16"],  // 🔧 ADDED THIS LINE
+  "Monolith": ["Lvl 2&3&4"],
+  "Mortar": ["Lvl 17"],
+  "Scattershot": ["Lvl 6&7&8"],
+  "Seeking Air Mine": ["Lvl 5&6"],
+  "Spring Trap": ["Lvl 7&8", "Lvl 9&10"],
+  "Town Hall": ["Lvl 18"],
+  "Wizard Tower": ["Lvl 17"],
+  "Workshop": ["Lvl 8"],
+  "X-Bow": ["Lvl 12&13&14"]
 };
 
 function getUpgradeImage(upgradeName) {
@@ -93,6 +111,7 @@ let boostPlanData = [];
 let currentBoostIndex = 0;
 let expandedBuilder = null;
 let openBuilders = []; // max 2 builders open at once
+let loadingBuilders = new Set(); // Track which builders are currently loading
 /* =========================
    HELPERS
    ========================= */
@@ -596,6 +615,9 @@ document.addEventListener("click", async e => {
   const builder = card.dataset.builder;
   if (!builder) return;
 
+  // 🔒 Prevent interaction while loading
+  if (loadingBuilders.has(builder)) return;
+
   const container = document.getElementById("builders-container");
 
   // 🔁 CASE 1: Builder already open → CLOSE it
@@ -610,6 +632,10 @@ document.addEventListener("click", async e => {
   }
 
   // 🔓 CASE 2: Opening a new builder
+
+  // 🔒 Mark as loading
+  loadingBuilders.add(builder);
+  card.classList.add("loading"); // Optional: add visual feedback
 
   // If already 2 open → close the oldest
   if (openBuilders.length === 2) {
@@ -628,9 +654,25 @@ document.addEventListener("click", async e => {
   openBuilders.push(builder);
   card.classList.add("expanded");
 
-  const builderDetails = await fetchBuilderDetails(builder);
-  const detailsEl = renderBuilderDetails(builderDetails);
-  card.after(detailsEl);
+  try {
+    const builderDetails = await fetchBuilderDetails(builder);
+    
+    // 🔒 Double-check no duplicate details exist before adding
+    const existingDetails = container.querySelectorAll(`.builder-details[data-builder="${builder}"]`);
+    existingDetails.forEach(el => el.remove());
+    
+    const detailsEl = renderBuilderDetails(builderDetails);
+    card.after(detailsEl);
+  } catch (error) {
+    console.error("Failed to load builder details:", error);
+    // If loading fails, remove from openBuilders
+    openBuilders = openBuilders.filter(b => b !== builder);
+    card.classList.remove("expanded");
+  } finally {
+    // 🔓 Remove loading state
+    loadingBuilders.delete(builder);
+    card.classList.remove("loading");
+  }
 });
 
 /* =========================
