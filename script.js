@@ -1,4 +1,4 @@
-console.log("Loaded script.js – v1");
+console.log("Loaded script.js – v2");
 
 /* =========================
    CONFIG
