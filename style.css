@@ -1,4 +1,8 @@
 html, body {
+  body {
+  max-width: 1470px;
+  margin: 0 auto;
+  }
   margin: 0;
   padding: 0;
   min-height: 100%;
@@ -533,19 +537,20 @@ button:disabled {
   }
 
   /* Current upgrade icon on mobile */
-  .@media (max-width: 768px) {
-  .current-upgrade-icon {
+.current-upgrade-icon {
     left: 14% !important;
+    top: 50% !important;
     width: 65px !important;
     height: 65px !important;
   }
   
+  /* Expanded icon on mobile */
   .builder-card.expanded .current-upgrade-icon {
     left: 14% !important;
     width: 45px !important;
     height: 45px !important;
   }
-}
+  
   /* Mobile structure */
   .builder-card.expanded {
     height: 210px;   /* same as normal mobile card */
