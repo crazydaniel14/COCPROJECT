@@ -1,7 +1,6 @@
 html, body {
   max-width: 1470px;
   margin: 0 auto;
-  }
   margin: 0;
   padding: 0;
   min-height: 100%;
@@ -537,15 +536,15 @@ button:disabled {
 
   /* Current upgrade icon on mobile */
 .current-upgrade-icon {
-    left: 14% !important;
-    top: 50% !important;
+    left: 20% !important;
+    top: 60% !important;
     width: 65px !important;
     height: 65px !important;
   }
   
   /* Expanded icon on mobile */
   .builder-card.expanded .current-upgrade-icon {
-    left: 14% !important;
+    left: 20% !important;
     width: 45px !important;
     height: 45px !important;
   }
