@@ -377,13 +377,13 @@ function renderBuilderCards() {
       let img;
       switch (todaysBoostInfo.status) {
         case "FORCED":
-          img = "Images/Builder Apprentice Forced.png";
+          img = "Images/Badge/Builder Apprentice Forced.png";
           break;
         case "APPLIED":
-          img = "Images/Builder Apprentice applied.png";
+          img = "Images/Badge/Builder Apprentice applied.png";
           break;
         default:
-          img = "Images/Builder Apprentice Safe.png";
+          img = "Images/Badge/Builder Apprentice Safe.png";
       }
 
       badgeHTML = `
@@ -406,7 +406,7 @@ function renderBuilderCards() {
     card.innerHTML = `
       ${badgeHTML}
       <img 
-        src="Images/Builder ${builderNumber}.png" 
+        src="Images/Builders/Builder ${builderNumber}.png" 
         class="builder-character" 
         alt="Builder ${builderNumber}"
       />
@@ -476,7 +476,7 @@ function wireApprenticeBoost() {
       await fetch(APPLY_TODAYS_BOOST);
 
       // 🔥 IMMEDIATE UI UPDATE - Change badge image
-      badge.src = "Images/Builder Apprentice applied.png";
+      badge.src = "Images/Badge/Builder Apprentice applied.png";
       
       // Update global state
       if (todaysBoostInfo) {
