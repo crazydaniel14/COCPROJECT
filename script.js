@@ -19,6 +19,71 @@ const BATTLE_PASS = API_BASE + "?action=apply_battle_pass";
 const BUILDER_DETAILS_ENDPOINT = API_BASE + "?action=builder_details&builder=";
 
 /* =========================
+   IMAGE MATCHING
+   ========================= */
+const HERO_NAMES = [
+  "Archer Queen",
+  "Barbarian King",
+  "Grand Warden",
+  "Minion Prince",
+  "Royal Champion"
+];
+
+// Map of available images with level ranges
+const IMAGE_MAP = {
+  "Air Bomb": ["Lvl 11"],"Archer Tower": ["Lvl 21"],"Blacksmith": ["Lvl 9"],"Bomb": ["Lvl 11&12", "Lvl 13&14"],"Builder Hut": ["Level 7&8&9"],"Dark Elixir Drill": ["Lvl 10", "Lvl 11"],
+  "Dark Elixir Storage": ["Lvl 12"],"Elixir Collector": ["Lvl 17"],"Elixir Storage": ["Lvl 18"],"Giant Bomb": ["Lvl 6", "Lvl 7&8", "Lvl 9&10"],"Gold Mine": ["Lvl 17"],"Gold Storage": ["Lvl 18"],
+  "Monolith": ["Lvl 2"],"Hidden Tesla": ["Lvl 16"],"Mortar": ["Lvl 17"],"Scattershot": ["Lvl 6&7&8"],"Seeking Air Mine": ["Lvl 5&6"],"Spring Trap": ["Lvl 7&8", "Lvl 9&10"],
+  "Town Hall": ["Lvl 18"],"Wizard Tower": ["Lvl 17"],"Workshop": ["Lvl 8"],"X-Bow": ["Lvl 12&13&14"]
+};
+
+function getUpgradeImage(upgradeName) {
+  const basePath = "Images/Upgrades/";
+  
+  // 1. Check if it's a hero (ignore level)
+  for (const hero of HERO_NAMES) {
+    if (upgradeName.includes(hero)) {
+      return basePath + hero + ".png";
+    }
+  }
+  
+  // 2. Extract base name and level number
+  // Example: "Mortar #3 Lvl 17" → baseName: "Mortar", level: 17
+  const match = upgradeName.match(/^(.+?)\s*(?:#\d+)?\s+(?:Level|Lvl)\s+(\d+)/i);
+  
+  if (!match) {
+    return basePath + "PH.png";
+  }
+  
+  const baseName = match[1].trim();
+  const levelNum = parseInt(match[2]);
+  
+  // 3. Check if we have this building in our map
+  if (!IMAGE_MAP[baseName]) {
+    return basePath + "PH.png";
+  }
+  
+  // 4. Find matching image (exact or range)
+  for (const levelStr of IMAGE_MAP[baseName]) {
+    // Check for exact match first
+    if (levelStr === `Lvl ${levelNum}` || levelStr === `Level ${levelNum}`) {
+      return basePath + baseName + " " + levelStr + ".png";
+    }
+    
+    // Check for range match (e.g., "Lvl 7&8" or "Level 7&8&9")
+    if (levelStr.includes("&")) {
+      const levels = levelStr.match(/\d+/g).map(Number);
+      if (levels.includes(levelNum)) {
+        return basePath + baseName + " " + levelStr + ".png";
+      }
+    }
+  }
+  
+  // 5. No match found
+  return basePath + "PH.png";
+}
+
+/* =========================
    GLOBAL STATE
    ========================= */
 let currentWorkData = null;
@@ -192,19 +257,28 @@ wrapper.dataset.builder = match ? match[1] : "";
     </div>
 
     <div class="upgrade-list">
-      ${details.upgrades.map(upg => `
-        <div class="upgrade-item"
-             data-builder="${upg.builder}"
-             data-row="${upg.row}">
-          <div class="upgrade-name">${upg.upgrade}</div>
-          <div class="upgrade-duration">${upg.duration}</div>
-          <div class="upgrade-time">
-            <span>${upg.start}</span>
-            <span>→</span>
-            <span>${upg.end}</span>
+      ${details.upgrades.map(upg => {
+        const imgSrc = getUpgradeImage(upg.upgrade);
+        return `
+          <div class="upgrade-item"
+               data-builder="${upg.builder}"
+               data-row="${upg.row}">
+            <div class="upgrade-name">
+              <img src="${imgSrc}" 
+                   class="upgrade-icon" 
+                   alt="${upg.upgrade}"
+                   onerror="this.src='Images/Upgrades/PH.png'" />
+              <span>${upg.upgrade}</span>
+            </div>
+            <div class="upgrade-duration">${upg.duration}</div>
+            <div class="upgrade-time">
+              <span>${upg.start}</span>
+              <span>→</span>
+              <span>${upg.end}</span>
+            </div>
           </div>
-        </div>
-      `).join("")}
+        `;
+      }).join("")}
     </div>
   `;
 
@@ -235,6 +309,10 @@ function renderBuilderCards() {
     const row = currentWorkData[i];
     const builderNumber = row[0].toString().match(/(\d+)/)?.[1];
     const finishMs = new Date(row[2]).getTime();
+    
+    // Get upgrade images for current and next
+    const currentUpgradeImg = getUpgradeImage(row[1]);
+    const nextUpgradeImg = getUpgradeImage(row[4]);
 
     let badgeHTML = "";
 
@@ -279,6 +357,10 @@ function renderBuilderCards() {
         class="builder-character" 
         alt="Builder ${builderNumber}"
       />
+      <img src="${currentUpgradeImg}" 
+           class="current-upgrade-icon" 
+           alt="${row[1]}"
+           onerror="this.src='Images/Upgrades/PH.png'" />
       <div class="builder-text">
         <div class="builder-name">BUILDER ${builderNumber}</div>
         <div class="builder-upgrade">${row[1]}</div>
@@ -286,7 +368,9 @@ function renderBuilderCards() {
         <div class="builder-finish">
           Finishes: ${formatFinishTime(row[2])}
         </div>
-        <div class="builder-next">▶ Next: ${row[4]}</div>
+        <div class="builder-next">
+          ▶ Next: ${row[4]}
+        </div>
       </div>
     `;
 
@@ -325,7 +409,7 @@ function wireApprenticeBoost() {
     // Prevent double-apply
     if (todaysBoostInfo?.status === "APPLIED") return;
 
-    if (!confirm("Apply today’s boost?")) return;
+    if (!confirm("Apply today's boost?")) return;
 
     try {
       await fetch(APPLY_TODAYS_BOOST);
@@ -337,8 +421,8 @@ function wireApprenticeBoost() {
 
       await refreshDashboard(); // backend sync
     } catch (err) {
-      console.error("Failed to apply today’s boost", err);
-      alert("Failed to apply today’s boost.");
+      console.error("Failed to apply today's boost", err);
+      alert("Failed to apply today's boost.");
     }
   });
 }
