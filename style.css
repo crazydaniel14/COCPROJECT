@@ -536,7 +536,7 @@ button:disabled {
 
   /* Current upgrade icon on mobile */
 .current-upgrade-icon {
-    left: 27% !important;
+    left: 28% !important;
     top: 65% !important;
     width: 55px !important;
     height: 55px !important;
@@ -544,9 +544,10 @@ button:disabled {
   
   /* Expanded icon on mobile */
   .builder-card.expanded .current-upgrade-icon {
-    left: 20% !important;
-    width: 45px !important;
-    height: 45px !important;
+    left: 28% !important;
+    top: 65% !important;
+    width: 55px !important;
+    height: 55px !important;
   }
   
   /* Mobile structure */
