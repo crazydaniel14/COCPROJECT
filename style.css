@@ -288,13 +288,6 @@ button:disabled {
   background: #14143d;
   outline: 2px solid rgba(255,255,255,0.25);
 }
-
-/* PINNED BUILDER CARD */
-
-.builder-card.pinned {
-  outline: 2px solid rgba(255, 255, 255, 0.15);
-}
-
 /* BUILDER DETAILS (UPGRADE LIST) */
 
 .builder-details {
