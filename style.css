@@ -536,8 +536,8 @@ button:disabled {
 
   /* Current upgrade icon on mobile */
 .current-upgrade-icon {
-    left: 30% !important;
-    top: 70% !important;
+    left: 27% !important;
+    top: 65% !important;
     width: 55px !important;
     height: 55px !important;
   }
