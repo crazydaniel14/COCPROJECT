@@ -423,22 +423,54 @@ function wireApprenticeBoost() {
   document.addEventListener("click", async e => {
     const badge = e.target.closest("[data-apply-boost]");
     if (!badge) return;
+    
+    // 🔒 STOP card from opening
     e.stopPropagation();
+    e.preventDefault();
      
     // Prevent double-apply
     if (todaysBoostInfo?.status === "APPLIED") return;
 
     if (!confirm("Apply today's boost?")) return;
 
+    // Get the builder card to update its time
+    const card = badge.closest(".builder-card");
+    const builderNumber = card?.dataset.builder;
+
     try {
+      // Apply the boost
       await fetch(APPLY_TODAYS_BOOST);
 
-      // 🔥 IMMEDIATE UI STATE UPDATE
+      // 🔥 IMMEDIATE UI UPDATE - Change badge image
+      badge.src = "Images/Builder Apprentice applied.png";
+      
+      // Update global state
       if (todaysBoostInfo) {
         todaysBoostInfo.status = "APPLIED";
       }
 
-      await refreshDashboard(); // backend sync
+      // 🔄 Refresh data to get new times
+      await loadCurrentWork();
+      
+      // 🎯 Update ONLY this builder's time display
+      if (card && currentWorkData && builderNumber) {
+        const builderData = currentWorkData.find(row => 
+          row[0]?.toString().includes(builderNumber)
+        );
+        
+        if (builderData) {
+          const timeLeftEl = card.querySelector(".builder-time-left");
+          const finishTimeEl = card.querySelector(".builder-finish");
+          
+          if (timeLeftEl) timeLeftEl.textContent = builderData[3];
+          if (finishTimeEl) finishTimeEl.textContent = "Finishes: " + formatFinishTime(builderData[2]);
+        }
+      }
+      
+      // Update other data in background
+      await Promise.all([loadTodaysBoost(), loadBoostPlan()]);
+      updateLastRefreshed();
+      
     } catch (err) {
       console.error("Failed to apply today's boost", err);
       alert("Failed to apply today's boost.");
