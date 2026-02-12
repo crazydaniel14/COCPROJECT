@@ -1,4 +1,4 @@
-console.log("Loaded script.js – v2");
+console.log("Loaded script.js – v1");
 
 /* =========================
    CONFIG
@@ -12,6 +12,7 @@ const BOOST_PLAN_ENDPOINT = API_BASE + "?action=boost_plan";
 
 /* Builder / Pass actions */
 const APPLY_TODAYS_BOOST = API_BASE + "?action=apply_todays_boost";
+const SET_TODAYS_BOOST_BUILDER = API_BASE + "?action=set_todays_boost_builder&builder=";
 const RUN_BOOST_SIM = API_BASE + "?action=run_boost_simulation";
 const BUILDER_POTION = API_BASE + "?action=apply_builder_potion";
 const BUILDER_SNACK = API_BASE + "?action=apply_one_hour_boost";
@@ -218,6 +219,8 @@ function renderBoostFocusCard() {
   const extraEl = document.querySelector(".boost-extra");
   const finishEl = document.getElementById("boostFinishTime");
   const modeEl = document.getElementById("boostMode");
+  const menuBtn = document.getElementById("boostMenuBtn");
+  const dropdown = document.getElementById("boostBuilderDropdown");
 
   if (!dayEl) return;
 
@@ -235,12 +238,43 @@ function renderBoostFocusCard() {
 
     modeEl.textContent = day.mode;
     modeEl.className = "boost-mode " + day.mode.toLowerCase();
+    
+    // Handle three-dot menu
+    if (menuBtn && dropdown && day.day === "TODAY") {
+      // Disable menu if boost already applied
+      if (todaysBoostInfo?.status === "APPLIED") {
+        menuBtn.style.opacity = "0.3";
+        menuBtn.style.cursor = "not-allowed";
+        menuBtn.disabled = true;
+      } else {
+        menuBtn.style.opacity = "1";
+        menuBtn.style.cursor = "pointer";
+        menuBtn.disabled = false;
+        
+        // Hide current builder from dropdown
+        const currentBuilderNum = todaysBoostInfo?.builder;
+        dropdown.querySelectorAll("[data-builder-select]").forEach(btn => {
+          const btnBuilderNum = btn.dataset.builderSelect.match(/(\d+)/)?.[1];
+          if (btnBuilderNum === currentBuilderNum) {
+            btn.style.display = "none";
+          } else {
+            btn.style.display = "block";
+          }
+        });
+      }
+      menuBtn.style.display = "block";
+    } else if (menuBtn) {
+      // Hide menu for non-TODAY days
+      menuBtn.style.display = "none";
+    }
   } else {
     statusEl.textContent = "No Boost";
     statusEl.classList.remove("boost-active");
 
     builderEl.style.display = "none";
     extraEl.style.display = "none";
+    
+    if (menuBtn) menuBtn.style.display = "none";
   }
 
   document.getElementById("boostPrev").disabled =
@@ -343,13 +377,13 @@ function renderBuilderCards() {
       let img;
       switch (todaysBoostInfo.status) {
         case "FORCED":
-          img = "Images/Badge/Builder Apprentice Forced.png";
+          img = "Images/Builder Apprentice Forced.png";
           break;
         case "APPLIED":
-          img = "Images/Badge/Builder Apprentice applied.png";
+          img = "Images/Builder Apprentice applied.png";
           break;
         default:
-          img = "Images/Badge/Builder Apprentice Safe.png";
+          img = "Images/Builder Apprentice Safe.png";
       }
 
       badgeHTML = `
@@ -372,7 +406,7 @@ function renderBuilderCards() {
     card.innerHTML = `
       ${badgeHTML}
       <img 
-        src="Images/Builders/Builder ${builderNumber}.png" 
+        src="Images/Builder ${builderNumber}.png" 
         class="builder-character" 
         alt="Builder ${builderNumber}"
       />
@@ -442,7 +476,7 @@ function wireApprenticeBoost() {
       await fetch(APPLY_TODAYS_BOOST);
 
       // 🔥 IMMEDIATE UI UPDATE - Change badge image
-      badge.src = "Images/Badge/Builder Apprentice applied.png";
+      badge.src = "Images/Builder Apprentice applied.png";
       
       // Update global state
       if (todaysBoostInfo) {
@@ -638,74 +672,141 @@ function wireBoostFocusNavigation() {
       renderBoostFocusCard();
     }
   });
+  
+  // Wire three-dot menu toggle
+  const menuBtn = document.getElementById("boostMenuBtn");
+  const dropdown = document.getElementById("boostBuilderDropdown");
+  
+  if (menuBtn && dropdown) {
+    menuBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dropdown.classList.toggle("hidden");
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!dropdown.contains(e.target) && !menuBtn.contains(e.target)) {
+        dropdown.classList.add("hidden");
+      }
+    });
+    
+    // Handle builder selection
+    dropdown.addEventListener("click", async (e) => {
+      const builderBtn = e.target.closest("[data-builder-select]");
+      if (!builderBtn) return;
+      
+      const selectedBuilder = builderBtn.dataset.builderSelect;
+      
+      try {
+        const res = await fetch(SET_TODAYS_BOOST_BUILDER + selectedBuilder);
+        const data = await res.json();
+        
+        if (data.error) {
+          alert(data.error);
+          return;
+        }
+        
+        // Update global state
+        if (todaysBoostInfo) {
+          todaysBoostInfo.builder = selectedBuilder.match(/(\d+)/)?.[1];
+        }
+        
+        // Close dropdown
+        dropdown.classList.add("hidden");
+        
+        // Refresh to show badge on new builder
+        const container = document.getElementById("builders-container");
+        container.innerHTML = "";
+        await Promise.all([loadCurrentWork(), loadTodaysBoost()]);
+        renderBuilderCards();
+        await loadBoostPlan();
+        
+      } catch (err) {
+        console.error("Failed to change builder:", err);
+        alert("Failed to change builder.");
+      }
+    });
+  }
 }
 
-document.addEventListener("click", async e => {
-  const card = e.target.closest(".builder-card");
-  if (!card) return;
+// Click handler for builder cards - moved to function for clarity
+function wireBuilderCardClicks() {
+  document.addEventListener("click", async e => {
+    // Check if badge was clicked first
+    const badge = e.target.closest("[data-apply-boost]");
+    if (badge) {
+      // Stop event from reaching card
+      e.stopPropagation();
+      e.preventDefault();
+      return; // Let wireApprenticeBoost handle it
+    }
+    
+    const card = e.target.closest(".builder-card");
+    if (!card) return;
 
-  const builder = card.dataset.builder;
-  if (!builder) return;
+    const builder = card.dataset.builder;
+    if (!builder) return;
 
-  // 🔒 Prevent interaction while loading
-  if (loadingBuilders.has(builder)) return;
+    // 🔒 Prevent interaction while loading
+    if (loadingBuilders.has(builder)) return;
 
-  const container = document.getElementById("builders-container");
+    const container = document.getElementById("builders-container");
 
-  // 🔁 CASE 1: Builder already open → CLOSE it
-  if (openBuilders.includes(builder)) {
-    openBuilders = openBuilders.filter(b => b !== builder);
+    // 🔁 CASE 1: Builder already open → CLOSE it
+    if (openBuilders.includes(builder)) {
+      openBuilders = openBuilders.filter(b => b !== builder);
 
-    card.classList.remove("expanded");
-    container
-    .querySelectorAll(`.builder-details[data-builder="${builder}"]`)
-    .forEach(el => el.remove());
-    return;
-  }
-
-  // 🔓 CASE 2: Opening a new builder
-
-  // 🔒 Mark as loading
-  loadingBuilders.add(builder);
-  card.classList.add("loading"); // Optional: add visual feedback
-
-  // If already 2 open → close the oldest
-  if (openBuilders.length === 2) {
-    const oldest = openBuilders.shift();
-
-    document
-      .querySelector(`.builder-card[data-builder="${oldest}"]`)
-      ?.classList.remove("expanded");
-
-    container
-      .querySelectorAll(`.builder-details[data-builder="${oldest}"]`)
+      card.classList.remove("expanded");
+      container
+      .querySelectorAll(`.builder-details[data-builder="${builder}"]`)
       .forEach(el => el.remove());
-  }
+      return;
+    }
 
-  // Open this builder
-  openBuilders.push(builder);
-  card.classList.add("expanded");
+    // 🔓 CASE 2: Opening a new builder
 
-  try {
-    const builderDetails = await fetchBuilderDetails(builder);
-    
-    // 🔒 Double-check no duplicate details exist before adding
-    const existingDetails = container.querySelectorAll(`.builder-details[data-builder="${builder}"]`);
-    existingDetails.forEach(el => el.remove());
-    
-    const detailsEl = renderBuilderDetails(builderDetails);
-    card.after(detailsEl);
-  } catch (error) {
-    console.error("Failed to load builder details:", error);
-    // If loading fails, remove from openBuilders
-    openBuilders = openBuilders.filter(b => b !== builder);
-    card.classList.remove("expanded");
-  } finally {
-    // 🔓 Remove loading state
-    loadingBuilders.delete(builder);
-    card.classList.remove("loading");
-  }
-});
+    // 🔒 Mark as loading
+    loadingBuilders.add(builder);
+    card.classList.add("loading");
+
+    // If already 2 open → close the oldest
+    if (openBuilders.length === 2) {
+      const oldest = openBuilders.shift();
+
+      document
+        .querySelector(`.builder-card[data-builder="${oldest}"]`)
+        ?.classList.remove("expanded");
+
+      container
+        .querySelectorAll(`.builder-details[data-builder="${oldest}"]`)
+        .forEach(el => el.remove());
+    }
+
+    // Open this builder
+    openBuilders.push(builder);
+    card.classList.add("expanded");
+
+    try {
+      const builderDetails = await fetchBuilderDetails(builder);
+      
+      // 🔒 Double-check no duplicate details exist before adding
+      const existingDetails = container.querySelectorAll(`.builder-details[data-builder="${builder}"]`);
+      existingDetails.forEach(el => el.remove());
+      
+      const detailsEl = renderBuilderDetails(builderDetails);
+      card.after(detailsEl);
+    } catch (error) {
+      console.error("Failed to load builder details:", error);
+      // If loading fails, remove from openBuilders
+      openBuilders = openBuilders.filter(b => b !== builder);
+      card.classList.remove("expanded");
+    } finally {
+      // 🔓 Remove loading state
+      loadingBuilders.delete(builder);
+      card.classList.remove("loading");
+    }
+  });
+}
 
 /* =========================
    INIT
@@ -719,4 +820,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   wireBuilderPotionModal();
   wireBuilderSnackModal();
   wireBoostFocusNavigation();
+  wireBuilderCardClicks();
 });
