@@ -498,6 +498,7 @@ button:disabled {
   /* Bigger card for readability */
   .builder-card {
     height: 210px;
+    min-height: 210px;
   }
 
   /* Builder image bigger and lower */
