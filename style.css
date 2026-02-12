@@ -535,15 +535,15 @@ button:disabled {
   /* Current upgrade icon on mobile */
   .@media (max-width: 768px) {
   .current-upgrade-icon {
-    width: 60px  /* Now this WILL override desktop */
-    height: 60px
-    left: 10%
+    left: 14% !important;
+    width: 65px !important;
+    height: 65px !important;
   }
-
-  /* For expanded state on mobile */
+  
   .builder-card.expanded .current-upgrade-icon {
-    width: 30px !important;  /* Your custom size */
-    height: 30px !important;
+    left: 14% !important;
+    width: 45px !important;
+    height: 45px !important;
   }
 }
   /* Mobile structure */
