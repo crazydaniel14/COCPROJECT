@@ -536,10 +536,10 @@ button:disabled {
 
   /* Current upgrade icon on mobile */
 .current-upgrade-icon {
-    left: 20% !important;
-    top: 60% !important;
-    width: 65px !important;
-    height: 65px !important;
+    left: 30% !important;
+    top: 70% !important;
+    width: 50px !important;
+    height: 50px !important;
   }
   
   /* Expanded icon on mobile */
