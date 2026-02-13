@@ -4,7 +4,7 @@ console.log("Loaded script.js – v1");
    CONFIG
    ========================= */
 const API_BASE = 
-    "https://script.google.com/macros/s/AKfycbwdK5Ynu-8_noqHwHXv5p0629SxDinFPr1crkiX4tL2yl5HDpTXLjx7ij2EkBk25Li3VA/exec"
+    "https://script.google.com/macros/s/AKfycbzvuA5LoP-lT592zIb022tK55zLE54IlzCwM_0PK9sRCbS5FYIJcNHjsEmPlMw5L5T6gw/exec"
 const TABLE_ENDPOINT = API_BASE + "?action=current_work_table";
 const REFRESH_ENDPOINT = API_BASE + "?action=refresh_sheet";
 const TODAYS_BOOST_ENDPOINT = API_BASE + "?action=todays_boost";
@@ -476,7 +476,7 @@ function wireApprenticeBoost() {
       await fetch(APPLY_TODAYS_BOOST);
 
       // 🔥 IMMEDIATE UI UPDATE - Change badge image
-      badge.src = "Images/Badge/Builder Apprentice applied.png";
+      badge.src = "Images/Builder Apprentice applied.png";
       
       // Update global state
       if (todaysBoostInfo) {
@@ -698,6 +698,7 @@ function wireBoostFocusNavigation() {
       const selectedBuilder = builderBtn.dataset.builderSelect;
       
       try {
+        // Change the builder
         const res = await fetch(SET_TODAYS_BOOST_BUILDER + selectedBuilder);
         const data = await res.json();
         
@@ -705,6 +706,9 @@ function wireBoostFocusNavigation() {
           alert(data.error);
           return;
         }
+        
+        // Run boost simulation to update the boost plan table
+        await fetch(RUN_BOOST_SIM);
         
         // Update global state
         if (todaysBoostInfo) {
@@ -714,12 +718,12 @@ function wireBoostFocusNavigation() {
         // Close dropdown
         dropdown.classList.add("hidden");
         
-        // Refresh to show badge on new builder
+        // Refresh everything to show badge on new builder and updated boost plan
         const container = document.getElementById("builders-container");
         container.innerHTML = "";
-        await Promise.all([loadCurrentWork(), loadTodaysBoost()]);
+        await Promise.all([loadCurrentWork(), loadTodaysBoost(), loadBoostPlan()]);
         renderBuilderCards();
-        await loadBoostPlan();
+        updateLastRefreshed();
         
       } catch (err) {
         console.error("Failed to change builder:", err);
