@@ -476,7 +476,7 @@ function wireApprenticeBoost() {
       await fetch(APPLY_TODAYS_BOOST);
 
       // 🔥 IMMEDIATE UI UPDATE - Change badge image
-      badge.src = "Images/Builder Apprentice applied.png";
+      badge.src = "Images/Badge/Builder Apprentice applied.png";
       
       // Update global state
       if (todaysBoostInfo) {
