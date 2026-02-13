@@ -696,38 +696,62 @@ function wireBoostFocusNavigation() {
       if (!builderBtn) return;
       
       const selectedBuilder = builderBtn.dataset.builderSelect;
+      const builderNum = selectedBuilder.match(/(\d+)/)?.[1];
+      
+      // Show loading state
+      const statusEl = document.querySelector(".boost-status");
+      const builderEl = document.querySelector(".boost-builder");
+      const originalStatus = statusEl.textContent;
+      const originalBuilder = builderEl.textContent;
+      
+      statusEl.textContent = "Updating...";
+      builderEl.textContent = `Changing to Builder ${builderNum}`;
+      dropdown.classList.add("hidden");
+      menuBtn.disabled = true;
       
       try {
-        // Change the builder
+        // Change the builder (this updates A23:F23)
         const res = await fetch(SET_TODAYS_BOOST_BUILDER + selectedBuilder);
         const data = await res.json();
         
         if (data.error) {
           alert(data.error);
+          statusEl.textContent = originalStatus;
+          builderEl.textContent = originalBuilder;
+          menuBtn.disabled = false;
           return;
         }
         
-        // Run boost simulation to update the boost plan table
+        // Run boost simulation to update rows 24-30
+        statusEl.textContent = "Recalculating boost plan...";
         await fetch(RUN_BOOST_SIM);
         
         // Update global state
         if (todaysBoostInfo) {
-          todaysBoostInfo.builder = selectedBuilder.match(/(\d+)/)?.[1];
+          todaysBoostInfo.builder = builderNum;
         }
         
-        // Close dropdown
-        dropdown.classList.add("hidden");
-        
         // Refresh everything to show badge on new builder and updated boost plan
+        statusEl.textContent = "Refreshing...";
         const container = document.getElementById("builders-container");
         container.innerHTML = "";
         await Promise.all([loadCurrentWork(), loadTodaysBoost(), loadBoostPlan()]);
         renderBuilderCards();
         updateLastRefreshed();
         
+        // Show success message briefly
+        statusEl.textContent = "✓ Updated!";
+        setTimeout(() => {
+          renderBoostFocusCard(); // Restore normal display
+        }, 1500);
+        
       } catch (err) {
         console.error("Failed to change builder:", err);
-        alert("Failed to change builder.");
+        alert("Failed to change builder: " + err.message);
+        statusEl.textContent = originalStatus;
+        builderEl.textContent = originalBuilder;
+      } finally {
+        menuBtn.disabled = false;
       }
     });
   }
