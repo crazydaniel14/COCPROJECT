@@ -642,6 +642,14 @@ button:disabled {
   pointer-events: none; /* Only badge and card background are clickable */
 }
 
+/* Mobile: Re-enable badge */
+@media (max-width: 768px) {
+  .apprentice-badge {
+    pointer-events: auto !important;
+    z-index: 1000;
+  }
+}
+
 
 #boostFocusWrapper {
   display: flex;
