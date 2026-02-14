@@ -447,7 +447,11 @@ function renderBuilderCards() {
       <div class="builder-text">
         <div class="builder-name">BUILDER ${builderNumber}</div>
         <div class="builder-upgrade">${row[1]}</div>
-        <div class="builder-time-left">${row[3]}</div>
+        <div class="builder-time-left editable-card-duration" 
+             data-builder="Builder_${builderNumber}"
+             data-upgrade="${row[1]}"
+             data-row="2"
+             title="Click to edit duration">${row[3]}</div>
         <div class="builder-finish">
           Finishes: ${formatFinishTime(row[2])}
         </div>
@@ -458,6 +462,12 @@ function renderBuilderCards() {
     `;
 
     container.appendChild(card);
+    
+    // Add click handler for duration editing on card
+    const durationEl = card.querySelector('.editable-card-duration');
+    if (durationEl) {
+      setupCardDurationEditor(durationEl);
+    }
   }
 }
 /* =========================
@@ -477,6 +487,74 @@ async function refreshDashboard() {
     console.error("Refresh failed", e);
   } finally {
     isRefreshing = false;
+  }
+}
+
+/* =========================
+   DURATION EDITOR FOR BUILDER CARDS
+   ========================= */
+function setupCardDurationEditor(durationEl) {
+  durationEl.addEventListener('click', (e) => {
+    e.stopPropagation(); // Don't trigger card opening
+    
+    const builderName = durationEl.dataset.builder;
+    const upgradeName = durationEl.dataset.upgrade;
+    const row = durationEl.dataset.row;
+    
+    // Parse current time left (e.g., "3 d 14 hr 0 min")
+    const timeText = durationEl.textContent.trim();
+    const match = timeText.match(/(\d+)\s*d\s*(\d+)\s*hr\s*(\d+)\s*min/);
+    
+    if (!match) {
+      alert('Unable to parse current duration');
+      return;
+    }
+    
+    const days = parseInt(match[1]);
+    const hours = parseInt(match[2]);
+    const mins = parseInt(match[3]);
+    
+    showDurationPicker(days, hours, mins, (newDays, newHours, newMins) => {
+      const newTotalMinutes = (newDays * 24 * 60) + (newHours * 60) + newMins;
+      const newDurationHr = `${newDays} d ${newHours} hr ${newMins} min`;
+      
+      if (confirm(`Change duration of "${upgradeName}" to ${newDurationHr}?`)) {
+        updateCardDuration(builderName, row, newTotalMinutes, newDurationHr, durationEl);
+      }
+    });
+  });
+}
+
+async function updateCardDuration(builderName, row, newMinutes, newDurationHr, durationEl) {
+  const originalText = durationEl.textContent;
+  durationEl.textContent = 'Saving...';
+  
+  try {
+    const res = await fetch(
+      `${API_BASE}?action=update_upgrade_duration&builder=${builderName}&row=${row}&minutes=${newMinutes}&duration_hr=${encodeURIComponent(newDurationHr)}`
+    );
+    const data = await res.json();
+    
+    if (data.error) {
+      alert('Failed to update: ' + data.error);
+      durationEl.textContent = originalText;
+      return;
+    }
+    
+    // Show success briefly then refresh
+    durationEl.textContent = '✓ Saved!';
+    setTimeout(async () => {
+      // Refresh entire dashboard to show updated times
+      const container = document.getElementById("builders-container");
+      container.innerHTML = "";
+      await Promise.all([loadCurrentWork(), loadTodaysBoost()]);
+      renderBuilderCards();
+    }, 800);
+    
+  } catch (err) {
+    console.error('Update failed:', err);
+    alert('Failed to update duration');
+    durationEl.textContent = originalText;
   }
 }
 
