@@ -329,7 +329,7 @@ button:disabled {
 /* FIX #2 & #4: Uniform row heights with consistent backgrounds */
 .upgrade-item {
   display: grid;
-  grid-template-columns: 2.2fr 1fr 2fr;  /* 🔧 Matches header columns */
+  grid-template-columns: 2.2fr 1fr 2fr 40px;  /* 🔧 Added 40px column for drag handle */
   align-items: center;
   font-size: 14px;
   color: #ffffff;
@@ -337,6 +337,88 @@ button:disabled {
   min-height: 44px;
   box-sizing: border-box;
   background-color: #2f2f38;  /* 🔧 Set default background */
+  cursor: grab;
+  transition: background-color 0.2s;
+}
+
+.upgrade-item:active {
+  cursor: grabbing;
+}
+
+.upgrade-item.dragging {
+  opacity: 0.5;
+  background-color: #3a3a45;
+}
+
+.upgrade-item.unsaved {
+  background-color: #4a4020;  /* Light yellow tint for unsaved changes */
+  border-left: 3px solid #f5d04c;
+}
+
+/* Drag handle */
+.drag-handle {
+  color: #f5d04c;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  cursor: grab;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  user-select: none;
+}
+
+.upgrade-item:hover .drag-handle {
+  opacity: 1;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Save order buttons */
+.save-order-container {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  padding: 16px 12px 0 12px;
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.save-order-btn,
+.cancel-order-btn {
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.save-order-btn {
+  background: #f5d04c;
+  color: #000000;
+}
+
+.save-order-btn:hover {
+  background: #ffd700;
+  transform: translateY(-1px);
+}
+
+.save-order-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cancel-order-btn {
+  background: #3a3a3a;
+  color: #ffffff;
+}
+
+.cancel-order-btn:hover {
+  background: #4a4a4a;
 }
 
 /* FIX #4: Ensure alternating colors have same padding/sizing */
@@ -582,6 +664,30 @@ button:disabled {
     padding: 14px 12px;  /* 🔧 More padding for touch targets */
     font-size: 13px;
     min-height: auto;  /* 🔧 Let height be natural */
+    position: relative;  /* For absolute positioning of drag handle */
+  }
+  
+  /* Drag handle on mobile - top right corner */
+  .drag-handle {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 24px;
+    padding: 8px;
+    touch-action: none;  /* Better touch handling */
+  }
+  
+  /* Save buttons on mobile - full width */
+  .save-order-container {
+    flex-direction: column;
+    padding: 12px;
+  }
+  
+  .save-order-btn,
+  .cancel-order-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
   }
 
   /* Upgrade name - bigger and bolder */
