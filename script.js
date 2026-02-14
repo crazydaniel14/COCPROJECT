@@ -1,10 +1,10 @@
-console.log("Loaded script.js – v1");
+console.log("Loaded script.js – v2");
 
 /* =========================
    CONFIG
    ========================= */
 const API_BASE = 
-    "https://script.google.com/macros/s/AKfycbxvPjXAx0ZNHYUu_P4GR1FDc0VgQlMwZ7HRCmUS1n7Rk76WnNORgvOXm4kllUp1HDaVCA/exec"
+    "https://script.google.com/macros/s/AKfycbwdK5Ynu-8_noqHwHXv5p0629SxDinFPr1crkiX4tL2yl5HDpTXLjx7ij2EkBk25Li3VA/exec"
 const TABLE_ENDPOINT = API_BASE + "?action=current_work_table";
 const REFRESH_ENDPOINT = API_BASE + "?action=refresh_sheet";
 const TODAYS_BOOST_ENDPOINT = API_BASE + "?action=todays_boost";
@@ -13,6 +13,7 @@ const BOOST_PLAN_ENDPOINT = API_BASE + "?action=boost_plan";
 /* Builder / Pass actions */
 const APPLY_TODAYS_BOOST = API_BASE + "?action=apply_todays_boost";
 const SET_TODAYS_BOOST_BUILDER = API_BASE + "?action=set_todays_boost_builder&builder=";
+const REORDER_BUILDER_UPGRADES = API_BASE + "?action=reorder_builder_upgrades";
 const RUN_BOOST_SIM = API_BASE + "?action=run_boost_simulation";
 const BUILDER_POTION = API_BASE + "?action=apply_builder_potion";
 const BUILDER_SNACK = API_BASE + "?action=apply_one_hour_boost";
@@ -298,9 +299,12 @@ async function fetchBuilderDetails(builderNumber) {
 function renderBuilderDetails(details) {
   const wrapper = document.createElement("div");
   wrapper.className = "builder-details";
-const match = details.builder.toString().match(/(\d+)/);
-wrapper.dataset.builder = match ? match[1] : "";
+  const match = details.builder.toString().match(/(\d+)/);
+  wrapper.dataset.builder = match ? match[1] : "";
 
+  // Track original order for detecting changes
+  const originalOrder = details.upgrades.map((_, i) => i);
+  
   wrapper.innerHTML = `
     <div class="builder-details-header"></div>
     <div class="upgrade-headers">
@@ -309,13 +313,15 @@ wrapper.dataset.builder = match ? match[1] : "";
       <span>Start and End dates</span>
     </div>
 
-    <div class="upgrade-list">
-      ${details.upgrades.map(upg => {
+    <div class="upgrade-list" data-original-order="${originalOrder.join(',')}">
+      ${details.upgrades.map((upg, idx) => {
         const imgSrc = getUpgradeImage(upg.upgrade);
         return `
-          <div class="upgrade-item"
+          <div class="upgrade-item" 
                data-builder="${upg.builder}"
-               data-row="${upg.row}">
+               data-row="${upg.row}"
+               data-index="${idx}"
+               draggable="true">
             <div class="upgrade-name">
               <img src="${imgSrc}" 
                    class="upgrade-icon" 
@@ -329,11 +335,22 @@ wrapper.dataset.builder = match ? match[1] : "";
               <span>→</span>
               <span>${upg.end}</span>
             </div>
+            <div class="drag-handle">⋮⋮</div>
           </div>
         `;
       }).join("")}
     </div>
+    
+    <div class="save-order-container hidden">
+      <button class="save-order-btn">Save Order</button>
+      <button class="cancel-order-btn">Cancel</button>
+    </div>
   `;
+
+  // Add drag and drop event listeners
+  setTimeout(() => {
+    setupDragAndDrop(wrapper);
+  }, 0);
 
   return wrapper;
 }
@@ -451,6 +468,131 @@ async function refreshDashboard() {
 }
 
 /* =========================
+   DRAG AND DROP FOR REORDERING
+   ========================= */
+function setupDragAndDrop(detailsWrapper) {
+  const upgradeList = detailsWrapper.querySelector('.upgrade-list');
+  const items = detailsWrapper.querySelectorAll('.upgrade-item');
+  const saveBtn = detailsWrapper.querySelector('.save-order-btn');
+  const cancelBtn = detailsWrapper.querySelector('.cancel-order-btn');
+  const saveContainer = detailsWrapper.querySelector('.save-order-container');
+  
+  let draggedItem = null;
+  let originalOrder = upgradeList.dataset.originalOrder;
+  
+  items.forEach(item => {
+    item.addEventListener('dragstart', (e) => {
+      draggedItem = item;
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      draggedItem = null;
+      checkIfOrderChanged();
+    });
+    
+    item.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const afterElement = getDragAfterElement(upgradeList, e.clientY);
+      if (afterElement == null) {
+        upgradeList.appendChild(draggedItem);
+      } else {
+        upgradeList.insertBefore(draggedItem, afterElement);
+      }
+    });
+  });
+  
+  function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.upgrade-item:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      
+      if (offset < 0 && offset > closest.offset) {
+        return { offset: offset, element: child };
+      } else {
+        return closest;
+      }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
+  
+  function checkIfOrderChanged() {
+    const currentItems = upgradeList.querySelectorAll('.upgrade-item');
+    const currentOrder = Array.from(currentItems).map(item => item.dataset.index).join(',');
+    
+    if (currentOrder !== originalOrder) {
+      // Show save button and highlight changed items
+      saveContainer.classList.remove('hidden');
+      currentItems.forEach(item => item.classList.add('unsaved'));
+    } else {
+      saveContainer.classList.add('hidden');
+      currentItems.forEach(item => item.classList.remove('unsaved'));
+    }
+  }
+  
+  // Save button click
+  saveBtn?.addEventListener('click', async () => {
+    const builderNum = detailsWrapper.dataset.builder;
+    const currentItems = upgradeList.querySelectorAll('.upgrade-item');
+    const newOrder = Array.from(currentItems).map(item => item.dataset.index).join(',');
+    
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    
+    try {
+      const res = await fetch(
+        `${API_BASE}?action=reorder_builder_upgrades&builder=Builder_${builderNum}&order=${newOrder}`
+      );
+      const data = await res.json();
+      
+      if (data.error) {
+        alert('Failed to save: ' + data.error);
+        return;
+      }
+      
+      // Update original order
+      originalOrder = newOrder;
+      upgradeList.dataset.originalOrder = newOrder;
+      
+      // Remove unsaved styling
+      currentItems.forEach(item => item.classList.remove('unsaved'));
+      saveContainer.classList.add('hidden');
+      
+      // Show success
+      saveBtn.textContent = '✓ Saved!';
+      setTimeout(() => {
+        saveBtn.textContent = 'Save Order';
+        saveBtn.disabled = false;
+      }, 1500);
+      
+      // Refresh the builder details to show updated dates
+      const builderDetails = await fetchBuilderDetails(builderNum);
+      const newDetailsEl = renderBuilderDetails(builderDetails);
+      detailsWrapper.replaceWith(newDetailsEl);
+      
+    } catch (err) {
+      console.error('Save failed:', err);
+      alert('Failed to save order');
+      saveBtn.textContent = 'Save Order';
+      saveBtn.disabled = false;
+    }
+  });
+  
+  // Cancel button
+  cancelBtn?.addEventListener('click', () => {
+    // Reload builder details to reset order
+    const builderNum = detailsWrapper.dataset.builder;
+    fetchBuilderDetails(builderNum).then(builderDetails => {
+      const newDetailsEl = renderBuilderDetails(builderDetails);
+      detailsWrapper.replaceWith(newDetailsEl);
+    });
+  });
+}
+
+/* =========================
    INTERACTIONS
    ========================= */
 function wireApprenticeBoost() {
@@ -476,7 +618,7 @@ function wireApprenticeBoost() {
       await fetch(APPLY_TODAYS_BOOST);
 
       // 🔥 IMMEDIATE UI UPDATE - Change badge image
-      badge.src = "Images/Badge/Builder Apprentice applied.png";
+      badge.src = "Images/Builder Apprentice applied.png";
       
       // Update global state
       if (todaysBoostInfo) {
