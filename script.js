@@ -501,18 +501,37 @@ function setupCardDurationEditor(durationEl) {
     const upgradeName = durationEl.dataset.upgrade;
     const row = durationEl.dataset.row;
     
-    // Parse current time left (e.g., "3 d 14 hr 0 min")
+    // Parse current time left - handle different formats
     const timeText = durationEl.textContent.trim();
-    const match = timeText.match(/(\d+)\s*d\s*(\d+)\s*hr\s*(\d+)\s*min/);
+    
+    // Try format: "3 d 14 hr 0 min"
+    let match = timeText.match(/(\d+)\s*d\s*(\d+)\s*hr\s*(\d+)\s*min/);
+    
+    // Try alternative format: "3d 14hr 0m" or "3 days 14 hours 0 minutes"
+    if (!match) {
+      match = timeText.match(/(\d+)\s*(?:d|days?)\s*(\d+)\s*(?:h|hr|hours?)\s*(\d+)\s*(?:m|min|minutes?)/i);
+    }
+    
+    // Try time-only format: "14:30:00" (hours:mins:secs)
+    if (!match) {
+      const timeMatch = timeText.match(/(\d+):(\d+)(?::(\d+))?/);
+      if (timeMatch) {
+        const days = 0;
+        const hours = parseInt(timeMatch[1]);
+        const mins = parseInt(timeMatch[2]);
+        match = ['', days.toString(), hours.toString(), mins.toString()];
+      }
+    }
     
     if (!match) {
-      alert('Unable to parse current duration');
+      console.error('Unable to parse duration:', timeText);
+      alert('Unable to parse current duration. Format should be like "3 d 14 hr 0 min"');
       return;
     }
     
-    const days = parseInt(match[1]);
-    const hours = parseInt(match[2]);
-    const mins = parseInt(match[3]);
+    const days = parseInt(match[1]) || 0;
+    const hours = parseInt(match[2]) || 0;
+    const mins = parseInt(match[3]) || 0;
     
     showDurationPicker(days, hours, mins, (newDays, newHours, newMins) => {
       const newTotalMinutes = (newDays * 24 * 60) + (newHours * 60) + newMins;
@@ -603,25 +622,25 @@ function showDurationPicker(initialDays, initialHours, initialMins, callback) {
         <div class="duration-input-group">
           <label>Days</label>
           <div class="number-input-wrapper">
-            <button class="number-btn number-down" data-input="days">−</button>
-            <input type="number" id="picker-days" min="0" max="365" value="${initialDays}">
             <button class="number-btn number-up" data-input="days">+</button>
+            <input type="number" id="picker-days" min="0" max="365" value="${initialDays}">
+            <button class="number-btn number-down" data-input="days">−</button>
           </div>
         </div>
         <div class="duration-input-group">
           <label>Hours</label>
           <div class="number-input-wrapper">
-            <button class="number-btn number-down" data-input="hours">−</button>
-            <input type="number" id="picker-hours" min="0" max="23" value="${initialHours}">
             <button class="number-btn number-up" data-input="hours">+</button>
+            <input type="number" id="picker-hours" min="0" max="23" value="${initialHours}">
+            <button class="number-btn number-down" data-input="hours">−</button>
           </div>
         </div>
         <div class="duration-input-group">
           <label>Minutes</label>
           <div class="number-input-wrapper">
-            <button class="number-btn number-down" data-input="mins">−</button>
-            <input type="number" id="picker-mins" min="0" max="59" value="${initialMins}">
             <button class="number-btn number-up" data-input="mins">+</button>
+            <input type="number" id="picker-mins" min="0" max="59" value="${initialMins}">
+            <button class="number-btn number-down" data-input="mins">−</button>
           </div>
         </div>
       </div>
