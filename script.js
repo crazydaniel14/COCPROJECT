@@ -1,10 +1,10 @@
-console.log("Loaded script.js – v2");
+console.log("Loaded script.js – v1");
 
 /* =========================
    CONFIG
    ========================= */
 const API_BASE = 
-    "https://script.google.com/macros/s/AKfycbwdK5Ynu-8_noqHwHXv5p0629SxDinFPr1crkiX4tL2yl5HDpTXLjx7ij2EkBk25Li3VA/exec"
+    "https://script.google.com/macros/s/AKfycbxvPjXAx0ZNHYUu_P4GR1FDc0VgQlMwZ7HRCmUS1n7Rk76WnNORgvOXm4kllUp1HDaVCA/exec"
 const TABLE_ENDPOINT = API_BASE + "?action=current_work_table";
 const REFRESH_ENDPOINT = API_BASE + "?action=refresh_sheet";
 const TODAYS_BOOST_ENDPOINT = API_BASE + "?action=todays_boost";
@@ -12,6 +12,8 @@ const BOOST_PLAN_ENDPOINT = API_BASE + "?action=boost_plan";
 
 /* Builder / Pass actions */
 const APPLY_TODAYS_BOOST = API_BASE + "?action=apply_todays_boost";
+const SET_TODAYS_BOOST_BUILDER = API_BASE + "?action=set_todays_boost_builder&builder=";
+const REORDER_BUILDER_UPGRADES = API_BASE + "?action=reorder_builder_upgrades";
 const RUN_BOOST_SIM = API_BASE + "?action=run_boost_simulation";
 const BUILDER_POTION = API_BASE + "?action=apply_builder_potion";
 const BUILDER_SNACK = API_BASE + "?action=apply_one_hour_boost";
@@ -218,6 +220,8 @@ function renderBoostFocusCard() {
   const extraEl = document.querySelector(".boost-extra");
   const finishEl = document.getElementById("boostFinishTime");
   const modeEl = document.getElementById("boostMode");
+  const menuBtn = document.getElementById("boostMenuBtn");
+  const dropdown = document.getElementById("boostBuilderDropdown");
 
   if (!dayEl) return;
 
@@ -235,12 +239,43 @@ function renderBoostFocusCard() {
 
     modeEl.textContent = day.mode;
     modeEl.className = "boost-mode " + day.mode.toLowerCase();
+    
+    // Handle three-dot menu
+    if (menuBtn && dropdown && day.day === "TODAY") {
+      // Disable menu if boost already applied
+      if (todaysBoostInfo?.status === "APPLIED") {
+        menuBtn.style.opacity = "0.3";
+        menuBtn.style.cursor = "not-allowed";
+        menuBtn.disabled = true;
+      } else {
+        menuBtn.style.opacity = "1";
+        menuBtn.style.cursor = "pointer";
+        menuBtn.disabled = false;
+        
+        // Hide current builder from dropdown
+        const currentBuilderNum = todaysBoostInfo?.builder;
+        dropdown.querySelectorAll("[data-builder-select]").forEach(btn => {
+          const btnBuilderNum = btn.dataset.builderSelect.match(/(\d+)/)?.[1];
+          if (btnBuilderNum === currentBuilderNum) {
+            btn.style.display = "none";
+          } else {
+            btn.style.display = "block";
+          }
+        });
+      }
+      menuBtn.style.display = "block";
+    } else if (menuBtn) {
+      // Hide menu for non-TODAY days
+      menuBtn.style.display = "none";
+    }
   } else {
     statusEl.textContent = "No Boost";
     statusEl.classList.remove("boost-active");
 
     builderEl.style.display = "none";
     extraEl.style.display = "none";
+    
+    if (menuBtn) menuBtn.style.display = "none";
   }
 
   document.getElementById("boostPrev").disabled =
@@ -264,9 +299,12 @@ async function fetchBuilderDetails(builderNumber) {
 function renderBuilderDetails(details) {
   const wrapper = document.createElement("div");
   wrapper.className = "builder-details";
-const match = details.builder.toString().match(/(\d+)/);
-wrapper.dataset.builder = match ? match[1] : "";
+  const match = details.builder.toString().match(/(\d+)/);
+  wrapper.dataset.builder = match ? match[1] : "";
 
+  // Track original order for detecting changes
+  const originalOrder = details.upgrades.map((_, i) => i);
+  
   wrapper.innerHTML = `
     <div class="builder-details-header"></div>
     <div class="upgrade-headers">
@@ -275,13 +313,25 @@ wrapper.dataset.builder = match ? match[1] : "";
       <span>Start and End dates</span>
     </div>
 
-    <div class="upgrade-list">
-      ${details.upgrades.map(upg => {
+    <div class="upgrade-list" data-original-order="${originalOrder.join(',')}">
+      ${details.upgrades.map((upg, idx) => {
         const imgSrc = getUpgradeImage(upg.upgrade);
+        // Extract duration in minutes from upgrade name or calculate it
+        // Duration format: "5 d 19 hr 0 min" → need to convert to minutes
+        const durationMatch = upg.duration.match(/(\d+)\s*d\s*(\d+)\s*hr\s*(\d+)\s*min/);
+        const days = durationMatch ? parseInt(durationMatch[1]) : 0;
+        const hours = durationMatch ? parseInt(durationMatch[2]) : 0;
+        const minutes = durationMatch ? parseInt(durationMatch[3]) : 0;
+        const totalMinutes = (days * 24 * 60) + (hours * 60) + minutes;
+        
         return `
-          <div class="upgrade-item"
+          <div class="upgrade-item" 
                data-builder="${upg.builder}"
-               data-row="${upg.row}">
+               data-row="${upg.row}"
+               data-index="${idx}"
+               data-upgrade-name="${upg.upgrade}"
+               data-duration-minutes="${totalMinutes}"
+               draggable="true">
             <div class="upgrade-name">
               <img src="${imgSrc}" 
                    class="upgrade-icon" 
@@ -289,17 +339,31 @@ wrapper.dataset.builder = match ? match[1] : "";
                    onerror="this.src='Images/Upgrades/PH.png'" />
               <span>${upg.upgrade}</span>
             </div>
-            <div class="upgrade-duration">${upg.duration}</div>
+            <div class="upgrade-duration editable-duration" data-index="${idx}">
+              ${upg.duration}
+            </div>
             <div class="upgrade-time">
               <span>${upg.start}</span>
               <span>→</span>
               <span>${upg.end}</span>
             </div>
+            <div class="drag-handle">⋮⋮</div>
           </div>
         `;
       }).join("")}
     </div>
+    
+    <div class="save-order-container hidden">
+      <button class="save-order-btn">Save Order</button>
+      <button class="cancel-order-btn">Cancel</button>
+    </div>
   `;
+
+  // Add drag and drop event listeners
+  setTimeout(() => {
+    setupDragAndDrop(wrapper);
+    setupDurationEditor(wrapper);
+  }, 0);
 
   return wrapper;
 }
@@ -383,7 +447,11 @@ function renderBuilderCards() {
       <div class="builder-text">
         <div class="builder-name">BUILDER ${builderNumber}</div>
         <div class="builder-upgrade">${row[1]}</div>
-        <div class="builder-time-left">${row[3]}</div>
+        <div class="builder-time-left editable-card-duration" 
+             data-builder="Builder_${builderNumber}"
+             data-upgrade="${row[1]}"
+             data-row="2"
+             title="Click to edit duration">${row[3]}</div>
         <div class="builder-finish">
           Finishes: ${formatFinishTime(row[2])}
         </div>
@@ -394,6 +462,12 @@ function renderBuilderCards() {
     `;
 
     container.appendChild(card);
+    
+    // Add click handler for duration editing on card
+    const durationEl = card.querySelector('.editable-card-duration');
+    if (durationEl) {
+      setupCardDurationEditor(durationEl);
+    }
   }
 }
 /* =========================
@@ -414,6 +488,413 @@ async function refreshDashboard() {
   } finally {
     isRefreshing = false;
   }
+}
+
+/* =========================
+   DURATION EDITOR FOR BUILDER CARDS
+   ========================= */
+function setupCardDurationEditor(durationEl) {
+  durationEl.addEventListener('click', (e) => {
+    e.stopPropagation(); // Don't trigger card opening
+    
+    const builderName = durationEl.dataset.builder;
+    const upgradeName = durationEl.dataset.upgrade;
+    const row = durationEl.dataset.row;
+    
+    // Parse current time left - handle different formats
+    const timeText = durationEl.textContent.trim();
+    
+    // Try format: "3 d 14 hr 0 min"
+    let match = timeText.match(/(\d+)\s*d\s*(\d+)\s*hr\s*(\d+)\s*min/);
+    
+    // Try alternative format: "3d 14hr 0m" or "3 days 14 hours 0 minutes"
+    if (!match) {
+      match = timeText.match(/(\d+)\s*(?:d|days?)\s*(\d+)\s*(?:h|hr|hours?)\s*(\d+)\s*(?:m|min|minutes?)/i);
+    }
+    
+    // Try time-only format: "14:30:00" (hours:mins:secs)
+    if (!match) {
+      const timeMatch = timeText.match(/(\d+):(\d+)(?::(\d+))?/);
+      if (timeMatch) {
+        const days = 0;
+        const hours = parseInt(timeMatch[1]);
+        const mins = parseInt(timeMatch[2]);
+        match = ['', days.toString(), hours.toString(), mins.toString()];
+      }
+    }
+    
+    if (!match) {
+      console.error('Unable to parse duration:', timeText);
+      alert('Unable to parse current duration. Format should be like "3 d 14 hr 0 min"');
+      return;
+    }
+    
+    const days = parseInt(match[1]) || 0;
+    const hours = parseInt(match[2]) || 0;
+    const mins = parseInt(match[3]) || 0;
+    
+    showDurationPicker(days, hours, mins, (newDays, newHours, newMins) => {
+      const newTotalMinutes = (newDays * 24 * 60) + (newHours * 60) + newMins;
+      const newDurationHr = `${newDays} d ${newHours} hr ${newMins} min`;
+      
+      if (confirm(`Change duration of "${upgradeName}" to ${newDurationHr}?`)) {
+        updateCardDuration(builderName, row, newTotalMinutes, newDurationHr, durationEl);
+      }
+    });
+  });
+}
+
+async function updateCardDuration(builderName, row, newMinutes, newDurationHr, durationEl) {
+  const originalText = durationEl.textContent;
+  durationEl.textContent = 'Saving...';
+  
+  try {
+    // For active upgrade, newMinutes is TIME REMAINING, not total duration
+    // We need to update End_DateTime to be NOW + newMinutes
+    // But keep Duration (min) as the original total duration
+    
+    const res = await fetch(
+      `${API_BASE}?action=update_active_upgrade_time&builder=${builderName}&remaining_minutes=${newMinutes}`
+    );
+    const data = await res.json();
+    
+    if (data.error) {
+      alert('Failed to update: ' + data.error);
+      durationEl.textContent = originalText;
+      return;
+    }
+    
+    // Show success briefly then refresh
+    durationEl.textContent = '✓ Saved!';
+    setTimeout(async () => {
+      // Refresh entire dashboard to show updated times
+      const container = document.getElementById("builders-container");
+      container.innerHTML = "";
+      await Promise.all([loadCurrentWork(), loadTodaysBoost()]);
+      renderBuilderCards();
+    }, 800);
+    
+  } catch (err) {
+    console.error('Update failed:', err);
+    alert('Failed to update duration');
+    durationEl.textContent = originalText;
+  }
+}
+
+/* =========================
+   DURATION EDITOR
+   ========================= */
+function setupDurationEditor(detailsWrapper) {
+  const durationElements = detailsWrapper.querySelectorAll('.editable-duration');
+  
+  durationElements.forEach(durationEl => {
+    durationEl.addEventListener('click', (e) => {
+      e.stopPropagation(); // Don't trigger drag
+      
+      const upgradeItem = durationEl.closest('.upgrade-item');
+      const currentMinutes = parseInt(upgradeItem.dataset.durationMinutes);
+      const upgradeName = upgradeItem.dataset.upgradeName;
+      const builderName = upgradeItem.dataset.builder;
+      const row = upgradeItem.dataset.row;
+      
+      // Convert minutes to days, hours, minutes
+      const days = Math.floor(currentMinutes / (24 * 60));
+      const hours = Math.floor((currentMinutes % (24 * 60)) / 60);
+      const mins = currentMinutes % 60;
+      
+      showDurationPicker(days, hours, mins, (newDays, newHours, newMins) => {
+        const newTotalMinutes = (newDays * 24 * 60) + (newHours * 60) + newMins;
+        const newDurationHr = `${newDays} d ${newHours} hr ${newMins} min`;
+        
+        // Confirm change
+        if (confirm(`Change duration of "${upgradeName}" to ${newDurationHr}?`)) {
+          updateUpgradeDuration(builderName, row, newTotalMinutes, newDurationHr, durationEl, detailsWrapper);
+        }
+      });
+    });
+  });
+}
+
+function showDurationPicker(initialDays, initialHours, initialMins, callback) {
+  // Create modal
+  const modal = document.createElement('div');
+  modal.className = 'duration-picker-modal';
+  modal.innerHTML = `
+    <div class="duration-picker-content">
+      <h3>Set Duration</h3>
+      <div class="duration-inputs">
+        <div class="duration-input-group">
+          <label>Days</label>
+          <div class="number-input-wrapper">
+            <button class="number-btn number-up" data-input="days">+</button>
+            <input type="number" id="picker-days" min="0" max="365" value="${initialDays}">
+            <button class="number-btn number-down" data-input="days">−</button>
+          </div>
+        </div>
+        <div class="duration-input-group">
+          <label>Hours</label>
+          <div class="number-input-wrapper">
+            <button class="number-btn number-up" data-input="hours">+</button>
+            <input type="number" id="picker-hours" min="0" max="23" value="${initialHours}">
+            <button class="number-btn number-down" data-input="hours">−</button>
+          </div>
+        </div>
+        <div class="duration-input-group">
+          <label>Minutes</label>
+          <div class="number-input-wrapper">
+            <button class="number-btn number-up" data-input="mins">+</button>
+            <input type="number" id="picker-mins" min="0" max="59" value="${initialMins}">
+            <button class="number-btn number-down" data-input="mins">−</button>
+          </div>
+        </div>
+      </div>
+      <div class="duration-picker-actions">
+        <button class="duration-confirm-btn">Confirm</button>
+        <button class="duration-cancel-btn">Cancel</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Focus first input
+  setTimeout(() => document.getElementById('picker-days')?.focus(), 100);
+  
+  // Number button handlers
+  modal.querySelectorAll('.number-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const inputName = btn.dataset.input;
+      const input = document.getElementById(`picker-${inputName}`);
+      const isUp = btn.classList.contains('number-up');
+      const currentVal = parseInt(input.value) || 0;
+      const min = parseInt(input.min);
+      const max = parseInt(input.max);
+      
+      if (isUp && currentVal < max) {
+        input.value = currentVal + 1;
+      } else if (!isUp && currentVal > min) {
+        input.value = currentVal - 1;
+      }
+    });
+  });
+  
+  // Confirm button
+  modal.querySelector('.duration-confirm-btn').addEventListener('click', () => {
+    const days = parseInt(document.getElementById('picker-days').value) || 0;
+    const hours = parseInt(document.getElementById('picker-hours').value) || 0;
+    const mins = parseInt(document.getElementById('picker-mins').value) || 0;
+    
+    modal.remove();
+    callback(days, hours, mins);
+  });
+  
+  // Cancel button
+  modal.querySelector('.duration-cancel-btn').addEventListener('click', () => {
+    modal.remove();
+  });
+  
+  // Click outside to close
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+}
+
+async function updateUpgradeDuration(builderName, row, newMinutes, newDurationHr, durationEl, detailsWrapper) {
+  const originalText = durationEl.textContent;
+  durationEl.textContent = 'Saving...';
+  
+  try {
+    const res = await fetch(
+      `${API_BASE}?action=update_upgrade_duration&builder=${builderName}&row=${row}&minutes=${newMinutes}&duration_hr=${encodeURIComponent(newDurationHr)}`
+    );
+    const data = await res.json();
+    
+    if (data.error) {
+      alert('Failed to update: ' + data.error);
+      durationEl.textContent = originalText;
+      return;
+    }
+    
+    // Show success briefly
+    durationEl.textContent = '✓ Saved!';
+    setTimeout(() => {
+      // Refresh builder details to show updated dates
+      const builderNum = detailsWrapper.dataset.builder;
+      fetchBuilderDetails(builderNum).then(builderDetails => {
+        const newDetailsEl = renderBuilderDetails(builderDetails);
+        detailsWrapper.replaceWith(newDetailsEl);
+      });
+    }, 800);
+    
+  } catch (err) {
+    console.error('Update failed:', err);
+    alert('Failed to update duration');
+    durationEl.textContent = originalText;
+  }
+}
+
+/* =========================
+   DRAG AND DROP FOR REORDERING
+   ========================= */
+function setupDragAndDrop(detailsWrapper) {
+  const upgradeList = detailsWrapper.querySelector('.upgrade-list');
+  const items = detailsWrapper.querySelectorAll('.upgrade-item');
+  const saveBtn = detailsWrapper.querySelector('.save-order-btn');
+  const cancelBtn = detailsWrapper.querySelector('.cancel-order-btn');
+  const saveContainer = detailsWrapper.querySelector('.save-order-container');
+  
+  let draggedItem = null;
+  let originalOrder = upgradeList.dataset.originalOrder;
+  let touchStartY = 0;
+  let isDragging = false;
+  
+  items.forEach(item => {
+    // Desktop drag events
+    item.addEventListener('dragstart', (e) => {
+      draggedItem = item;
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      draggedItem = null;
+      checkIfOrderChanged();
+    });
+    
+    item.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const afterElement = getDragAfterElement(upgradeList, e.clientY);
+      if (afterElement == null) {
+        upgradeList.appendChild(draggedItem);
+      } else {
+        upgradeList.insertBefore(draggedItem, afterElement);
+      }
+    });
+    
+    // Mobile touch events
+    const dragHandle = item.querySelector('.drag-handle');
+    
+    dragHandle?.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      isDragging = true;
+      draggedItem = item;
+      touchStartY = e.touches[0].clientY;
+      item.classList.add('dragging');
+    }, { passive: false });
+    
+    dragHandle?.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      e.preventDefault();
+      
+      const touch = e.touches[0];
+      const afterElement = getDragAfterElement(upgradeList, touch.clientY);
+      
+      if (afterElement == null) {
+        upgradeList.appendChild(draggedItem);
+      } else {
+        upgradeList.insertBefore(draggedItem, afterElement);
+      }
+    }, { passive: false });
+    
+    dragHandle?.addEventListener('touchend', () => {
+      if (!isDragging) return;
+      isDragging = false;
+      item.classList.remove('dragging');
+      draggedItem = null;
+      checkIfOrderChanged();
+    });
+  });
+  
+  function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.upgrade-item:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+      
+      if (offset < 0 && offset > closest.offset) {
+        return { offset: offset, element: child };
+      } else {
+        return closest;
+      }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
+  
+  function checkIfOrderChanged() {
+    const currentItems = upgradeList.querySelectorAll('.upgrade-item');
+    const currentOrder = Array.from(currentItems).map(item => item.dataset.index).join(',');
+    
+    if (currentOrder !== originalOrder) {
+      // Show save button and highlight changed items
+      saveContainer.classList.remove('hidden');
+      currentItems.forEach(item => item.classList.add('unsaved'));
+    } else {
+      saveContainer.classList.add('hidden');
+      currentItems.forEach(item => item.classList.remove('unsaved'));
+    }
+  }
+  
+  // Save button click
+  saveBtn?.addEventListener('click', async () => {
+    const builderNum = detailsWrapper.dataset.builder;
+    const currentItems = upgradeList.querySelectorAll('.upgrade-item');
+    const newOrder = Array.from(currentItems).map(item => item.dataset.index).join(',');
+    
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    
+    try {
+      const res = await fetch(
+        `${API_BASE}?action=reorder_builder_upgrades&builder=Builder_${builderNum}&order=${newOrder}`
+      );
+      const data = await res.json();
+      
+      if (data.error) {
+        alert('Failed to save: ' + data.error);
+        return;
+      }
+      
+      // Update original order
+      originalOrder = newOrder;
+      upgradeList.dataset.originalOrder = newOrder;
+      
+      // Remove unsaved styling
+      currentItems.forEach(item => item.classList.remove('unsaved'));
+      saveContainer.classList.add('hidden');
+      
+      // Show success
+      saveBtn.textContent = '✓ Saved!';
+      setTimeout(() => {
+        saveBtn.textContent = 'Save Order';
+        saveBtn.disabled = false;
+      }, 1500);
+      
+      // Refresh the builder details to show updated dates
+      const builderDetails = await fetchBuilderDetails(builderNum);
+      const newDetailsEl = renderBuilderDetails(builderDetails);
+      detailsWrapper.replaceWith(newDetailsEl);
+      
+    } catch (err) {
+      console.error('Save failed:', err);
+      alert('Failed to save order');
+      saveBtn.textContent = 'Save Order';
+      saveBtn.disabled = false;
+    }
+  });
+  
+  // Cancel button
+  cancelBtn?.addEventListener('click', () => {
+    // Reload builder details to reset order
+    const builderNum = detailsWrapper.dataset.builder;
+    fetchBuilderDetails(builderNum).then(builderDetails => {
+      const newDetailsEl = renderBuilderDetails(builderDetails);
+      detailsWrapper.replaceWith(newDetailsEl);
+    });
+  });
 }
 
 /* =========================
@@ -442,7 +923,7 @@ function wireApprenticeBoost() {
       await fetch(APPLY_TODAYS_BOOST);
 
       // 🔥 IMMEDIATE UI UPDATE - Change badge image
-      badge.src = "Images/Badge/Builder Apprentice applied.png";
+      badge.src = "Images/Builder Apprentice applied.png";
       
       // Update global state
       if (todaysBoostInfo) {
@@ -470,6 +951,11 @@ function wireApprenticeBoost() {
       // Update other data in background
       await Promise.all([loadTodaysBoost(), loadBoostPlan()]);
       updateLastRefreshed();
+      
+      // Re-render cards to show APPLIED badge
+      const container = document.getElementById("builders-container");
+      container.innerHTML = "";
+      renderBuilderCards();
       
     } catch (err) {
       console.error("Failed to apply today's boost", err);
@@ -638,74 +1124,169 @@ function wireBoostFocusNavigation() {
       renderBoostFocusCard();
     }
   });
+  
+  // Wire three-dot menu toggle
+  const menuBtn = document.getElementById("boostMenuBtn");
+  const dropdown = document.getElementById("boostBuilderDropdown");
+  
+  if (menuBtn && dropdown) {
+    menuBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dropdown.classList.toggle("hidden");
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!dropdown.contains(e.target) && !menuBtn.contains(e.target)) {
+        dropdown.classList.add("hidden");
+      }
+    });
+    
+    // Handle builder selection
+    dropdown.addEventListener("click", async (e) => {
+      const builderBtn = e.target.closest("[data-builder-select]");
+      if (!builderBtn) return;
+      
+      const selectedBuilder = builderBtn.dataset.builderSelect;
+      const builderNum = selectedBuilder.match(/(\d+)/)?.[1];
+      
+      // Show loading state
+      const statusEl = document.querySelector(".boost-status");
+      const builderEl = document.querySelector(".boost-builder");
+      const originalStatus = statusEl.textContent;
+      const originalBuilder = builderEl.textContent;
+      
+      statusEl.textContent = "Updating...";
+      builderEl.textContent = `Changing to Builder ${builderNum}`;
+      dropdown.classList.add("hidden");
+      menuBtn.disabled = true;
+      
+      try {
+        // Change the builder (this updates A23:F23)
+        const res = await fetch(SET_TODAYS_BOOST_BUILDER + selectedBuilder);
+        const data = await res.json();
+        
+        if (data.error) {
+          alert(data.error);
+          statusEl.textContent = originalStatus;
+          builderEl.textContent = originalBuilder;
+          menuBtn.disabled = false;
+          return;
+        }
+        
+        // Run boost simulation to update rows 24-30
+        statusEl.textContent = "Recalculating boost plan...";
+        await fetch(RUN_BOOST_SIM);
+        
+        // Update global state
+        if (todaysBoostInfo) {
+          todaysBoostInfo.builder = builderNum;
+        }
+        
+        // Refresh everything to show badge on new builder and updated boost plan
+        statusEl.textContent = "Refreshing...";
+        const container = document.getElementById("builders-container");
+        container.innerHTML = "";
+        await Promise.all([loadCurrentWork(), loadTodaysBoost(), loadBoostPlan()]);
+        renderBuilderCards();
+        updateLastRefreshed();
+        
+        // Show success message briefly
+        statusEl.textContent = "✓ Updated!";
+        setTimeout(() => {
+          renderBoostFocusCard(); // Restore normal display
+        }, 1500);
+        
+      } catch (err) {
+        console.error("Failed to change builder:", err);
+        alert("Failed to change builder: " + err.message);
+        statusEl.textContent = originalStatus;
+        builderEl.textContent = originalBuilder;
+      } finally {
+        menuBtn.disabled = false;
+      }
+    });
+  }
 }
 
-document.addEventListener("click", async e => {
-  const card = e.target.closest(".builder-card");
-  if (!card) return;
+// Click handler for builder cards - moved to function for clarity
+function wireBuilderCardClicks() {
+  document.addEventListener("click", async e => {
+    // Check if badge was clicked first
+    const badge = e.target.closest("[data-apply-boost]");
+    if (badge) {
+      // Stop event from reaching card
+      e.stopPropagation();
+      e.preventDefault();
+      return; // Let wireApprenticeBoost handle it
+    }
+    
+    const card = e.target.closest(".builder-card");
+    if (!card) return;
 
-  const builder = card.dataset.builder;
-  if (!builder) return;
+    const builder = card.dataset.builder;
+    if (!builder) return;
 
-  // 🔒 Prevent interaction while loading
-  if (loadingBuilders.has(builder)) return;
+    // 🔒 Prevent interaction while loading
+    if (loadingBuilders.has(builder)) return;
 
-  const container = document.getElementById("builders-container");
+    const container = document.getElementById("builders-container");
 
-  // 🔁 CASE 1: Builder already open → CLOSE it
-  if (openBuilders.includes(builder)) {
-    openBuilders = openBuilders.filter(b => b !== builder);
+    // 🔁 CASE 1: Builder already open → CLOSE it
+    if (openBuilders.includes(builder)) {
+      openBuilders = openBuilders.filter(b => b !== builder);
 
-    card.classList.remove("expanded");
-    container
-    .querySelectorAll(`.builder-details[data-builder="${builder}"]`)
-    .forEach(el => el.remove());
-    return;
-  }
-
-  // 🔓 CASE 2: Opening a new builder
-
-  // 🔒 Mark as loading
-  loadingBuilders.add(builder);
-  card.classList.add("loading"); // Optional: add visual feedback
-
-  // If already 2 open → close the oldest
-  if (openBuilders.length === 2) {
-    const oldest = openBuilders.shift();
-
-    document
-      .querySelector(`.builder-card[data-builder="${oldest}"]`)
-      ?.classList.remove("expanded");
-
-    container
-      .querySelectorAll(`.builder-details[data-builder="${oldest}"]`)
+      card.classList.remove("expanded");
+      container
+      .querySelectorAll(`.builder-details[data-builder="${builder}"]`)
       .forEach(el => el.remove());
-  }
+      return;
+    }
 
-  // Open this builder
-  openBuilders.push(builder);
-  card.classList.add("expanded");
+    // 🔓 CASE 2: Opening a new builder
 
-  try {
-    const builderDetails = await fetchBuilderDetails(builder);
-    
-    // 🔒 Double-check no duplicate details exist before adding
-    const existingDetails = container.querySelectorAll(`.builder-details[data-builder="${builder}"]`);
-    existingDetails.forEach(el => el.remove());
-    
-    const detailsEl = renderBuilderDetails(builderDetails);
-    card.after(detailsEl);
-  } catch (error) {
-    console.error("Failed to load builder details:", error);
-    // If loading fails, remove from openBuilders
-    openBuilders = openBuilders.filter(b => b !== builder);
-    card.classList.remove("expanded");
-  } finally {
-    // 🔓 Remove loading state
-    loadingBuilders.delete(builder);
-    card.classList.remove("loading");
-  }
-});
+    // 🔒 Mark as loading
+    loadingBuilders.add(builder);
+    card.classList.add("loading");
+
+    // If already 2 open → close the oldest
+    if (openBuilders.length === 2) {
+      const oldest = openBuilders.shift();
+
+      document
+        .querySelector(`.builder-card[data-builder="${oldest}"]`)
+        ?.classList.remove("expanded");
+
+      container
+        .querySelectorAll(`.builder-details[data-builder="${oldest}"]`)
+        .forEach(el => el.remove());
+    }
+
+    // Open this builder
+    openBuilders.push(builder);
+    card.classList.add("expanded");
+
+    try {
+      const builderDetails = await fetchBuilderDetails(builder);
+      
+      // 🔒 Double-check no duplicate details exist before adding
+      const existingDetails = container.querySelectorAll(`.builder-details[data-builder="${builder}"]`);
+      existingDetails.forEach(el => el.remove());
+      
+      const detailsEl = renderBuilderDetails(builderDetails);
+      card.after(detailsEl);
+    } catch (error) {
+      console.error("Failed to load builder details:", error);
+      // If loading fails, remove from openBuilders
+      openBuilders = openBuilders.filter(b => b !== builder);
+      card.classList.remove("expanded");
+    } finally {
+      // 🔓 Remove loading state
+      loadingBuilders.delete(builder);
+      card.classList.remove("loading");
+    }
+  });
+}
 
 /* =========================
    INIT
@@ -719,4 +1300,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   wireBuilderPotionModal();
   wireBuilderSnackModal();
   wireBoostFocusNavigation();
+  wireBuilderCardClicks();
 });

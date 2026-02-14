@@ -1,6 +1,4 @@
 html, body {
-  max-width: 1470px;
-  margin: 0 auto;
   margin: 0;
   padding: 0;
   min-height: 100%;
@@ -288,6 +286,13 @@ button:disabled {
   background: #14143d;
   outline: 2px solid rgba(255,255,255,0.25);
 }
+
+/* PINNED BUILDER CARD */
+
+.builder-card.pinned {
+  outline: 2px solid rgba(255, 255, 255, 0.15);
+}
+
 /* BUILDER DETAILS (UPGRADE LIST) */
 
 .builder-details {
@@ -324,7 +329,7 @@ button:disabled {
 /* FIX #2 & #4: Uniform row heights with consistent backgrounds */
 .upgrade-item {
   display: grid;
-  grid-template-columns: 2.2fr 1fr 2fr;  /* 🔧 Matches header columns */
+  grid-template-columns: 2.2fr 1fr 2fr 40px;  /* 🔧 Added 40px column for drag handle */
   align-items: center;
   font-size: 14px;
   color: #ffffff;
@@ -332,6 +337,88 @@ button:disabled {
   min-height: 44px;
   box-sizing: border-box;
   background-color: #2f2f38;  /* 🔧 Set default background */
+  cursor: grab;
+  transition: background-color 0.2s;
+}
+
+.upgrade-item:active {
+  cursor: grabbing;
+}
+
+.upgrade-item.dragging {
+  opacity: 0.5;
+  background-color: #3a3a45;
+}
+
+.upgrade-item.unsaved {
+  background-color: #4a4020;  /* Light yellow tint for unsaved changes */
+  border-left: 3px solid #f5d04c;
+}
+
+/* Drag handle */
+.drag-handle {
+  color: #f5d04c;
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  cursor: grab;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  user-select: none;
+}
+
+.upgrade-item:hover .drag-handle {
+  opacity: 1;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Save order buttons */
+.save-order-container {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  padding: 16px 12px 0 12px;
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.save-order-btn,
+.cancel-order-btn {
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.save-order-btn {
+  background: #f5d04c;
+  color: #000000;
+}
+
+.save-order-btn:hover {
+  background: #ffd700;
+  transform: translateY(-1px);
+}
+
+.save-order-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cancel-order-btn {
+  background: #3a3a3a;
+  color: #ffffff;
+}
+
+.cancel-order-btn:hover {
+  background: #4a4a4a;
 }
 
 /* FIX #4: Ensure alternating colors have same padding/sizing */
@@ -368,6 +455,219 @@ button:disabled {
   line-height: 1.3;
   text-align: center;
   padding-right: 8px;  /* 🔧 Shift content left by adding right padding */
+}
+
+/* Editable duration - NO underline, just cursor change */
+.editable-duration {
+  cursor: pointer;
+  transition: color 0.2s, opacity 0.2s;
+}
+
+.editable-duration:hover {
+  color: #f5d04c;
+  opacity: 0.9;
+}
+
+/* Duration Picker Modal */
+.duration-picker-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+}
+
+.duration-picker-content {
+  background: linear-gradient(135deg, #2a2a2f 0%, #1f1f24 100%);
+  border: 2px solid rgba(245, 208, 76, 0.3);
+  border-radius: 20px;
+  padding: 28px;
+  min-width: 340px;
+  max-width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+
+.duration-picker-content h3 {
+  margin: 0 0 24px 0;
+  color: #f5d04c;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.duration-inputs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.duration-input-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.duration-input-group label {
+  color: #babac0;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+/* Number input wrapper with custom buttons */
+.number-input-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.number-btn {
+  width: 100%;
+  height: 32px;  /* Smaller buttons */
+  background: linear-gradient(135deg, #f5d04c 0%, #ffd700 100%);
+  border: none;
+  border-radius: 8px;
+  color: #000000;
+  font-size: 18px;  /* Slightly smaller font */
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(245, 208, 76, 0.3);
+}
+
+.number-btn:hover {
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  transform: scale(1.05);
+  box-shadow: 0 3px 8px rgba(245, 208, 76, 0.4);
+}
+
+.number-btn:active {
+  transform: scale(0.95);
+}
+
+.duration-input-group input {
+  width: 100%;
+  padding: 10px 8px;  /* Reduced from 14px to 10px */
+  font-size: 22px;  /* Slightly smaller from 24px */
+  font-weight: 800;
+  text-align: center;
+  background: #16161b;
+  border: 2px solid #3a3a3f;
+  border-radius: 10px;  /* Slightly smaller radius */
+  color: #f5d04c;
+  font-family: 'Lexend', sans-serif;
+  transition: all 0.2s;
+  
+  /* Hide default spinner arrows since we have custom buttons */
+  -moz-appearance: textfield;
+}
+
+.duration-input-group input::-webkit-inner-spin-button,
+.duration-input-group input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.duration-input-group input:focus {
+  outline: none;
+  border-color: #f5d04c;
+  background: #1a1a20;
+  box-shadow: 0 0 0 3px rgba(245, 208, 76, 0.15);
+}
+
+.duration-input-group input:hover {
+  border-color: rgba(245, 208, 76, 0.5);
+}
+
+.duration-picker-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.duration-confirm-btn,
+.duration-cancel-btn {
+  flex: 1;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.duration-confirm-btn {
+  background: linear-gradient(135deg, #f5d04c 0%, #ffd700 100%);
+  color: #000000;
+  box-shadow: 0 4px 12px rgba(245, 208, 76, 0.3);
+}
+
+.duration-confirm-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(245, 208, 76, 0.4);
+}
+
+.duration-confirm-btn:active {
+  transform: translateY(0);
+}
+
+.duration-cancel-btn {
+  background: #2a2a2f;
+  color: #babac0;
+  border: 2px solid #3a3a3f;
+}
+
+.duration-cancel-btn:hover {
+  background: #3a3a3f;
+  color: #ffffff;
+  border-color: #4a4a4f;
+}
+
+/* Mobile: Larger touch targets and visible arrows */
+@media (max-width: 768px) {
+  .duration-picker-content {
+    min-width: 300px;
+    padding: 24px 20px;
+  }
+  
+  .duration-inputs {
+    gap: 10px;
+  }
+  
+  .number-btn {
+    height: 38px;  /* Slightly bigger on mobile for touch */
+    font-size: 22px;
+  }
+  
+  .duration-input-group input {
+    font-size: 26px;  /* Reduced from 28px */
+    padding: 12px 4px;  /* Reduced from 16px */
+  }
+  
+  .duration-picker-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .duration-confirm-btn,
+  .duration-cancel-btn {
+    padding: 16px;
+    font-size: 17px;
+  }
 }
 
 /* FIX #3: Balance date column spacing */
@@ -415,28 +715,25 @@ button:disabled {
 /* Current upgrade icon - positioned to the left of text */
 .current-upgrade-icon {
   position: absolute;
-  left: 34%;  /* 🔧 Position to the left of the text column */
-  top: 65%;
+  left: 38%;  /* 🔧 Position to the left of the text column */
+  top: 50%;
   transform: translateY(-50%);
-  width: 70px;  /* 🔧 Adjusted size */
-  height: 70px;
+  width: 50px;  /* 🔧 Adjusted size */
+  height: 50px;
   object-fit: contain;
   z-index: 1;
-  filter: drop-shadow(0 0 5px rgba(245, 208, 76, 0.6));
+  filter: drop-shadow(0 0 8px rgba(245, 208, 76, 0.6));  /* 🔧 GLOW EFFECT - yellow glow */
 }
 
 /* FIX #2: Shift text left when card is expanded */
 .builder-card.expanded .builder-text {
-  left: 43%;  /* 🔧 Moved from 46% to 38% when expanded */
+  left: 38%;  /* 🔧 Moved from 46% to 38% when expanded */
   width: 56%;  /* 🔧 Increased width to accommodate */
 }
 
 /* Move icon when expanded too */
 .builder-card.expanded .current-upgrade-icon {
-  left: 33%;/* 🔧 Shift icon left when expanded */
-  top: 50%;
-  width: 100px;
-  height: 100px;
+  left: 30%;  /* 🔧 Shift icon left when expanded */
 }
 
 /* BUILDER NAME */
@@ -462,6 +759,20 @@ button:disabled {
   color: #f5d04c;
   margin-bottom: 4px;
   font-weight: bold;
+}
+
+/* Editable duration on builder card */
+.editable-card-duration {
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.editable-card-duration:hover {
+  background: rgba(245, 208, 76, 0.15);
+  transform: scale(1.05);
 }
 
 /* FINISH TIME */
@@ -491,12 +802,22 @@ button:disabled {
   /* Bigger card for readability */
   .builder-card {
     height: 210px;
-    min-height: 210px;
+    min-height: 48px; /* 🔧 Minimum touch target */
+    cursor: pointer;
+  }
+
+  /* Ensure entire card is tappable */
+  .builder-card * {
+    pointer-events: none; /* Only card itself handles clicks */
+  }
+  
+  .builder-card .apprentice-badge {
+    pointer-events: auto; /* Except the badge */
   }
 
   /* Builder image bigger and lower */
   .builder-character {
-    left: 18px;
+    left: 20px;
     bottom: 40px;
     height: 120px;
   }
@@ -528,22 +849,20 @@ button:disabled {
     font-size: 10px;
   }
 
-  /* Current upgrade icon on mobile */
-.current-upgrade-icon {
-    left: 28% !important;
-    top: 65% !important;
-    width: 55px !important;
-    height: 55px !important;
+  /* Current upgrade icon on mobile - override desktop styles */
+  .current-upgrade-icon {
+    left: 30% !important;  /* 🔧 Force override */
+    width: 45px !important;  /* 🔧 Force override */
+    height: 45px !important;  /* 🔧 Force override */
   }
   
   /* Expanded icon on mobile */
   .builder-card.expanded .current-upgrade-icon {
-    left: 28% !important;
-    top: 65% !important;
-    width: 55px !important;
-    height: 55px !important;
+    left: 25% !important;  /* 🔧 Force override */
+    width: 60px !important;  /* 🔧 You can change this */
+    height: 60px !important;  /* 🔧 You can change this */
   }
-  
+
   /* Mobile structure */
   .builder-card.expanded {
     height: 210px;   /* same as normal mobile card */
@@ -572,6 +891,30 @@ button:disabled {
     padding: 14px 12px;  /* 🔧 More padding for touch targets */
     font-size: 13px;
     min-height: auto;  /* 🔧 Let height be natural */
+    position: relative;  /* For absolute positioning of drag handle */
+  }
+  
+  /* Drag handle on mobile - top right corner */
+  .drag-handle {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 24px;
+    padding: 8px;
+    touch-action: none;  /* Better touch handling */
+  }
+  
+  /* Save buttons on mobile - full width */
+  .save-order-container {
+    flex-direction: column;
+    padding: 12px;
+  }
+  
+  .save-order-btn,
+  .cancel-order-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
   }
 
   /* Upgrade name - bigger and bolder */
@@ -615,7 +958,6 @@ button:disabled {
 
 /* Builder Apprentice badge (Today's Boost indicator) */
 .apprentice-badge {
-  pointer-events: auto;
   cursor: pointer;
   position: absolute;
   top: 8px;
@@ -623,7 +965,27 @@ button:disabled {
   width: 60px;
   height: auto;
   z-index: 999;
-  pointer-events: auto;
+  pointer-events: auto !important; /* Ensure badge is clickable */
+}
+
+/* Prevent badge area from triggering card click */
+.builder-card .builder-text,
+.builder-card .builder-character,
+.builder-card .current-upgrade-icon {
+  pointer-events: none; /* Only badge and card background are clickable */
+}
+
+/* Re-enable pointer events for editable duration */
+.builder-card .editable-card-duration {
+  pointer-events: auto !important;
+}
+
+/* Mobile: Re-enable badge */
+@media (max-width: 768px) {
+  .apprentice-badge {
+    pointer-events: auto !important;
+    z-index: 1000;
+  }
 }
 
 
@@ -637,12 +999,69 @@ button:disabled {
 
 /* Focus card */
 #boostFocusCard {
+  position: relative; /* For positioning the menu button */
   background: #2f2f2f;
   border-radius: 16px;
   padding: 20px 28px;
   min-width: 220px;
   text-align: center;
   box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+}
+
+/* Three-dot menu button */
+.boost-menu-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #f5d04c;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  z-index: 10;
+  transition: opacity 0.2s;
+}
+
+.boost-menu-btn:hover {
+  opacity: 0.7;
+}
+
+/* Dropdown menu */
+.boost-builder-dropdown {
+  position: absolute;
+  top: 45px;
+  right: 12px;
+  background: #3a3a3a;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  z-index: 100;
+  min-width: 140px;
+  overflow: hidden;
+}
+
+.boost-builder-dropdown button {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  color: #ffffff;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.boost-builder-dropdown button:hover {
+  background: #4a4a4a;
+}
+
+.boost-builder-dropdown button:active {
+  background: #5a5a5a;
 }
 
 /* Day label */
@@ -747,6 +1166,30 @@ button:disabled {
 
   #boostFocusCard {
     min-width: 200px;
+  }
+  
+  /* 🔧 Larger tap targets for mobile */
+  .action-button {
+    gap: 20px;
+    margin: 16px 0;
+  }
+  
+  .image-button {
+    width: 60px;
+    height: 60px;
+    padding: 8px;
+  }
+  
+  .boost-nav {
+    min-width: 48px;
+    min-height: 48px;
+    padding: 12px 16px;
+  }
+  
+  button {
+    min-height: 44px;
+    padding: 12px 16px;
+    font-size: 16px;
   }
 }
 
