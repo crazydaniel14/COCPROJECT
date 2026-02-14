@@ -531,12 +531,12 @@ button:disabled {
 
 .number-btn {
   width: 100%;
-  height: 36px;
+  height: 32px;  /* Smaller buttons */
   background: linear-gradient(135deg, #f5d04c 0%, #ffd700 100%);
   border: none;
   border-radius: 8px;
   color: #000000;
-  font-size: 20px;
+  font-size: 18px;  /* Slightly smaller font */
   font-weight: 800;
   cursor: pointer;
   transition: all 0.15s;
@@ -559,13 +559,13 @@ button:disabled {
 
 .duration-input-group input {
   width: 100%;
-  padding: 14px 8px;
-  font-size: 24px;
+  padding: 10px 8px;  /* Reduced from 14px to 10px */
+  font-size: 22px;  /* Slightly smaller from 24px */
   font-weight: 800;
   text-align: center;
   background: #16161b;
   border: 2px solid #3a3a3f;
-  border-radius: 12px;
+  border-radius: 10px;  /* Slightly smaller radius */
   color: #f5d04c;
   font-family: 'Lexend', sans-serif;
   transition: all 0.2s;
@@ -649,13 +649,13 @@ button:disabled {
   }
   
   .number-btn {
-    height: 42px;
-    font-size: 24px;
+    height: 38px;  /* Slightly bigger on mobile for touch */
+    font-size: 22px;
   }
   
   .duration-input-group input {
-    font-size: 28px;
-    padding: 16px 4px;
+    font-size: 26px;  /* Reduced from 28px */
+    padding: 12px 4px;  /* Reduced from 16px */
   }
   
   .duration-picker-actions {
