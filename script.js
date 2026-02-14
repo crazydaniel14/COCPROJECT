@@ -602,15 +602,27 @@ function showDurationPicker(initialDays, initialHours, initialMins, callback) {
       <div class="duration-inputs">
         <div class="duration-input-group">
           <label>Days</label>
-          <input type="number" id="picker-days" min="0" max="365" value="${initialDays}">
+          <div class="number-input-wrapper">
+            <button class="number-btn number-down" data-input="days">−</button>
+            <input type="number" id="picker-days" min="0" max="365" value="${initialDays}">
+            <button class="number-btn number-up" data-input="days">+</button>
+          </div>
         </div>
         <div class="duration-input-group">
           <label>Hours</label>
-          <input type="number" id="picker-hours" min="0" max="23" value="${initialHours}">
+          <div class="number-input-wrapper">
+            <button class="number-btn number-down" data-input="hours">−</button>
+            <input type="number" id="picker-hours" min="0" max="23" value="${initialHours}">
+            <button class="number-btn number-up" data-input="hours">+</button>
+          </div>
         </div>
         <div class="duration-input-group">
           <label>Minutes</label>
-          <input type="number" id="picker-mins" min="0" max="59" value="${initialMins}">
+          <div class="number-input-wrapper">
+            <button class="number-btn number-down" data-input="mins">−</button>
+            <input type="number" id="picker-mins" min="0" max="59" value="${initialMins}">
+            <button class="number-btn number-up" data-input="mins">+</button>
+          </div>
         </div>
       </div>
       <div class="duration-picker-actions">
@@ -624,6 +636,25 @@ function showDurationPicker(initialDays, initialHours, initialMins, callback) {
   
   // Focus first input
   setTimeout(() => document.getElementById('picker-days')?.focus(), 100);
+  
+  // Number button handlers
+  modal.querySelectorAll('.number-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const inputName = btn.dataset.input;
+      const input = document.getElementById(`picker-${inputName}`);
+      const isUp = btn.classList.contains('number-up');
+      const currentVal = parseInt(input.value) || 0;
+      const min = parseInt(input.min);
+      const max = parseInt(input.max);
+      
+      if (isUp && currentVal < max) {
+        input.value = currentVal + 1;
+      } else if (!isUp && currentVal > min) {
+        input.value = currentVal - 1;
+      }
+    });
+  });
   
   // Confirm button
   modal.querySelector('.duration-confirm-btn').addEventListener('click', () => {
