@@ -549,8 +549,12 @@ async function updateCardDuration(builderName, row, newMinutes, newDurationHr, d
   durationEl.textContent = 'Saving...';
   
   try {
+    // For active upgrade, newMinutes is TIME REMAINING, not total duration
+    // We need to update End_DateTime to be NOW + newMinutes
+    // But keep Duration (min) as the original total duration
+    
     const res = await fetch(
-      `${API_BASE}?action=update_upgrade_duration&builder=${builderName}&row=${row}&minutes=${newMinutes}&duration_hr=${encodeURIComponent(newDurationHr)}`
+      `${API_BASE}?action=update_active_upgrade_time&builder=${builderName}&remaining_minutes=${newMinutes}`
     );
     const data = await res.json();
     
