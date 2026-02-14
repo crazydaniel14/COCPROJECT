@@ -457,51 +457,52 @@ button:disabled {
   padding-right: 8px;  /* 🔧 Shift content left by adding right padding */
 }
 
-/* Editable duration - subtle styling */
+/* Editable duration - NO underline, just cursor change */
 .editable-duration {
   cursor: pointer;
-  transition: color 0.2s;
-  text-decoration: underline;
-  text-decoration-style: dotted;
-  text-decoration-color: rgba(245, 208, 76, 0.3);
+  transition: color 0.2s, opacity 0.2s;
 }
 
 .editable-duration:hover {
   color: #f5d04c;
-  text-decoration-color: #f5d04c;
+  opacity: 0.9;
 }
 
 /* Duration Picker Modal */
 .duration-picker-modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
+  backdrop-filter: blur(4px);
 }
 
 .duration-picker-content {
-  background: #2f2f2f;
-  border-radius: 16px;
-  padding: 24px;
-  min-width: 320px;
+  background: linear-gradient(135deg, #2a2a2f 0%, #1f1f24 100%);
+  border: 2px solid rgba(245, 208, 76, 0.3);
+  border-radius: 20px;
+  padding: 28px;
+  min-width: 340px;
   max-width: 90%;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
 }
 
 .duration-picker-content h3 {
-  margin: 0 0 20px 0;
+  margin: 0 0 24px 0;
   color: #f5d04c;
   text-align: center;
-  font-size: 20px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
 }
 
 .duration-inputs {
   display: flex;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
 .duration-input-group {
@@ -513,27 +514,54 @@ button:disabled {
 
 .duration-input-group label {
   color: #babac0;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
   text-align: center;
+  letter-spacing: 1px;
 }
 
 .duration-input-group input {
   width: 100%;
-  padding: 12px;
-  font-size: 18px;
-  font-weight: 700;
+  padding: 14px 8px;
+  font-size: 24px;
+  font-weight: 800;
   text-align: center;
-  background: #1a1a1a;
-  border: 2px solid #3a3a3a;
-  border-radius: 8px;
-  color: #ffffff;
+  background: #16161b;
+  border: 2px solid #3a3a3f;
+  border-radius: 12px;
+  color: #f5d04c;
+  font-family: 'Lexend', sans-serif;
+  transition: all 0.2s;
+  
+  /* Style the spinner arrows */
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+}
+
+/* Custom number input arrows for Chrome/Safari */
+.duration-input-group input::-webkit-inner-spin-button,
+.duration-input-group input::-webkit-outer-spin-button {
+  -webkit-appearance: inner-spin-button;
+  opacity: 1;
+  height: 40px;
+  cursor: pointer;
+}
+
+/* Firefox number input styling */
+.duration-input-group input[type="number"] {
+  -moz-appearance: number-input;
 }
 
 .duration-input-group input:focus {
   outline: none;
   border-color: #f5d04c;
+  background: #1a1a20;
+  box-shadow: 0 0 0 3px rgba(245, 208, 76, 0.15);
+}
+
+.duration-input-group input:hover {
+  border-color: rgba(245, 208, 76, 0.5);
 }
 
 .duration-picker-actions {
@@ -544,32 +572,72 @@ button:disabled {
 .duration-confirm-btn,
 .duration-cancel-btn {
   flex: 1;
-  padding: 12px;
-  font-size: 15px;
-  font-weight: 600;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 700;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .duration-confirm-btn {
-  background: #f5d04c;
+  background: linear-gradient(135deg, #f5d04c 0%, #ffd700 100%);
   color: #000000;
+  box-shadow: 0 4px 12px rgba(245, 208, 76, 0.3);
 }
 
 .duration-confirm-btn:hover {
-  background: #ffd700;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(245, 208, 76, 0.4);
+}
+
+.duration-confirm-btn:active {
+  transform: translateY(0);
 }
 
 .duration-cancel-btn {
-  background: #3a3a3a;
-  color: #ffffff;
+  background: #2a2a2f;
+  color: #babac0;
+  border: 2px solid #3a3a3f;
 }
 
 .duration-cancel-btn:hover {
-  background: #4a4a4a;
+  background: #3a3a3f;
+  color: #ffffff;
+  border-color: #4a4a4f;
+}
+
+/* Mobile: Larger touch targets and visible arrows */
+@media (max-width: 768px) {
+  .duration-picker-content {
+    min-width: 300px;
+    padding: 24px 20px;
+  }
+  
+  .duration-inputs {
+    gap: 10px;
+  }
+  
+  .duration-input-group input {
+    font-size: 28px;
+    padding: 16px 4px;
+    /* Force show spinner on mobile */
+    -webkit-appearance: auto;
+  }
+  
+  .duration-picker-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .duration-confirm-btn,
+  .duration-cancel-btn {
+    padding: 16px;
+    font-size: 17px;
+  }
 }
 
 /* FIX #3: Balance date column spacing */
@@ -661,6 +729,20 @@ button:disabled {
   color: #f5d04c;
   margin-bottom: 4px;
   font-weight: bold;
+}
+
+/* Editable duration on builder card */
+.editable-card-duration {
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.editable-card-duration:hover {
+  background: rgba(245, 208, 76, 0.15);
+  transform: scale(1.05);
 }
 
 /* FINISH TIME */
