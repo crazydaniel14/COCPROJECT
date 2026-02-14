@@ -1,4 +1,4 @@
-console.log("Loaded script.js – v2");
+console.log("Loaded script.js – v1");
 
 /* =========================
    CONFIG
@@ -316,11 +316,21 @@ function renderBuilderDetails(details) {
     <div class="upgrade-list" data-original-order="${originalOrder.join(',')}">
       ${details.upgrades.map((upg, idx) => {
         const imgSrc = getUpgradeImage(upg.upgrade);
+        // Extract duration in minutes from upgrade name or calculate it
+        // Duration format: "5 d 19 hr 0 min" → need to convert to minutes
+        const durationMatch = upg.duration.match(/(\d+)\s*d\s*(\d+)\s*hr\s*(\d+)\s*min/);
+        const days = durationMatch ? parseInt(durationMatch[1]) : 0;
+        const hours = durationMatch ? parseInt(durationMatch[2]) : 0;
+        const minutes = durationMatch ? parseInt(durationMatch[3]) : 0;
+        const totalMinutes = (days * 24 * 60) + (hours * 60) + minutes;
+        
         return `
           <div class="upgrade-item" 
                data-builder="${upg.builder}"
                data-row="${upg.row}"
                data-index="${idx}"
+               data-upgrade-name="${upg.upgrade}"
+               data-duration-minutes="${totalMinutes}"
                draggable="true">
             <div class="upgrade-name">
               <img src="${imgSrc}" 
@@ -329,7 +339,9 @@ function renderBuilderDetails(details) {
                    onerror="this.src='Images/Upgrades/PH.png'" />
               <span>${upg.upgrade}</span>
             </div>
-            <div class="upgrade-duration">${upg.duration}</div>
+            <div class="upgrade-duration editable-duration" data-index="${idx}">
+              ${upg.duration}
+            </div>
             <div class="upgrade-time">
               <span>${upg.start}</span>
               <span>→</span>
@@ -350,6 +362,7 @@ function renderBuilderDetails(details) {
   // Add drag and drop event listeners
   setTimeout(() => {
     setupDragAndDrop(wrapper);
+    setupDurationEditor(wrapper);
   }, 0);
 
   return wrapper;
@@ -468,6 +481,130 @@ async function refreshDashboard() {
 }
 
 /* =========================
+   DURATION EDITOR
+   ========================= */
+function setupDurationEditor(detailsWrapper) {
+  const durationElements = detailsWrapper.querySelectorAll('.editable-duration');
+  
+  durationElements.forEach(durationEl => {
+    durationEl.addEventListener('click', (e) => {
+      e.stopPropagation(); // Don't trigger drag
+      
+      const upgradeItem = durationEl.closest('.upgrade-item');
+      const currentMinutes = parseInt(upgradeItem.dataset.durationMinutes);
+      const upgradeName = upgradeItem.dataset.upgradeName;
+      const builderName = upgradeItem.dataset.builder;
+      const row = upgradeItem.dataset.row;
+      
+      // Convert minutes to days, hours, minutes
+      const days = Math.floor(currentMinutes / (24 * 60));
+      const hours = Math.floor((currentMinutes % (24 * 60)) / 60);
+      const mins = currentMinutes % 60;
+      
+      showDurationPicker(days, hours, mins, (newDays, newHours, newMins) => {
+        const newTotalMinutes = (newDays * 24 * 60) + (newHours * 60) + newMins;
+        const newDurationHr = `${newDays} d ${newHours} hr ${newMins} min`;
+        
+        // Confirm change
+        if (confirm(`Change duration of "${upgradeName}" to ${newDurationHr}?`)) {
+          updateUpgradeDuration(builderName, row, newTotalMinutes, newDurationHr, durationEl, detailsWrapper);
+        }
+      });
+    });
+  });
+}
+
+function showDurationPicker(initialDays, initialHours, initialMins, callback) {
+  // Create modal
+  const modal = document.createElement('div');
+  modal.className = 'duration-picker-modal';
+  modal.innerHTML = `
+    <div class="duration-picker-content">
+      <h3>Set Duration</h3>
+      <div class="duration-inputs">
+        <div class="duration-input-group">
+          <label>Days</label>
+          <input type="number" id="picker-days" min="0" max="365" value="${initialDays}">
+        </div>
+        <div class="duration-input-group">
+          <label>Hours</label>
+          <input type="number" id="picker-hours" min="0" max="23" value="${initialHours}">
+        </div>
+        <div class="duration-input-group">
+          <label>Minutes</label>
+          <input type="number" id="picker-mins" min="0" max="59" value="${initialMins}">
+        </div>
+      </div>
+      <div class="duration-picker-actions">
+        <button class="duration-confirm-btn">Confirm</button>
+        <button class="duration-cancel-btn">Cancel</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Focus first input
+  setTimeout(() => document.getElementById('picker-days')?.focus(), 100);
+  
+  // Confirm button
+  modal.querySelector('.duration-confirm-btn').addEventListener('click', () => {
+    const days = parseInt(document.getElementById('picker-days').value) || 0;
+    const hours = parseInt(document.getElementById('picker-hours').value) || 0;
+    const mins = parseInt(document.getElementById('picker-mins').value) || 0;
+    
+    modal.remove();
+    callback(days, hours, mins);
+  });
+  
+  // Cancel button
+  modal.querySelector('.duration-cancel-btn').addEventListener('click', () => {
+    modal.remove();
+  });
+  
+  // Click outside to close
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+}
+
+async function updateUpgradeDuration(builderName, row, newMinutes, newDurationHr, durationEl, detailsWrapper) {
+  const originalText = durationEl.textContent;
+  durationEl.textContent = 'Saving...';
+  
+  try {
+    const res = await fetch(
+      `${API_BASE}?action=update_upgrade_duration&builder=${builderName}&row=${row}&minutes=${newMinutes}&duration_hr=${encodeURIComponent(newDurationHr)}`
+    );
+    const data = await res.json();
+    
+    if (data.error) {
+      alert('Failed to update: ' + data.error);
+      durationEl.textContent = originalText;
+      return;
+    }
+    
+    // Show success briefly
+    durationEl.textContent = '✓ Saved!';
+    setTimeout(() => {
+      // Refresh builder details to show updated dates
+      const builderNum = detailsWrapper.dataset.builder;
+      fetchBuilderDetails(builderNum).then(builderDetails => {
+        const newDetailsEl = renderBuilderDetails(builderDetails);
+        detailsWrapper.replaceWith(newDetailsEl);
+      });
+    }, 800);
+    
+  } catch (err) {
+    console.error('Update failed:', err);
+    alert('Failed to update duration');
+    durationEl.textContent = originalText;
+  }
+}
+
+/* =========================
    DRAG AND DROP FOR REORDERING
    ========================= */
 function setupDragAndDrop(detailsWrapper) {
@@ -479,8 +616,11 @@ function setupDragAndDrop(detailsWrapper) {
   
   let draggedItem = null;
   let originalOrder = upgradeList.dataset.originalOrder;
+  let touchStartY = 0;
+  let isDragging = false;
   
   items.forEach(item => {
+    // Desktop drag events
     item.addEventListener('dragstart', (e) => {
       draggedItem = item;
       item.classList.add('dragging');
@@ -501,6 +641,39 @@ function setupDragAndDrop(detailsWrapper) {
       } else {
         upgradeList.insertBefore(draggedItem, afterElement);
       }
+    });
+    
+    // Mobile touch events
+    const dragHandle = item.querySelector('.drag-handle');
+    
+    dragHandle?.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      isDragging = true;
+      draggedItem = item;
+      touchStartY = e.touches[0].clientY;
+      item.classList.add('dragging');
+    }, { passive: false });
+    
+    dragHandle?.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      e.preventDefault();
+      
+      const touch = e.touches[0];
+      const afterElement = getDragAfterElement(upgradeList, touch.clientY);
+      
+      if (afterElement == null) {
+        upgradeList.appendChild(draggedItem);
+      } else {
+        upgradeList.insertBefore(draggedItem, afterElement);
+      }
+    }, { passive: false });
+    
+    dragHandle?.addEventListener('touchend', () => {
+      if (!isDragging) return;
+      isDragging = false;
+      item.classList.remove('dragging');
+      draggedItem = null;
+      checkIfOrderChanged();
     });
   });
   
