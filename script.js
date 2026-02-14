@@ -948,6 +948,11 @@ function wireApprenticeBoost() {
       await Promise.all([loadTodaysBoost(), loadBoostPlan()]);
       updateLastRefreshed();
       
+      // Re-render cards to show APPLIED badge
+      const container = document.getElementById("builders-container");
+      container.innerHTML = "";
+      renderBuilderCards();
+      
     } catch (err) {
       console.error("Failed to apply today's boost", err);
       alert("Failed to apply today's boost.");
