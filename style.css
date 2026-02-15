@@ -722,18 +722,18 @@ button:disabled {
   height: 70px;
   object-fit: contain;
   z-index: 1;
-  filter: drop-shadow(0 0 8px rgba(245, 208, 76, 0.6));  /* 🔧 GLOW EFFECT - yellow glow */
+  filter: drop-shadow(0 0 5px rgba(245, 208, 76, 0.6));  /* 🔧 GLOW EFFECT - yellow glow */
 }
 
 /* FIX #2: Shift text left when card is expanded */
 .builder-card.expanded .builder-text {
-  left: 38%;  /* 🔧 Moved from 46% to 38% when expanded */
+  left: 43%;  /* 🔧 Moved from 46% to 38% when expanded */
   width: 56%;  /* 🔧 Increased width to accommodate */
 }
 
 /* Move icon when expanded too */
 .builder-card.expanded .current-upgrade-icon {
-  left: 30%;  /* 🔧 Shift icon left when expanded */
+  left: 40%;  /* 🔧 Shift icon left when expanded */
 }
 
 /* BUILDER NAME */
