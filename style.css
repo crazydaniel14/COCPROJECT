@@ -782,7 +782,7 @@ button:disabled {
 .builder-finish {
   font-size: 12px;
   opacity: 0.85;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 /* NEXT UPGRADE */
@@ -894,8 +894,8 @@ button:disabled {
     display: flex;  /* 🔧 Changed from grid to flex for stacking */
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
-    padding: 14px 12px;  /* 🔧 More padding for touch targets */
+    gap: 6px;
+    padding: 12px 12px;  /* 🔧 More padding for touch targets */
     font-size: 13px;
     min-height: auto;  /* 🔧 Let height be natural */
     position: relative;  /* For absolute positioning of drag handle */
