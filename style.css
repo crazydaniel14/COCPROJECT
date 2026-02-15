@@ -715,28 +715,25 @@ button:disabled {
 /* Current upgrade icon - positioned to the left of text */
 .current-upgrade-icon {
   position: absolute;
-  left: 33%;  /* 🔧 Position to the left of the text column */
-  top: 60%;
+  left: 38%;  /* 🔧 Position to the left of the text column */
+  top: 50%;
   transform: translateY(-50%);
-  width: 70px;  /* 🔧 Adjusted size */
-  height: 70px;
+  width: 50px;  /* 🔧 Adjusted size */
+  height: 50px;
   object-fit: contain;
   z-index: 1;
-  filter: drop-shadow(0 0 5px rgba(245, 208, 76, 0.6));  /* 🔧 GLOW EFFECT - yellow glow */
+  filter: drop-shadow(0 0 8px rgba(245, 208, 76, 0.6));  /* 🔧 GLOW EFFECT - yellow glow */
 }
 
 /* FIX #2: Shift text left when card is expanded */
 .builder-card.expanded .builder-text {
-  left: 43%;  /* 🔧 Moved from 46% to 38% when expanded */
+  left: 38%;  /* 🔧 Moved from 46% to 38% when expanded */
   width: 56%;  /* 🔧 Increased width to accommodate */
 }
 
 /* Move icon when expanded too */
 .builder-card.expanded .current-upgrade-icon {
-  left: 35%;/* 🔧 Shift icon left when expanded */
-  top: 50%;
-  width: 100px;  /* 🔧 Adjusted size */
-  height: 100px;
+  left: 30%;  /* 🔧 Shift icon left when expanded */
 }
 
 /* BUILDER NAME */
@@ -854,23 +851,25 @@ button:disabled {
 
   /* Current upgrade icon on mobile - override desktop styles */
   .current-upgrade-icon {
-    left: 30% !important;  /* 🔧 Force override */
-    top: 90%
-    width: 60px !important;  /* 🔧 Force override */
-    height: 60px !important;  /* 🔧 Force override */
+    left: 28% !important;  /* 🔧 Force override */
+    top: 70% !important;  /* 🔧 Lower on mobile */
+    width: 75px !important;  /* 🔧 Bigger on mobile */
+    height: 75px !important;  /* 🔧 Bigger on mobile */
   }
   
-  /* Expanded icon on mobile */
+  /* Expanded icon on mobile - SAME as closed (no change) */
   .builder-card.expanded .current-upgrade-icon {
-    left: 25% !important;  /* 🔧 Force override */
-    width: 60px !important;  /* 🔧 You can change this */
-    height: 60px !important;  /* 🔧 You can change this */
+    left: 28% !important;  /* 🔧 Same as closed */
+    top: 70% !important;  /* 🔧 Same as closed */
+    width: 75px !important;  /* 🔧 Same as closed */
+    height: 75px !important;  /* 🔧 Same as closed */
   }
 
   /* Mobile structure */
   .builder-card.expanded {
     height: 210px;   /* same as normal mobile card */
     min-height: 210px;
+    grid-column: 1 / -1;  /* 🔧 Full width - prevents cards from being hidden */
   }
 
   .builder-details {
