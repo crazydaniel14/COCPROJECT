@@ -733,7 +733,9 @@ button:disabled {
 
 /* Move icon when expanded too */
 .builder-card.expanded .current-upgrade-icon {
-  left: 40%;  /* 🔧 Shift icon left when expanded */
+  left: 30%;  /* 🔧 Shift icon left when expanded */
+  width: 100px;  /* 🔧 Adjusted size */
+  height: 100px;
 }
 
 /* BUILDER NAME */
