@@ -715,8 +715,8 @@ button:disabled {
 /* Current upgrade icon - positioned to the left of text */
 .current-upgrade-icon {
   position: absolute;
-  left: 43%;  /* 🔧 Position to the left of the text column */
-  top: 50%;
+  left: 33%;  /* 🔧 Position to the left of the text column */
+  top: 60%;
   transform: translateY(-50%);
   width: 70px;  /* 🔧 Adjusted size */
   height: 70px;
