@@ -854,10 +854,10 @@ button:disabled {
 
   /* Current upgrade icon on mobile - override desktop styles */
   .current-upgrade-icon {
-    left: 29% !important;  /* 🔧 Force override */
-    top: 60%
-    width: 50px !important;  /* 🔧 Force override */
-    height: 50px !important;  /* 🔧 Force override */
+    left: 30% !important;  /* 🔧 Force override */
+    top: 90%
+    width: 60px !important;  /* 🔧 Force override */
+    height: 60px !important;  /* 🔧 Force override */
   }
   
   /* Expanded icon on mobile */
