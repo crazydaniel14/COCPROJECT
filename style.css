@@ -799,7 +799,7 @@ button:disabled {
   /* One card per row */
   .builders-container {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 5px;
   }
 
   /* Bigger card for readability */
@@ -820,7 +820,7 @@ button:disabled {
 
   /* Builder image bigger and lower */
   .builder-character {
-    left: 20px;
+    left: 5px;
     bottom: 40px;
     height: 120px;
   }
@@ -854,18 +854,18 @@ button:disabled {
 
   /* Current upgrade icon on mobile - override desktop styles */
   .current-upgrade-icon {
-    left: 28% !important;  /* 🔧 Force override */
-    top: 70% !important;  /* 🔧 Lower on mobile */
-    width: 55px !important;  /* 🔧 Bigger on mobile */
-    height: 55px !important;  /* 🔧 Bigger on mobile */
+    left: 27% !important;  /* 🔧 Force override */
+    top: 67% !important;  /* 🔧 Lower on mobile */
+    width: 50px !important;  /* 🔧 Bigger on mobile */
+    height: 50px !important;  /* 🔧 Bigger on mobile */
   }
   
   /* Expanded icon on mobile - SAME as closed (no change) */
   .builder-card.expanded .current-upgrade-icon {
-    left: 28% !important;  /* 🔧 Same as closed */
-    top: 70% !important;  /* 🔧 Same as closed */
-    width: 55px !important;  /* 🔧 Same as closed */
-    height: 55px !important;  /* 🔧 Same as closed */
+    left: 27% !important;  /* 🔧 Same as closed */
+    top: 67% !important;  /* 🔧 Same as closed */
+    width: 50px !important;  /* 🔧 Same as closed */
+    height: 50px !important;  /* 🔧 Same as closed */
   }
 
   /* Mobile structure */
@@ -876,9 +876,9 @@ button:disabled {
   }
 
   .builder-details {
-    margin-top: 8px;   /* normal spacing on mobile */
+    margin-top: -10px;   /* normal spacing on mobile */
     max-width: 100%;
-    padding: 12px 12px 16px 12px;  /* 🔧 Added side padding for mobile */
+    padding: 12px 12px 12px 12px;  /* 🔧 Added side padding for mobile */
     grid-column: span 1;  /* 🔧 Only span 1 column on mobile! */
   }
 
@@ -904,7 +904,7 @@ button:disabled {
   /* Drag handle on mobile - top right corner */
   .drag-handle {
     position: absolute;
-    top: 8px;
+    top: 35px;
     right: 8px;
     font-size: 24px;
     padding: 8px;
@@ -926,7 +926,7 @@ button:disabled {
 
   /* Upgrade name - bigger and bolder */
   .upgrade-name {
-    font-size: 15px;  /* 🔧 Larger for readability */
+    font-size: 11px;  /* 🔧 Larger for readability */
     font-weight: 700;
     padding-left: 0;  /* 🔧 Remove left padding on mobile */
     width: 100%;
@@ -955,7 +955,7 @@ button:disabled {
 
   /* Time row */
   .upgrade-time {
-    font-size: 12px;
+    font-size: 9px;
     padding-left: 0;  /* 🔧 Remove padding on mobile */
     min-width: auto;
     width: 100%;
@@ -1149,7 +1149,7 @@ button:disabled {
 /* Text */
 .boost-finish-text {
   color: #ffffff;    /* ← white */
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 
