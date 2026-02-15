@@ -853,16 +853,16 @@ button:disabled {
   .current-upgrade-icon {
     left: 28% !important;  /* 🔧 Force override */
     top: 70% !important;  /* 🔧 Lower on mobile */
-    width: 75px !important;  /* 🔧 Bigger on mobile */
-    height: 75px !important;  /* 🔧 Bigger on mobile */
+    width: 60px !important;  /* 🔧 Bigger on mobile */
+    height: 60px !important;  /* 🔧 Bigger on mobile */
   }
   
   /* Expanded icon on mobile - SAME as closed (no change) */
   .builder-card.expanded .current-upgrade-icon {
     left: 28% !important;  /* 🔧 Same as closed */
     top: 70% !important;  /* 🔧 Same as closed */
-    width: 75px !important;  /* 🔧 Same as closed */
-    height: 75px !important;  /* 🔧 Same as closed */
+    width: 60px !important;  /* 🔧 Same as closed */
+    height: 60px !important;  /* 🔧 Same as closed */
   }
 
   /* Mobile structure */
