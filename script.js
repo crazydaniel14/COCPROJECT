@@ -357,6 +357,14 @@ function renderBuilderDetails(details) {
                     data-current-builder="${upg.builder}"
                     data-row="${upg.row}"
                     title="Move to another builder">👤</button>
+            <div class="upgrade-controls">
+              <button class="transfer-builder-btn" 
+                      data-upgrade-name="${upg.upgrade}"
+                      data-current-builder="${upg.builder}"
+                      data-row="${upg.row}"
+                      title="Move to another builder">👤</button>
+              <div class="drag-handle">⋮⋮</div>
+            </div>
           </div>
         `;
       }).join("")}
@@ -924,37 +932,39 @@ function setupDragAndDrop(detailsWrapper) {
       }
     });
     
-    // Mobile touch events
-    const dragHandle = item.querySelector('.drag-handle');
+    // Mobile touch events - handle both desktop drag handle AND mobile controls wrapper
+    const dragHandles = item.querySelectorAll('.drag-handle');
     
-    dragHandle?.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      isDragging = true;
-      draggedItem = item;
-      touchStartY = e.touches[0].clientY;
-      item.classList.add('dragging');
-    }, { passive: false });
-    
-    dragHandle?.addEventListener('touchmove', (e) => {
-      if (!isDragging) return;
-      e.preventDefault();
+    dragHandles.forEach(dragHandle => {
+      dragHandle?.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        isDragging = true;
+        draggedItem = item;
+        touchStartY = e.touches[0].clientY;
+        item.classList.add('dragging');
+      }, { passive: false });
       
-      const touch = e.touches[0];
-      const afterElement = getDragAfterElement(upgradeList, touch.clientY);
+      dragHandle?.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        const afterElement = getDragAfterElement(upgradeList, touch.clientY);
+        
+        if (afterElement == null) {
+          upgradeList.appendChild(draggedItem);
+        } else {
+          upgradeList.insertBefore(draggedItem, afterElement);
+        }
+      }, { passive: false });
       
-      if (afterElement == null) {
-        upgradeList.appendChild(draggedItem);
-      } else {
-        upgradeList.insertBefore(draggedItem, afterElement);
-      }
-    }, { passive: false });
-    
-    dragHandle?.addEventListener('touchend', () => {
-      if (!isDragging) return;
-      isDragging = false;
-      item.classList.remove('dragging');
-      draggedItem = null;
-      checkIfOrderChanged();
+      dragHandle?.addEventListener('touchend', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        item.classList.remove('dragging');
+        draggedItem = null;
+        checkIfOrderChanged();
+      });
     });
   });
   
