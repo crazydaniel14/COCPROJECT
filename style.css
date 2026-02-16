@@ -5,10 +5,6 @@ html, body {
   background-color: #101013;
   font-family: 'Lexend', system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
 }
-/* TODAY'S BOOST block */
-#todaysBoost {
-  color: #babac0;
-}
 
 h1 {
   margin-bottom: 5px;
@@ -22,93 +18,15 @@ h2 {
   font-size: 2.5rem;
   font-weight: 800;
 }
+
 h3 {
   color: #babac0;
 }
+
 h4 {
   color: #babac0;
   text-align: center;
   font-weight: bold;
-}
-/* ===== TABLEBASE ===== */
-table {
-  border-collapse: collapse;
-  width: 100%;
-  background-color: #ffffff;
-  margin-top: 15px;
-}
-
-th, td {
-  border: 1px solid #d0d0d0;
-  text-align: center;
-  font-size: 14px;
-  line-height: 1.2;
-}
-
-/* Header */
-th {
-  background-color: #b7b7b7;
-  font-weight: bold;
-  padding: 8px 6px;
-}
-
-/* ===== COLUMN BEHAVIOR ===== */
-
-/* BUILDER */
-td:first-child,
-th:first-child {
-  width: 48px;
-  font-weight: bold;
-  padding: 6px 4px;
-}
-
-/* CURRENT UPGRADE + NEXT UPGRADE */
-td:nth-child(2),
-td:nth-child(5) {
-  padding: 4px 4px;
-  line-height: 1.1;
-}
-
-/* FINISH TIME */
-td:nth-child(3) {
-  padding: 6px 6px;
-  white-space: nowrap;
-}
-
-/* TIME LEFT */
-td:nth-child(4) {
-  font-family: monospace;
-  font-weight: bold;
-  padding: 16px 6px;
-  min-height: 56px;
-  vertical-align: middle;
-}
-
-/* ===== MOBILE OPTIMIZATION ===== */
-@media (max-width: 600px) {
-  th {
-    padding: 6px 4px;
-    font-size: 13px;
-  }
-
-  td {
-    font-size: 13px;
-  }
-
-  td:nth-child(2),
-  td:nth-child(5) {
-    padding: 3px 4px;
-  }
-
-  td:nth-child(4) {
-    padding: 18px 6px;
-    min-height: 60px;
-  }
-}
-
-/* ===== NEXT FINISH HIGHLIGHT ===== */
-tr.next-finish {
-  background-color: #fff3cd;
 }
 
 button:disabled {
@@ -116,40 +34,12 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* ==================================================
-   BOOST PLAN (MIRROR TABLE ONLY)
-   ================================================== */
-
-.table-wrapper {
-  overflow-x: auto;
-}
-
-/* Slightly softer header for Boost Plan */
-#boost-plan-table th {
-  background-color: #d6d6d6;
-}
-
-/* Keep Boost Plan compact */
-#boost-plan-table td,
-#boost-plan-table th {
-  padding: 6px 8px;
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-/* SAFE / FORCED indicators */
-#boost-plan-table .safe {
-  color: #2e7d32;
-  font-weight: bold;
-}
-
-#boost-plan-table .forced {
-  color: #c62828;
-  font-weight: bold;
+.hidden {
+  display: none;
 }
 
 /* ==================================================
-   BUILDER POTION IMAGE BUTTON
+   ACTION BUTTONS
    ================================================== */
 .action-button {
   display: flex;
@@ -174,7 +64,6 @@ button:disabled {
 /* ==================================================
    MODAL OVERLAY
    ================================================== */
-
 .modal {
   position: fixed;
   inset: 0;
@@ -184,14 +73,6 @@ button:disabled {
   justify-content: center;
   z-index: 1000;
 }
-
-.hidden {
-  display: none;
-}
-
-/* ==================================================
-   MODAL CONTENT
-   ================================================== */
 
 .modal-content {
   background: #ffffff;
@@ -206,20 +87,12 @@ button:disabled {
   margin-top: 0;
 }
 
-/* ==================================================
-   NUMBER INPUT
-   ================================================== */
-
 .modal-content input[type="number"] {
   width: 100%;
   padding: 8px;
   font-size: 14px;
   margin: 8px 0 12px 0;
 }
-
-/* ==================================================
-   PREVIEW BOX
-   ================================================== */
 
 .preview-box {
   background: #f7f7f7;
@@ -231,10 +104,6 @@ button:disabled {
   margin-bottom: 12px;
 }
 
-/* ==================================================
-   MODAL ACTION BUTTONS
-   ================================================== */
-
 .modal-actions {
   display: flex;
   gap: 10px;
@@ -244,21 +113,9 @@ button:disabled {
   flex: 1;
 }
 
-/* Hide legacy builder table (cards are now primary UI) */
-#builderTable {
-  display: none;
-}
-
 /* ==================================================
-   BUILDER CARDS — IMAGE-MATCHED DESIGN
+   BUILDER CARDS
    ================================================== */
-
-/* Highlight builder closest to finishing */
-.builder-card.next-finish {
-  box-shadow: 0 0 0 0px #24f016, 0 5px 10px rgba(36, 240, 22, 0.60);
-}
-
-/* Always 2 cards per row */
 .builders-container {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -267,8 +124,6 @@ button:disabled {
   margin-top: 16px;
 }
 
-
-/* Card shell */
 .builder-card {
   position: relative;
   height: 160px;
@@ -279,7 +134,9 @@ button:disabled {
   box-shadow: 0 6px 16px rgba(0,0,0,0.4);
 }
 
-/* EXPANDED BUILDER CARD */
+.builder-card.next-finish {
+  box-shadow: 0 0 0 0px #24f016, 0 5px 10px rgba(36, 240, 22, 0.60);
+}
 
 .builder-card.expanded {
   grid-column: 1 / -1; 
@@ -287,23 +144,130 @@ button:disabled {
   outline: 2px solid rgba(255,255,255,0.25);
 }
 
-/* PINNED BUILDER CARD */
-
-.builder-card.pinned {
-  outline: 2px solid rgba(255, 255, 255, 0.15);
+.builder-character {
+  position: absolute;
+  left: 100px;
+  bottom: 10px;
+  height: 100px;
+  transform: scale(1.3);
+  transform-origin: bottom left;
+  pointer-events: none;
 }
 
-/* BUILDER DETAILS (UPGRADE LIST) */
+.builder-text {
+  position: absolute;
+  left: 46%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48%;
+  color: #ffffff;
+}
 
+.current-upgrade-icon {
+  position: absolute;
+  left: 33%;
+  top: 60%;
+  transform: translateY(-50%);
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  z-index: 1;
+  filter: drop-shadow(0 0 5px rgba(245, 208, 76, 0.6));
+}
+
+.builder-card.expanded .builder-text {
+  left: 43%;
+  width: 56%;
+}
+
+.builder-card.expanded .current-upgrade-icon {
+  left: 35%;
+  top: 50%;
+  width: 100px;
+  height: 100px;
+}
+
+.builder-name {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.builder-upgrade {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.builder-time-left {
+  font-size: 22px;
+  font-weight: 800;
+  color: #f5d04c;
+  margin-bottom: 4px;
+}
+
+.editable-card-duration {
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.editable-card-duration:hover {
+  background: rgba(245, 208, 76, 0.15);
+  transform: scale(1.05);
+}
+
+.builder-finish {
+  font-size: 12px;
+  opacity: 0.85;
+  margin-bottom: 8px;
+}
+
+.builder-next {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.apprentice-badge {
+  cursor: pointer;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 60px;
+  height: auto;
+  z-index: 999;
+  pointer-events: auto !important;
+}
+
+.builder-card .apprentice-badge[src*="Forced"] {
+  filter: drop-shadow(0 0 10px rgba(255, 80, 80, 0.8));
+}
+
+.builder-card .builder-text,
+.builder-card .builder-character,
+.builder-card .current-upgrade-icon {
+  pointer-events: none;
+}
+
+.builder-card .editable-card-duration {
+  pointer-events: auto !important;
+}
+
+/* ==================================================
+   BUILDER DETAILS (UPGRADE LIST)
+   ================================================== */
 .builder-details-header {
   position: relative;
-  height: 0;  /* No space taken */
+  height: 0;
 }
 
-/* 🔧 FIX 1: Builder refresh button - positioned on builder card on desktop */
 .builder-refresh-btn {
   position: absolute;
-  top: -50px;  /* Above the header on desktop */
+  top: -50px;
   right: 12px;
   background: rgba(245, 208, 76, 0.15);
   border: 1px solid rgba(245, 208, 76, 0.3);
@@ -341,22 +305,21 @@ button:disabled {
   to { transform: rotate(360deg); }
 }
 
-/* 🔧 FIX 3: Builder details with better padding (not too wide, not too narrow) */
 .builder-details {
-  padding: 0 24px 16px 24px;  /* 🔧 Good padding for content */
-  margin: 20px auto;  /* 🔧 Auto margins to center */
-  max-width: calc(100% - 32px);  /* 🔧 Only 16px margin on each side - WIDER */
-  width: auto;  /* 🔧 Let it size naturally */
+  padding: 0 24px 16px 24px;
+  margin: 20px auto;
+  max-width: calc(100% - 32px);
+  width: auto;
   grid-column: span 2;
   background: #16161b;
   border-radius: 18px;
-  margin-top: -8px;   /* visually attached to card */
+  margin-top: -8px;
   color: #ffffff;
 }
 
 .upgrade-headers {
   display: grid;
-  grid-template-columns: 60px 2.2fr 1fr 2fr 40px;  /* 🔧 Drag handle | Name | Duration | Dates | Transfer button */
+  grid-template-columns: 60px 2.2fr 1fr 2fr 40px;
   align-items: center;
   text-align: center;
   font-size: 15px;
@@ -375,7 +338,7 @@ button:disabled {
 
 .upgrade-item {
   display: grid;
-  grid-template-columns: 60px 2.2fr 1fr 2fr 40px;  /* 🔧 Drag handle | Name | Duration | Dates | Transfer button */
+  grid-template-columns: 60px 2.2fr 1fr 2fr 40px;
   align-items: center;
   font-size: 14px;
   color: #ffffff;
@@ -387,55 +350,8 @@ button:disabled {
   transition: background-color 0.2s;
 }
 
-/* Drag handle - FIRST column (left side) */
-.drag-handle {
-  color: #f5d04c;
-  font-size: 16px;
-  font-weight: bold;
-  text-align: center;
-  cursor: grab;
-  opacity: 0.6;
-  transition: opacity 0.2s;
-  user-select: none;
-  width: 20px;
-  justify-self: center;  /* 🔧 Center in its column */
-}
-
-.upgrade-item:hover .drag-handle {
-  opacity: 1;
-}
-
-.drag-handle:active {
-  cursor: grabbing;
-}
-
-/* Transfer builder button - LAST column (right side) */
-.transfer-builder-btn {
-  background: rgba(245, 208, 76, 0.15);
-  border: 1px solid rgba(245, 208, 76, 0.3);
-  border-radius: 6px;
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-  padding: 0;
-  justify-self: end;  /* 🔧 Push to right end of column */
-  margin-right: 4px;  /* 🔧 Small margin from edge */
-}
-
-.transfer-builder-btn:hover {
-  background: rgba(245, 208, 76, 0.25);
-  border-color: #f5d04c;
-  transform: scale(1.1);
-}
-
-/* 🔧 Hide mobile controls wrapper on desktop */
-.upgrade-controls {
-  display: none;
+.upgrade-item:nth-child(even) {
+  background-color: #23232b;
 }
 
 .upgrade-item:active {
@@ -452,7 +368,103 @@ button:disabled {
   border-left: 3px solid #f5d04c;
 }
 
-/* Save order buttons */
+.drag-handle {
+  color: #f5d04c;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  cursor: grab;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  user-select: none;
+  width: 20px;
+  justify-self: center;
+}
+
+.upgrade-item:hover .drag-handle {
+  opacity: 1;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.transfer-builder-btn {
+  background: rgba(245, 208, 76, 0.15);
+  border: 1px solid rgba(245, 208, 76, 0.3);
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  padding: 0;
+  justify-self: end;
+  margin-right: 4px;
+}
+
+.transfer-builder-btn:hover {
+  background: rgba(245, 208, 76, 0.25);
+  border-color: #f5d04c;
+  transform: scale(1.1);
+}
+
+.upgrade-controls {
+  display: none;
+}
+
+.upgrade-name {
+  font-weight: 600;
+  text-align: left;
+  padding-left: 8px;
+  line-height: 1.3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.upgrade-icon {
+  width: 35px;
+  height: 35px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 3px;
+  flex-shrink: 0;
+}
+
+.upgrade-duration {
+  font-weight: 500;
+  white-space: nowrap;
+  line-height: 1.3;
+  text-align: center;
+  padding-right: 8px;
+}
+
+.editable-duration {
+  cursor: pointer;
+  transition: color 0.2s, opacity 0.2s;
+}
+
+.editable-duration:hover {
+  color: #f5d04c;
+  opacity: 0.9;
+}
+
+.upgrade-time {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  white-space: nowrap;
+  padding-left: 8px;
+  min-width: 200px;
+  line-height: 1.3;
+}
+
 .save-order-container {
   display: flex;
   gap: 12px;
@@ -498,53 +510,9 @@ button:disabled {
   background: #4a4a4a;
 }
 
-.upgrade-item:nth-child(even) {
-  background-color: #23232b;
-}
-
-/* Upgrade name */
-.upgrade-name {
-  font-weight: 600;
-  text-align: left;
-  padding-left: 8px;
-  line-height: 1.3;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* Upgrade icon in expanded list */
-.upgrade-icon {
-  width: 35px;
-  height: 35px;
-  object-fit: contain;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 3px;
-  flex-shrink: 0;
-}
-
-/* Duration */
-.upgrade-duration {
-  font-weight: 500;
-  white-space: nowrap;
-  line-height: 1.3;
-  text-align: center;
-  padding-right: 8px;
-}
-
-/* Editable duration - NO underline, just cursor change */
-.editable-duration {
-  cursor: pointer;
-  transition: color 0.2s, opacity 0.2s;
-}
-
-.editable-duration:hover {
-  color: #f5d04c;
-  opacity: 0.9;
-}
-
-/* Duration Picker Modal */
+/* ==================================================
+   DURATION PICKER MODAL
+   ================================================== */
 .duration-picker-modal {
   position: fixed;
   inset: 0;
@@ -597,7 +565,6 @@ button:disabled {
   letter-spacing: 1px;
 }
 
-/* Number input wrapper with custom buttons */
 .number-input-wrapper {
   position: relative;
   display: flex;
@@ -645,8 +612,6 @@ button:disabled {
   color: #f5d04c;
   font-family: 'Lexend', sans-serif;
   transition: all 0.2s;
-  
-  /* Hide default spinner arrows since we have custom buttons */
   -moz-appearance: textfield;
 }
 
@@ -713,7 +678,9 @@ button:disabled {
   border-color: #4a4a4f;
 }
 
-/* Builder Picker Modal */
+/* ==================================================
+   BUILDER PICKER MODAL
+   ================================================== */
 .builder-picker-modal {
   position: fixed;
   inset: 0;
@@ -801,415 +768,9 @@ button:disabled {
   border-color: #4a4a4f;
 }
 
-.upgrade-time {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 6px;
-  white-space: nowrap;
-  padding-left: 8px;
-  min-width: 200px;
-  line-height: 1.3;
-}
-
-/* Builder character (visual only) */
-.builder-character {
-  position: absolute;
-  left: 100px;
-  bottom: 10px;
-  height: 100px;
-  transform: scale(1.3);
-  transform-origin: bottom left;
-  pointer-events: none;
-}
-
-/* Text column */
-.builder-text {
-  position: absolute;
-  left: 46%;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 48%;
-  color: #ffffff;
-}
-
-/* Current upgrade icon - positioned to the left of text */
-.current-upgrade-icon {
-  position: absolute;
-  left: 33%;
-  top: 60%;
-  transform: translateY(-50%);
-  width: 70px;
-  height: 70px;
-  object-fit: contain;
-  z-index: 1;
-  filter: drop-shadow(0 0 5px rgba(245, 208, 76, 0.6));
-}
-
-.builder-card.expanded .builder-text {
-  left: 43%;
-  width: 56%;
-}
-
-/* Move icon when expanded too */
-.builder-card.expanded .current-upgrade-icon {
-  left: 35%;
-  top: 50%;
-  width: 100px;
-  height: 100px;
-}
-
-/* BUILDER NAME */
-.builder-name {
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  color: #ffffff;
-  margin-bottom: 6px;
-}
-
-/* CURRENT UPGRADE */
-.builder-upgrade {
-  font-size: 15px;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-/* TIME LEFT (PRIMARY) */
-.builder-time-left {
-  font-size: 22px;
-  font-weight: 800;
-  color: #f5d04c;
-  margin-bottom: 4px;
-  font-weight: bold;
-}
-
-/* Editable duration on builder card */
-.editable-card-duration {
-  cursor: pointer;
-  transition: all 0.2s;
-  padding: 4px 8px;
-  border-radius: 6px;
-  display: inline-block;
-}
-
-.editable-card-duration:hover {
-  background: rgba(245, 208, 76, 0.15);
-  transform: scale(1.05);
-}
-
-/* FINISH TIME */
-.builder-finish {
-  font-size: 12px;
-  opacity: 0.85;
-  margin-bottom: 8px;
-}
-
-/* NEXT UPGRADE */
-.builder-next {
-  font-size: 13px;
-  opacity: 0.7;
-}
 /* ==================================================
-   MOBILE: SINGLE COLUMN, BIGGER CARDS
+   BOOST FOCUS CARD
    ================================================== */
-
-@media (max-width: 768px) {
-
-  /* One card per row */
-  .builders-container {
-    grid-template-columns: 1fr;
-    gap: 5px;
-  }
-
-  /* 🔧 FIX 4: Keep builder card SAME width when expanded */
-  .builder-card {
-    height: 210px;
-    min-height: 48px;
-    cursor: pointer;
-    /* Remove any width-changing styles */
-  }
-
-  /* 🔧 FIX 4: No width change on expanded state */
-  .builder-card.expanded {
-    height: 210px;
-    min-height: 210px;
-    grid-column: 1 / -1;
-    /* Ensure no margin/padding changes that would narrow it */
-  }
-
-  /* Ensure entire card is tappable */
-  .builder-card * {
-    pointer-events: none;
-  }
-  
-  .builder-card .apprentice-badge {
-    pointer-events: auto;
-  }
-
-  /* Builder image bigger and lower */
-  .builder-character {
-    left: 20px;
-    bottom: 40px;
-    height: 120px;
-    transform: scale(1);  /* Reset scaling on mobile */
-  }
-
-  /* Text column wider */
-  .builder-text {
-    left: 42%;
-    width: 54%;
-  }
-
-  /* Text scaling */
-  .builder-name {
-    font-size: 17px;
-  }
-
-  .builder-upgrade {
-    font-size: 15px;
-  }
-
-  .builder-time-left {
-    font-size: 17px;
-  }
-
-  .builder-finish {
-    font-size: 13px;
-  }
-
-  .builder-next {
-    font-size: 10px;
-  }
-
-  /* Current upgrade icon on mobile */
-  .current-upgrade-icon {
-    left: 27% !important;
-    top: 67% !important;
-    width: 50px !important;
-    height: 50px !important;
-  }
-  
-  /* Expanded icon on mobile - SAME as closed */
-  .builder-card.expanded .current-upgrade-icon {
-    left: 27% !important;
-    top: 67% !important;
-    width: 50px !important;
-    height: 50px !important;
-  }
-
-  /* 🔧 Mobile builder details - centered with proper padding */
-  .builder-details {
-    margin: 20px auto;  /* 🔧 Auto margins to center */
-    width: calc(100% - 16px);  /* 🔧 Small margins on sides (8px each) */
-    max-width: 100%;
-    padding: 12px 16px 16px 16px;  /* 🔧 Consistent padding */
-    grid-column: span 1;
-    box-sizing: border-box;
-  }
-
-  /* 🔧 Builder refresh button on mobile - positioned as requested */
-  .builder-refresh-btn {
-    position: absolute;
-    top: -90px;  /* 🔧 User-specified position */
-    right: -9px;  /* 🔧 User-specified position */
-    width: 40px;
-    height: 40px;
-    font-size: 18px;
-    opacity: 0.8;
-  }
-
-  /* Hide the header row on mobile */
-  .upgrade-headers {
-    display: none;
-  }
-
-  /* 🔧 Mobile upgrade item - stacked layout */
-  .upgrade-item {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 14px 12px;  /* 🔧 Consistent padding */
-    font-size: 13px;
-    min-height: auto;
-    position: relative;
-    box-sizing: border-box;
-  }
-  
-  /* 🔧 Hide desktop drag handle and transfer button on mobile */
-  .upgrade-item > .drag-handle,
-  .upgrade-item > .transfer-builder-btn {
-    display: none !important;
-  }
-  
-  /* 🔧 Show mobile controls wrapper */
-  .upgrade-controls {
-    display: flex !important;
-    position: absolute;
-    top: 14px;
-    right: 12px;
-    flex-direction: row-reverse;  /* 🔧 Drag handle on right, transfer on left */
-    gap: 6px;
-  }
-  
-  /* 🔧 Mobile transfer button sizing */
-  .upgrade-controls .transfer-builder-btn {
-    width: 28px;
-    height: 28px;
-    font-size: 13px;
-    display: flex !important;
-  }
-  
-  /* 🔧 Mobile drag handle sizing */
-  .upgrade-controls .drag-handle {
-    display: block !important;
-    font-size: 20px;
-    padding: 4px;
-    touch-action: none;
-    width: auto;
-  }
-  
-  /* Save buttons on mobile - full width */
-  .save-order-container {
-    flex-direction: column;
-    padding: 12px 8px;  /* 🔧 Match container padding */
-  }
-  
-  .save-order-btn,
-  .cancel-order-btn {
-    width: 100%;
-    padding: 14px;
-    font-size: 16px;
-  }
-
-  /* Upgrade name - bigger and bolder */
-  .upgrade-name {
-    font-size: 11px;
-    font-weight: 700;
-    padding-left: 0;
-    padding-right: 70px;  /* 🔧 Space for controls on right */
-    width: 100%;
-    gap: 8px;
-  }
-  
-  /* Upgrade icons on mobile */
-  .upgrade-icon {
-    width: 30px;
-    height: 30px;
-  }
-
-  /* Duration row */
-  .upgrade-duration {
-    font-size: 13px;
-    padding-right: 0;
-    color: #f5d04c;
-    font-weight: 600;
-  }
-
-  /* Time row */
-  .upgrade-time {
-    font-size: 12px;
-    padding-left: 0;
-    min-width: auto;
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  /* Mobile: Larger touch targets and visible arrows */
-  .duration-picker-content {
-    min-width: 300px;
-    padding: 24px 20px;
-  }
-  
-  .duration-inputs {
-    gap: 10px;
-  }
-  
-  .number-btn {
-    height: 38px;
-    font-size: 22px;
-  }
-  
-  .duration-input-group input {
-    font-size: 26px;
-    padding: 12px 4px;
-  }
-  
-  .duration-picker-actions {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .duration-confirm-btn,
-  .duration-cancel-btn {
-    padding: 16px;
-    font-size: 17px;
-  }
-  
-  /* Builder picker mobile */
-  .builder-picker-content {
-    min-width: 320px;
-    padding: 24px 16px;
-  }
-  
-  .builder-picker-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-  }
-  
-  .builder-picker-btn {
-    padding: 20px 12px;
-  }
-  
-  .builder-picker-btn img {
-    width: 70px;
-    height: 70px;
-  }
-  
-  .builder-picker-btn span {
-    font-size: 15px;
-  }
-  
-  .builder-picker-cancel {
-    padding: 16px;
-    font-size: 17px;
-  }
-}
-
-/* Builder Apprentice badge (Today's Boost indicator) */
-.apprentice-badge {
-  cursor: pointer;
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 60px;
-  height: auto;
-  z-index: 999;
-  pointer-events: auto !important;
-}
-
-/* Prevent badge area from triggering card click */
-.builder-card .builder-text,
-.builder-card .builder-character,
-.builder-card .current-upgrade-icon {
-  pointer-events: none;
-}
-
-/* Re-enable pointer events for editable duration */
-.builder-card .editable-card-duration {
-  pointer-events: auto !important;
-}
-
-/* Mobile: Re-enable badge */
-@media (max-width: 768px) {
-  .apprentice-badge {
-    pointer-events: auto !important;
-    z-index: 1000;
-  }
-}
-
-
 #boostFocusWrapper {
   display: flex;
   align-items: center;
@@ -1218,7 +779,6 @@ button:disabled {
   margin-top: 16px;
 }
 
-/* Focus card */
 #boostFocusCard {
   position: relative;
   background: #2f2f2f;
@@ -1229,7 +789,6 @@ button:disabled {
   box-shadow: 0 6px 18px rgba(0,0,0,0.35);
 }
 
-/* Three-dot menu button */
 .boost-menu-btn {
   position: absolute;
   top: 12px;
@@ -1250,7 +809,6 @@ button:disabled {
   opacity: 0.7;
 }
 
-/* Dropdown menu */
 .boost-builder-dropdown {
   position: absolute;
   top: 45px;
@@ -1285,16 +843,14 @@ button:disabled {
   background: #5a5a5a;
 }
 
-/* Day label */
 .boost-day {
   font-size: 0.85rem;
   letter-spacing: 1px;
   margin-bottom: 8px;
   color: #ffffff;     
   opacity: 1;
- }
+}
 
-/* Status */
 .boost-status {
   font-size: 1.1rem;
   margin-bottom: 6px;
@@ -1304,7 +860,6 @@ button:disabled {
   color: #f5c84c;
 }
 
-/* Builder */
 .boost-builder {
   font-size: 1.1rem;
   font-weight: 800;
@@ -1312,7 +867,6 @@ button:disabled {
   opacity: 1;
 }
 
-/* Arrows */
 .boost-nav {
   background: none;
   border: none;
@@ -1326,6 +880,7 @@ button:disabled {
   opacity: 0.25;
   cursor: default;
 }
+
 .boost-mode {
   display: inline-block;
   margin-top: 4px;
@@ -1341,11 +896,6 @@ button:disabled {
   opacity: 0.9;
 }
 
-.boost-finish .value {
-  color: #ffffff;
-  font-weight: 500;
-}
-
 .boost-finish {
   display: flex;
   align-items: center;
@@ -1353,34 +903,268 @@ button:disabled {
   margin-bottom: 6px;
 }
 
-/* Clock icon */
 .boost-clock {
   width: 14px;
   height: 14px;
   opacity: 0.9;
 }
 
-/* Text */
 .boost-finish-text {
   color: #ffffff;
   font-size: 0.9rem;
 }
 
-
-/* SAFE */
 .boost-mode.safe {
   background: rgba(80, 200, 120, 0.15);
   color: #6adf9c;
 }
 
-/* FORCED */
 .boost-mode.forced {
   background: rgba(255, 90, 90, 0.15);
   color: #ff6b6b;
 }
 
-/* mobile section */
+/* ==================================================
+   MOBILE STYLES
+   ================================================== */
 @media (max-width: 768px) {
+  .builders-container {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .builder-card {
+    height: 210px;
+    min-height: 48px;
+    cursor: pointer;
+  }
+
+  .builder-card * {
+    pointer-events: none;
+  }
+  
+  .builder-card .apprentice-badge {
+    pointer-events: auto;
+  }
+
+  .builder-character {
+    left: 20px;
+    bottom: 40px;
+    height: 120px;
+    transform: scale(1);
+  }
+
+  .builder-text {
+    left: 42%;
+    width: 54%;
+  }
+
+  .builder-name {
+    font-size: 17px;
+  }
+
+  .builder-upgrade {
+    font-size: 15px;
+  }
+
+  .builder-time-left {
+    font-size: 17px;
+  }
+
+  .builder-finish {
+    font-size: 13px;
+  }
+
+  .builder-next {
+    font-size: 10px;
+  }
+
+  .current-upgrade-icon {
+    left: 28% !important;
+    top: 70% !important;
+    width: 55px !important;
+    height: 55px !important;
+  }
+  
+  .builder-card.expanded .current-upgrade-icon {
+    left: 28% !important;
+    top: 70% !important;
+    width: 55px !important;
+    height: 55px !important;
+  }
+
+  .builder-card.expanded {
+    height: 210px;
+    min-height: 210px;
+    grid-column: 1 / -1;
+  }
+
+  .builder-refresh-btn {
+    position: absolute;
+    top: -90px;
+    right: -9px;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    opacity: 0.8;
+  }
+
+  .builder-details {
+    margin: 20px auto;
+    width: calc(100% - 16px);
+    max-width: 100%;
+    padding: 12px 16px 16px 16px;
+    grid-column: span 1;
+    box-sizing: border-box;
+  }
+
+  .upgrade-headers {
+    display: none;
+  }
+
+  .upgrade-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 14px 12px;
+    font-size: 13px;
+    min-height: auto;
+    position: relative;
+    box-sizing: border-box;
+  }
+  
+  .upgrade-item > .drag-handle,
+  .upgrade-item > .transfer-builder-btn {
+    display: none !important;
+  }
+  
+  .upgrade-controls {
+    display: flex !important;
+    position: absolute;
+    top: 14px;
+    right: 12px;
+    flex-direction: row-reverse;
+    gap: 6px;
+  }
+  
+  .upgrade-controls .transfer-builder-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+    display: flex !important;
+  }
+  
+  .upgrade-controls .drag-handle {
+    display: block !important;
+    font-size: 20px;
+    padding: 4px;
+    touch-action: none;
+    width: auto;
+  }
+
+  .save-order-container {
+    flex-direction: column;
+    padding: 12px 8px;
+  }
+  
+  .save-order-btn,
+  .cancel-order-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+  }
+
+  .upgrade-name {
+    font-size: 13px;
+    font-weight: 700;
+    padding-left: 0;
+    padding-right: 70px;
+    width: 100%;
+    gap: 8px;
+    box-sizing: border-box;
+  }
+  
+  .upgrade-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .upgrade-duration {
+    font-size: 13px;
+    padding-right: 0;
+    padding-left: 0;
+    color: #f5d04c;
+    font-weight: 600;
+  }
+
+  .upgrade-time {
+    font-size: 12px;
+    padding-left: 0;
+    padding-right: 0;
+    min-width: auto;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .duration-picker-content {
+    min-width: 300px;
+    padding: 24px 20px;
+  }
+  
+  .duration-inputs {
+    gap: 10px;
+  }
+  
+  .number-btn {
+    height: 38px;
+    font-size: 22px;
+  }
+  
+  .duration-input-group input {
+    font-size: 26px;
+    padding: 12px 4px;
+  }
+  
+  .duration-picker-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .duration-confirm-btn,
+  .duration-cancel-btn {
+    padding: 16px;
+    font-size: 17px;
+  }
+  
+  .builder-picker-content {
+    min-width: 320px;
+    padding: 24px 16px;
+  }
+  
+  .builder-picker-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  
+  .builder-picker-btn {
+    padding: 20px 12px;
+  }
+  
+  .builder-picker-btn img {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .builder-picker-btn span {
+    font-size: 15px;
+  }
+  
+  .builder-picker-cancel {
+    padding: 16px;
+    font-size: 17px;
+  }
+
   #boostFocusWrapper {
     gap: 10px;
   }
@@ -1411,9 +1195,9 @@ button:disabled {
     padding: 12px 16px;
     font-size: 16px;
   }
-}
 
-/* Extra emphasis if FORCED */
-.builder-card .apprentice-badge[src*="Forced"] {
-  filter: drop-shadow(0 0 10px rgba(255, 80, 80, 0.8));
+  .apprentice-badge {
+    pointer-events: auto !important;
+    z-index: 1000;
+  }
 }
