@@ -13,7 +13,6 @@ const APPLY_TODAYS_BOOST = API_BASE + "?action=apply_todays_boost";
 const SET_TODAYS_BOOST_BUILDER = API_BASE + "?action=set_todays_boost_builder&builder=";
 const REORDER_BUILDER_UPGRADES = API_BASE + "?action=reorder_builder_upgrades";
 const RUN_BOOST_SIM = API_BASE + "?action=run_boost_simulation";
-const BUILDER_POTION = API_BASE + "?action=apply_builder_potion";
 const BUILDER_SNACK = API_BASE + "?action=apply_one_hour_boost";
 const BATTLE_PASS = API_BASE + "?action=apply_battle_pass";
 const BUILDER_DETAILS_ENDPOINT = API_BASE + "?action=builder_details&builder=";
@@ -998,11 +997,6 @@ function wireApprenticeBoost() {
 }
 
 function wireImageButtons() {
-  document.getElementById("builderPotionBtn")?.addEventListener("click", async () => {
-    await fetch(BUILDER_POTION);
-    refreshDashboard();
-  });
-
   document.getElementById("oneHourBoostBtn")?.addEventListener("click", async () => {
     await fetch(BUILDER_SNACK);
     refreshDashboard();
@@ -1025,77 +1019,6 @@ function wireBoostSimulation() {
     await refreshDashboard();
     btn.textContent = "Run Boost Simulation";
     btn.disabled = false;
-  });
-}
-
-function wireBuilderPotionModal() {
-  const modal = document.getElementById("builderPotionModal");
-  const openBtn = document.getElementById("builderPotionBtn");
-  const cancelBtn = document.getElementById("cancelPotionBtn");
-  const previewBtn = document.getElementById("previewPotionBtn");
-  const confirmBtn = document.getElementById("confirmPotionBtn");
-  const countInput = document.getElementById("potionCount");
-  const previewBox = document.getElementById("builderPotionPreview");
-
-  if (!modal || !openBtn) return;
-
-  openBtn.addEventListener("click", () => {
-    modal.classList.remove("hidden");
-    previewBox.innerHTML = "";
-    confirmBtn.disabled = true;
-  });
-
-  cancelBtn.addEventListener("click", () => {
-    modal.classList.add("hidden");
-  });
-
-  previewBtn.addEventListener("click", async () => {
-    const times = Number(countInput.value);
-    if (!times || times <= 0) {
-      alert("Please enter a valid number.");
-      return;
-    }
-
-    previewBox.innerHTML = "Loading preview…";
-
-    try {
-      const res = await fetch(
-        `${API_BASE}?action=preview_builder_potion&times=${times}`
-      );
-      const data = await res.json();
-
-      let html = `<strong>Applying ${times} potion(s):</strong><br><br>`;
-      data.preview.forEach(row => {
-        html += `
-          ${row.builder}:<br>
-          ${new Date(row.oldTime).toLocaleString()} →
-          ${new Date(row.newTime).toLocaleString()}<br><br>
-        `;
-      });
-
-      previewBox.innerHTML = html;
-      confirmBtn.disabled = false;
-    } catch (err) {
-      console.error(err);
-      previewBox.innerHTML = "Failed to load preview.";
-    }
-  });
-
-  confirmBtn.addEventListener("click", async () => {
-    const times = Number(countInput.value);
-    confirmBtn.disabled = true;
-    previewBox.innerHTML = "Applying…";
-
-    try {
-      await fetch(
-        `${API_BASE}?action=apply_builder_potion&times=${times}`
-      );
-      modal.classList.add("hidden");
-      await refreshDashboard();
-    } catch (err) {
-      console.error(err);
-      previewBox.innerHTML = "Failed to apply potion.";
-    }
   });
 }
 
@@ -1267,7 +1190,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   startAutoRefresh();
   wireApprenticeBoost();
   wireBoostSimulation();
-  wireBuilderPotionModal();
   wireBoostFocusNavigation();
   wireBuilderCardClicks();
   wireImageButtons();
