@@ -343,9 +343,9 @@ button:disabled {
 
 /* 🔧 FIX 3: Builder details with better padding (not too wide, not too narrow) */
 .builder-details {
-  padding: 0 24px 16px 24px;  /* 🔧 Increased side padding from 12px to 24px for better spacing */
-  margin: 20px auto;  /* 🔧 Auto margins to center the element */
-  max-width: calc(100% - 48px);  /* 🔧 Allow some breathing room on sides */
+  padding: 0 24px 16px 24px;  /* 🔧 Good padding for content */
+  margin: 20px auto;  /* 🔧 Auto margins to center */
+  max-width: calc(100% - 32px);  /* 🔧 Only 16px margin on each side - WIDER */
   width: auto;  /* 🔧 Let it size naturally */
   grid-column: span 2;
   background: #16161b;
@@ -431,6 +431,11 @@ button:disabled {
   background: rgba(245, 208, 76, 0.25);
   border-color: #f5d04c;
   transform: scale(1.1);
+}
+
+/* 🔧 Hide mobile controls wrapper on desktop */
+.upgrade-controls {
+  display: none;
 }
 
 .upgrade-item:active {
@@ -1003,11 +1008,11 @@ button:disabled {
     box-sizing: border-box;
   }
 
-  /* 🔧 Builder refresh button on mobile - inside builder card, near top-right */
+  /* 🔧 Builder refresh button on mobile - positioned as requested */
   .builder-refresh-btn {
     position: absolute;
-    top: 160px;  /* 🔧 Position near bottom-right of 210px card (50px from bottom) */
-    right: 16px;
+    top: -90px;  /* 🔧 User-specified position */
+    right: -9px;  /* 🔧 User-specified position */
     width: 40px;
     height: 40px;
     font-size: 18px;
@@ -1019,40 +1024,50 @@ button:disabled {
     display: none;
   }
 
-  /* 🔧 FIX 6: Stack upgrade info vertically with consistent padding */
+  /* 🔧 Mobile upgrade item - stacked layout */
   .upgrade-item {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
-    padding: 14px 8px;  /* 🔧 Reduced from 14px 12px to match container padding */
+    padding: 14px 12px;  /* 🔧 Consistent padding */
     font-size: 13px;
     min-height: auto;
     position: relative;
+    box-sizing: border-box;
   }
   
-  /* 🔧 FIX 2 & FIX 5: Controls on mobile (transfer button LEFT, drag handle RIGHT) */
+  /* 🔧 Hide desktop drag handle and transfer button on mobile */
+  .upgrade-item > .drag-handle,
+  .upgrade-item > .transfer-builder-btn {
+    display: none !important;
+  }
+  
+  /* 🔧 Show mobile controls wrapper */
   .upgrade-controls {
+    display: flex !important;
     position: absolute;
     top: 14px;
-    right: 8px;
-    display: flex;
-    flex-direction: row-reverse;  /* 🔧 Reverse order: drag handle on right */
+    right: 12px;
+    flex-direction: row-reverse;  /* 🔧 Drag handle on right, transfer on left */
     gap: 6px;
   }
   
-  /* 🔧 FIX 5: Smaller transfer button on mobile */
-  .transfer-builder-btn {
-    width: 28px;  /* 🔧 Reduced from 32px */
+  /* 🔧 Mobile transfer button sizing */
+  .upgrade-controls .transfer-builder-btn {
+    width: 28px;
     height: 28px;
-    font-size: 13px;  /* 🔧 Slightly smaller icon */
+    font-size: 13px;
+    display: flex !important;
   }
   
-  /* Drag handle on mobile */
-  .drag-handle {
+  /* 🔧 Mobile drag handle sizing */
+  .upgrade-controls .drag-handle {
+    display: block !important;
     font-size: 20px;
     padding: 4px;
     touch-action: none;
+    width: auto;
   }
   
   /* Save buttons on mobile - full width */
