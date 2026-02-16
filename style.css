@@ -356,7 +356,7 @@ button:disabled {
 
 .upgrade-headers {
   display: grid;
-  grid-template-columns: 2.2fr 1fr 2fr;
+  grid-template-columns: 60px 2.2fr 1fr 2fr 40px;  /* 🔧 Drag handle | Name | Duration | Dates | Transfer button */
   align-items: center;
   text-align: center;
   font-size: 15px;
@@ -375,7 +375,7 @@ button:disabled {
 
 .upgrade-item {
   display: grid;
-  grid-template-columns: 60px 2fr 1fr 2fr;  /* 🔧 FIX 2: Added 60px column for controls at START */
+  grid-template-columns: 60px 2.2fr 1fr 2fr 40px;  /* 🔧 Drag handle | Name | Duration | Dates | Transfer button */
   align-items: center;
   font-size: 14px;
   color: #ffffff;
@@ -387,16 +387,29 @@ button:disabled {
   transition: background-color 0.2s;
 }
 
-/* 🔧 Upgrade controls on the RIGHT side of upgrade item */
-.upgrade-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  flex-direction: row-reverse;  /* 🔧 Transfer button left, drag handle right */
+/* Drag handle - FIRST column (left side) */
+.drag-handle {
+  color: #f5d04c;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  cursor: grab;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  user-select: none;
+  width: 20px;
+  justify-self: center;  /* 🔧 Center in its column */
 }
 
-/* Transfer builder button */
+.upgrade-item:hover .drag-handle {
+  opacity: 1;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Transfer builder button - LAST column (right side) */
 .transfer-builder-btn {
   background: rgba(245, 208, 76, 0.15);
   border: 1px solid rgba(245, 208, 76, 0.3);
@@ -410,33 +423,14 @@ button:disabled {
   font-size: 14px;
   transition: all 0.2s;
   padding: 0;
+  justify-self: end;  /* 🔧 Push to right end of column */
+  margin-right: 4px;  /* 🔧 Small margin from edge */
 }
 
 .transfer-builder-btn:hover {
   background: rgba(245, 208, 76, 0.25);
   border-color: #f5d04c;
   transform: scale(1.1);
-}
-
-/* 🔧 FIX 2: Drag handle (AFTER transfer button) */
-.drag-handle {
-  color: #f5d04c;
-  font-size: 16px;
-  font-weight: bold;
-  text-align: center;
-  cursor: grab;
-  opacity: 0.6;
-  transition: opacity 0.2s;
-  user-select: none;
-  width: 20px;
-}
-
-.upgrade-item:hover .drag-handle {
-  opacity: 1;
-}
-
-.drag-handle:active {
-  cursor: grabbing;
 }
 
 .upgrade-item:active {
@@ -1009,12 +1003,12 @@ button:disabled {
     box-sizing: border-box;
   }
 
-  /* 🔧 FIX: Builder refresh button on mobile - inside builder card bottom-right */
+  /* 🔧 Builder refresh button on mobile - inside builder card, near top-right */
   .builder-refresh-btn {
     position: absolute;
-    top: 140px;  /* 🔧 Position inside the expanded card (210px - 70px from bottom) */
-    right: 12px;
-    width: 40px;  /* 🔧 Touch-friendly size */
+    top: 160px;  /* 🔧 Position near bottom-right of 210px card (50px from bottom) */
+    right: 16px;
+    width: 40px;
     height: 40px;
     font-size: 18px;
     opacity: 0.8;
