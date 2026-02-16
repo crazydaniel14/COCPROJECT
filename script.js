@@ -96,6 +96,7 @@ let boostPlanData = [];
 let currentBoostIndex = 0;
 let openBuilders = [];
 let loadingBuilders = new Set();
+let lastActiveStatusUpdate = 0; // Timestamp of last Active? update
 
 /* =========================
    HELPERS
@@ -126,6 +127,51 @@ function updateLastRefreshed() {
       minute: "2-digit",
       hour12: true
     });
+}
+
+/* =========================
+   SMART ACTIVE STATUS UPDATE
+   ========================= */
+async function updateActiveStatusSmart() {
+  const now = Date.now();
+  
+  // Only update every 5 minutes max (prevent excessive calls)
+  if (now - lastActiveStatusUpdate < 5 * 60 * 1000) {
+    return;
+  }
+  
+  try {
+    await fetch(API_BASE + "?action=update_active_status");
+    lastActiveStatusUpdate = now;
+    console.log("Active? status updated at:", new Date());
+  } catch (e) {
+    console.error("Failed to update Active? status:", e);
+  }
+}
+
+/* =========================
+   SOFT REFRESH (NON-DISRUPTIVE)
+   ========================= */
+async function softRefreshBuilderCards() {
+  // Only refresh if NO builder details are open (preserve unsaved work)
+  if (openBuilders.length > 0) {
+    console.log("Skipping card refresh - builder details open");
+    return;
+  }
+  
+  try {
+    await loadCurrentWork();
+    await loadTodaysBoost();
+    
+    // Clear and re-render builder cards
+    const container = document.getElementById("builders-container");
+    if (container) {
+      container.innerHTML = "";
+      renderBuilderCards();
+    }
+  } catch (e) {
+    console.error("Soft refresh failed:", e);
+  }
 }
 
 /* =========================
@@ -185,10 +231,23 @@ async function refreshDashboard() {
   isRefreshing = true;
 
   try {
+    // Step 1: Update Active? status in background (non-blocking)
+    updateActiveStatusSmart();
+    
+    // Step 2: Refresh sheet timestamp
     await fetch(REFRESH_ENDPOINT);
+    
+    // Step 3: Load data
     await Promise.all([loadCurrentWork(), loadTodaysBoost()]);
-    renderBuilderCards();
+    
+    // Step 4: Smart render - only if no builder details open
+    if (openBuilders.length === 0) {
+      renderBuilderCards();
+    }
+    
+    // Step 5: Load boost plan
     await loadBoostPlan();
+    
     updateLastRefreshed();
   } catch (e) {
     console.error("Refresh failed", e);
@@ -1179,7 +1238,11 @@ function wireBuilderCardClicks() {
 }
 
 function startAutoRefresh() {
+  // Full refresh every 45 seconds (keeps sheet data fresh)
   setInterval(refreshDashboard, 45 * 1000);
+  
+  // Soft refresh builder cards every 10 minutes (catches upgrade transitions)
+  setInterval(softRefreshBuilderCards, 10 * 60 * 1000);
 }
 
 /* =========================
