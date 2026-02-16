@@ -4,7 +4,7 @@ console.log("Loaded script.js – v1");
    CONFIG
    ========================= */
 const API_BASE = 
-    "https://script.google.com/macros/s/AKfycbxvPjXAx0ZNHYUu_P4GR1FDc0VgQlMwZ7HRCmUS1n7Rk76WnNORgvOXm4kllUp1HDaVCA/exec"
+    "https://script.google.com/macros/s/AKfycbwdK5Ynu-8_noqHwHXv5p0629SxDinFPr1crkiX4tL2yl5HDpTXLjx7ij2EkBk25Li3VA/exec"
 const TABLE_ENDPOINT = API_BASE + "?action=current_work_table";
 const REFRESH_ENDPOINT = API_BASE + "?action=refresh_sheet";
 const TODAYS_BOOST_ENDPOINT = API_BASE + "?action=todays_boost";
@@ -347,7 +347,14 @@ function renderBuilderDetails(details) {
               <span>→</span>
               <span>${upg.end}</span>
             </div>
-            <div class="drag-handle">⋮⋮</div>
+            <div class="upgrade-controls">
+              <div class="drag-handle">⋮⋮</div>
+              <button class="transfer-builder-btn" 
+                      data-upgrade-name="${upg.upgrade}"
+                      data-current-builder="${upg.builder}"
+                      data-row="${upg.row}"
+                      title="Move to another builder">👤</button>
+            </div>
           </div>
         `;
       }).join("")}
@@ -363,6 +370,7 @@ function renderBuilderDetails(details) {
   setTimeout(() => {
     setupDragAndDrop(wrapper);
     setupDurationEditor(wrapper);
+    setupBuilderTransfer(wrapper);
   }, 0);
 
   return wrapper;
@@ -733,6 +741,108 @@ async function updateUpgradeDuration(builderName, row, newMinutes, newDurationHr
     console.error('Update failed:', err);
     alert('Failed to update duration');
     durationEl.textContent = originalText;
+  }
+}
+
+/* =========================
+   BUILDER TRANSFER
+   ========================= */
+function setupBuilderTransfer(detailsWrapper) {
+  const transferBtns = detailsWrapper.querySelectorAll('.transfer-builder-btn');
+  
+  transferBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      
+      const upgradeName = btn.dataset.upgradeName;
+      const currentBuilder = btn.dataset.currentBuilder;
+      const row = btn.dataset.row;
+      
+      showBuilderPicker(currentBuilder, (targetBuilder) => {
+        if (confirm(`Move "${upgradeName}" from ${currentBuilder} to ${targetBuilder}?`)) {
+          transferUpgradeToBuilder(upgradeName, currentBuilder, row, targetBuilder, detailsWrapper);
+        }
+      });
+    });
+  });
+}
+
+function showBuilderPicker(currentBuilder, callback) {
+  const modal = document.createElement('div');
+  modal.className = 'builder-picker-modal';
+  
+  // Get all builders except current one
+  const allBuilders = ['Builder_1', 'Builder_2', 'Builder_3', 'Builder_4', 'Builder_5', 'Builder_6'];
+  const availableBuilders = allBuilders.filter(b => b !== currentBuilder);
+  
+  modal.innerHTML = `
+    <div class="builder-picker-content">
+      <h3>Move to Builder</h3>
+      <div class="builder-picker-grid">
+        ${availableBuilders.map(builder => {
+          const num = builder.match(/\d+/)[0];
+          return `
+            <button class="builder-picker-btn" data-builder="${builder}">
+              <img src="Images/Builders/Builder ${num}.png" 
+                   alt="${builder}"
+                   onerror="this.style.display='none'">
+              <span>Builder ${num}</span>
+            </button>
+          `;
+        }).join('')}
+      </div>
+      <button class="builder-picker-cancel">Cancel</button>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  
+  // Handle builder selection
+  modal.querySelectorAll('.builder-picker-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetBuilder = btn.dataset.builder;
+      modal.remove();
+      callback(targetBuilder);
+    });
+  });
+  
+  // Cancel button
+  modal.querySelector('.builder-picker-cancel').addEventListener('click', () => {
+    modal.remove();
+  });
+  
+  // Click outside to close
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+}
+
+async function transferUpgradeToBuilder(upgradeName, fromBuilder, row, toBuilder, detailsWrapper) {
+  try {
+    const res = await fetch(
+      `${API_BASE}?action=transfer_upgrade&upgrade=${encodeURIComponent(upgradeName)}&from_builder=${fromBuilder}&row=${row}&to_builder=${toBuilder}`
+    );
+    const data = await res.json();
+    
+    if (data.error) {
+      alert('Failed to transfer: ' + data.error);
+      return;
+    }
+    
+    // Show success and refresh
+    alert(`✓ Moved "${upgradeName}" to ${toBuilder}`);
+    
+    // Refresh the builder details
+    const builderNum = detailsWrapper.dataset.builder;
+    const builderDetails = await fetchBuilderDetails(builderNum);
+    const newDetailsEl = renderBuilderDetails(builderDetails);
+    detailsWrapper.replaceWith(newDetailsEl);
+    
+  } catch (err) {
+    console.error('Transfer failed:', err);
+    alert('Failed to transfer upgrade');
   }
 }
 
