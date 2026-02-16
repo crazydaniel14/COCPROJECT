@@ -310,9 +310,11 @@ function renderBuilderDetails(details) {
       <button class="builder-refresh-btn" title="Refresh builder data">🔄</button>
     </div>
     <div class="upgrade-headers">
+      <span></span>
       <span>Future Upgrades</span>
       <span>Duration</span>
       <span>Start and End dates</span>
+      <span></span>
     </div>
 
     <div class="upgrade-list" data-original-order="${originalOrder.join(',')}">
@@ -334,6 +336,7 @@ function renderBuilderDetails(details) {
                data-upgrade-name="${upg.upgrade}"
                data-duration-minutes="${totalMinutes}"
                draggable="true">
+            <div class="drag-handle">⋮⋮</div>
             <div class="upgrade-name">
               <img src="${imgSrc}" 
                    class="upgrade-icon" 
@@ -349,14 +352,11 @@ function renderBuilderDetails(details) {
               <span>→</span>
               <span>${upg.end}</span>
             </div>
-            <div class="upgrade-controls">
-              <div class="drag-handle">⋮⋮</div>
-              <button class="transfer-builder-btn" 
-                      data-upgrade-name="${upg.upgrade}"
-                      data-current-builder="${upg.builder}"
-                      data-row="${upg.row}"
-                      title="Move to another builder">👤</button>
-            </div>
+            <button class="transfer-builder-btn" 
+                    data-upgrade-name="${upg.upgrade}"
+                    data-current-builder="${upg.builder}"
+                    data-row="${upg.row}"
+                    title="Move to another builder">👤</button>
           </div>
         `;
       }).join("")}
@@ -760,74 +760,6 @@ function setupBuilderRefresh(detailsWrapper) {
       const builderNum = detailsWrapper.dataset.builder;
       
       // Show loading state
-      refreshBtn.disabled = true;
-      refreshBtn.textContent = '⟳';
-      refreshBtn.classList.add('spinning');
-      
-      try {
-        // Refresh builder details from backend
-        const builderDetails = await fetchBuilderDetails(builderNum);
-        const newDetailsEl = renderBuilderDetails(builderDetails);
-        detailsWrapper.replaceWith(newDetailsEl);
-        
-      } catch (err) {
-        console.error('Refresh failed:', err);
-        refreshBtn.disabled = false;
-        refreshBtn.textContent = '🔄';
-        refreshBtn.classList.remove('spinning');
-      }
-    });
-  }
-}
-
-/* =========================
-   BUILDER REFRESH BUTTON
-   ========================= */
-function setupBuilderRefresh(detailsWrapper) {
-  const refreshBtn = detailsWrapper.querySelector('.builder-refresh-btn');
-  
-  if (!refreshBtn) return;
-  
-  refreshBtn.addEventListener('click', async (e) => {
-    e.stopPropagation();
-    
-    const builderNum = detailsWrapper.dataset.builder;
-    
-    // Show loading state
-    refreshBtn.disabled = true;
-    refreshBtn.style.opacity = '0.5';
-    refreshBtn.textContent = '↻';
-    
-    try {
-      // Fetch fresh data
-      const builderDetails = await fetchBuilderDetails(builderNum);
-      
-      // Re-render the builder details
-      const newDetailsEl = renderBuilderDetails(builderDetails);
-      detailsWrapper.replaceWith(newDetailsEl);
-      
-    } catch (err) {
-      console.error('Refresh failed:', err);
-      refreshBtn.disabled = false;
-      refreshBtn.style.opacity = '1';
-      refreshBtn.textContent = '🔄';
-    }
-  });
-}
-
-/* =========================
-   BUILDER REFRESH
-   ========================= */
-function setupBuilderRefresh(detailsWrapper) {
-  const refreshBtn = detailsWrapper.querySelector('.builder-refresh-btn');
-  
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      
-      const builderNum = detailsWrapper.dataset.builder;
-      
-      // Show loading state
       const originalText = refreshBtn.textContent;
       refreshBtn.textContent = '⟳';
       refreshBtn.disabled = true;
@@ -849,42 +781,6 @@ function setupBuilderRefresh(detailsWrapper) {
       }
     });
   }
-}
-
-/* =========================
-   BUILDER REFRESH BUTTON
-   ========================= */
-function setupBuilderRefresh(detailsWrapper) {
-  const refreshBtn = detailsWrapper.querySelector('.builder-refresh-btn');
-  if (!refreshBtn) return;
-  
-  refreshBtn.addEventListener('click', async (e) => {
-    e.stopPropagation();
-    
-    // Show loading state
-    const originalText = refreshBtn.textContent;
-    refreshBtn.textContent = '⟳';
-    refreshBtn.classList.add('spinning');
-    refreshBtn.disabled = true;
-    
-    try {
-      const builderNum = detailsWrapper.dataset.builder;
-      
-      // Refresh builder details from backend
-      const builderDetails = await fetchBuilderDetails(builderNum);
-      const newDetailsEl = renderBuilderDetails(builderDetails);
-      
-      // Replace old details with new
-      detailsWrapper.replaceWith(newDetailsEl);
-      
-    } catch (err) {
-      console.error('Refresh failed:', err);
-      refreshBtn.textContent = originalText;
-      refreshBtn.classList.remove('spinning');
-      refreshBtn.disabled = false;
-      alert('Failed to refresh builder data');
-    }
-  });
 }
 
 /* =========================
