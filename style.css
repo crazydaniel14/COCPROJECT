@@ -343,14 +343,14 @@ button:disabled {
 
 /* 🔧 FIX 3: Builder details with better padding (not too wide, not too narrow) */
 .builder-details {
-  padding: 0 12px 16px 12px;
-  margin: 20px 40px;  /* 🔧 INCREASED from 8px to 40px side margins for better visual balance */
-  max-width: none;
-  width: calc(100% - 80px);  /* 🔧 Adjusted to match new margins (40px * 2) */
+  padding: 0 24px 16px 24px;  /* 🔧 Increased side padding from 12px to 24px for better spacing */
+  margin: 20px auto;  /* 🔧 Auto margins to center the element */
+  max-width: calc(100% - 48px);  /* 🔧 Allow some breathing room on sides */
+  width: auto;  /* 🔧 Let it size naturally */
   grid-column: span 2;
   background: #16161b;
   border-radius: 18px;
-  margin-top: -8px;
+  margin-top: -8px;   /* visually attached to card */
   color: #ffffff;
 }
 
@@ -387,16 +387,16 @@ button:disabled {
   transition: background-color 0.2s;
 }
 
-/* 🔧 FIX 2: Upgrade controls at the LEFT (transfer button + drag handle) */
+/* 🔧 Upgrade controls on the RIGHT side of upgrade item */
 .upgrade-controls {
   display: flex;
   align-items: center;
-  justify-content: flex-start;  /* Left-aligned */
+  justify-content: center;
   gap: 4px;
-  order: -1;  /* Ensure it appears first */
+  flex-direction: row-reverse;  /* 🔧 Transfer button left, drag handle right */
 }
 
-/* 🔧 FIX 2: Transfer builder button (BEFORE drag handle) */
+/* Transfer builder button */
 .transfer-builder-btn {
   background: rgba(245, 208, 76, 0.15);
   border: 1px solid rgba(245, 208, 76, 0.3);
@@ -999,25 +999,25 @@ button:disabled {
     height: 50px !important;
   }
 
-  /* 🔧 FIX 3: Mobile builder details with proper padding */
+  /* 🔧 Mobile builder details - centered with proper padding */
   .builder-details {
-    margin: 20px 12px;  /* 🔧 Smaller margins on mobile (was 8px) */
-    width: calc(100% - 24px);  /* 🔧 Match margins (12px * 2) */
+    margin: 20px auto;  /* 🔧 Auto margins to center */
+    width: calc(100% - 16px);  /* 🔧 Small margins on sides (8px each) */
     max-width: 100%;
-    padding: 12px 8px 16px 8px;  /* 🔧 FIX 6: Reduced side padding from 12px to 8px */
+    padding: 12px 16px 16px 16px;  /* 🔧 Consistent padding */
     grid-column: span 1;
+    box-sizing: border-box;
   }
 
-  /* 🔧 FIX 1: Position refresh button on BUILDER CARD (bottom-right) when expanded on mobile */
+  /* 🔧 FIX: Builder refresh button on mobile - inside builder card bottom-right */
   .builder-refresh-btn {
     position: absolute;
-    top: auto;  /* Reset top */
-    bottom: 12px;  /* 🔧 Position at bottom of card */
+    top: 140px;  /* 🔧 Position inside the expanded card (210px - 70px from bottom) */
     right: 12px;
-    width: 32px;
-    height: 32px;
-    font-size: 16px;
-    opacity: 0.7;
+    width: 40px;  /* 🔧 Touch-friendly size */
+    height: 40px;
+    font-size: 18px;
+    opacity: 0.8;
   }
 
   /* Hide the header row on mobile */
