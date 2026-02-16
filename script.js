@@ -306,11 +306,15 @@ function renderBuilderDetails(details) {
   const originalOrder = details.upgrades.map((_, i) => i);
   
   wrapper.innerHTML = `
-    <div class="builder-details-header"></div>
+    <div class="builder-details-header">
+      <button class="builder-refresh-btn" title="Refresh builder data">🔄</button>
+    </div>
     <div class="upgrade-headers">
+      <span></span>
       <span>Future Upgrades</span>
       <span>Duration</span>
       <span>Start and End dates</span>
+      <span></span>
     </div>
 
     <div class="upgrade-list" data-original-order="${originalOrder.join(',')}">
@@ -332,6 +336,7 @@ function renderBuilderDetails(details) {
                data-upgrade-name="${upg.upgrade}"
                data-duration-minutes="${totalMinutes}"
                draggable="true">
+            <div class="drag-handle">⋮⋮</div>
             <div class="upgrade-name">
               <img src="${imgSrc}" 
                    class="upgrade-icon" 
@@ -347,13 +352,18 @@ function renderBuilderDetails(details) {
               <span>→</span>
               <span>${upg.end}</span>
             </div>
+            <button class="transfer-builder-btn" 
+                    data-upgrade-name="${upg.upgrade}"
+                    data-current-builder="${upg.builder}"
+                    data-row="${upg.row}"
+                    title="Move to another builder">👤</button>
             <div class="upgrade-controls">
-              <div class="drag-handle">⋮⋮</div>
               <button class="transfer-builder-btn" 
                       data-upgrade-name="${upg.upgrade}"
                       data-current-builder="${upg.builder}"
                       data-row="${upg.row}"
                       title="Move to another builder">👤</button>
+              <div class="drag-handle">⋮⋮</div>
             </div>
           </div>
         `;
@@ -371,6 +381,7 @@ function renderBuilderDetails(details) {
     setupDragAndDrop(wrapper);
     setupDurationEditor(wrapper);
     setupBuilderTransfer(wrapper);
+    setupBuilderRefresh(wrapper);
   }, 0);
 
   return wrapper;
@@ -745,6 +756,42 @@ async function updateUpgradeDuration(builderName, row, newMinutes, newDurationHr
 }
 
 /* =========================
+   BUILDER REFRESH
+   ========================= */
+function setupBuilderRefresh(detailsWrapper) {
+  const refreshBtn = detailsWrapper.querySelector('.builder-refresh-btn');
+  
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      
+      const builderNum = detailsWrapper.dataset.builder;
+      
+      // Show loading state
+      const originalText = refreshBtn.textContent;
+      refreshBtn.textContent = '⟳';
+      refreshBtn.disabled = true;
+      refreshBtn.classList.add('spinning');
+      
+      try {
+        // Fetch fresh data
+        const builderDetails = await fetchBuilderDetails(builderNum);
+        
+        // Re-render the details
+        const newDetailsEl = renderBuilderDetails(builderDetails);
+        detailsWrapper.replaceWith(newDetailsEl);
+        
+      } catch (err) {
+        console.error('Refresh failed:', err);
+        refreshBtn.textContent = originalText;
+        refreshBtn.disabled = false;
+        refreshBtn.classList.remove('spinning');
+      }
+    });
+  }
+}
+
+/* =========================
    BUILDER TRANSFER
    ========================= */
 function setupBuilderTransfer(detailsWrapper) {
@@ -885,37 +932,39 @@ function setupDragAndDrop(detailsWrapper) {
       }
     });
     
-    // Mobile touch events
-    const dragHandle = item.querySelector('.drag-handle');
+    // Mobile touch events - handle both desktop drag handle AND mobile controls wrapper
+    const dragHandles = item.querySelectorAll('.drag-handle');
     
-    dragHandle?.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      isDragging = true;
-      draggedItem = item;
-      touchStartY = e.touches[0].clientY;
-      item.classList.add('dragging');
-    }, { passive: false });
-    
-    dragHandle?.addEventListener('touchmove', (e) => {
-      if (!isDragging) return;
-      e.preventDefault();
+    dragHandles.forEach(dragHandle => {
+      dragHandle?.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        isDragging = true;
+        draggedItem = item;
+        touchStartY = e.touches[0].clientY;
+        item.classList.add('dragging');
+      }, { passive: false });
       
-      const touch = e.touches[0];
-      const afterElement = getDragAfterElement(upgradeList, touch.clientY);
+      dragHandle?.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        
+        const touch = e.touches[0];
+        const afterElement = getDragAfterElement(upgradeList, touch.clientY);
+        
+        if (afterElement == null) {
+          upgradeList.appendChild(draggedItem);
+        } else {
+          upgradeList.insertBefore(draggedItem, afterElement);
+        }
+      }, { passive: false });
       
-      if (afterElement == null) {
-        upgradeList.appendChild(draggedItem);
-      } else {
-        upgradeList.insertBefore(draggedItem, afterElement);
-      }
-    }, { passive: false });
-    
-    dragHandle?.addEventListener('touchend', () => {
-      if (!isDragging) return;
-      isDragging = false;
-      item.classList.remove('dragging');
-      draggedItem = null;
-      checkIfOrderChanged();
+      dragHandle?.addEventListener('touchend', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        item.classList.remove('dragging');
+        draggedItem = null;
+        checkIfOrderChanged();
+      });
     });
   });
   
