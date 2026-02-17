@@ -1246,17 +1246,6 @@ function startAutoRefresh() {
   // Soft refresh builder cards every 10 minutes (catches upgrade transitions)
   setInterval(softRefreshBuilderCards, 10 * 60 * 1000);
 }
-/*****************************************************
- * UPGRADE CONFIRMATION SYSTEM - FRONTEND
- * 
- * Add this code to your script.js file
- *****************************************************/
-
-/* =========================
-   GLOBAL STATE
-   ========================= */
-let reviewedTabs = new Set(); // Track which builder tabs have been reviewed
-let finishedUpgradesData = null; // Store the data for the confirmation modal
 
 /* =========================
    CHECK FOR FINISHED UPGRADES (Call on page load)
