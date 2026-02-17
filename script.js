@@ -1246,15 +1246,14 @@ function startAutoRefresh() {
   // Soft refresh builder cards every 10 minutes (catches upgrade transitions)
   setInterval(softRefreshBuilderCards, 10 * 60 * 1000);
 }
-
 /* =========================
-   CHECK FOR FINISHED UPGRADES (Call on page load)
+   CHECK FOR FINISHED UPGRADES
    ========================= */
 async function checkForFinishedUpgrades() {
   try {
     const res = await fetch(API_BASE + "?action=check_finished_upgrades");
     const data = await res.json();
-    
+
     if (data.finishedUpgrades && data.finishedUpgrades.length > 0) {
       finishedUpgradesData = data.finishedUpgrades;
       showUpgradeConfirmationModal(data.finishedUpgrades);
@@ -1263,514 +1262,557 @@ async function checkForFinishedUpgrades() {
     console.error("Failed to check finished upgrades:", e);
   }
 }
-
 /* =========================
-   SHOW UPGRADE CONFIRMATION MODAL
+   SHOW MAIN CONFIRMATION MODAL
    ========================= */
 function showUpgradeConfirmationModal(upgrades) {
   reviewedTabs = new Set();
-  
+
+  // Remove any existing modal
+  document.querySelector('.upgrade-confirmation-modal-overlay')?.remove();
+
   const modal = document.createElement('div');
   modal.className = 'upgrade-confirmation-modal-overlay';
   modal.innerHTML = `
     <div class="upgrade-confirmation-modal">
-      <div class="modal-header">
-        <h3>⚠️ Upgrade Confirmations Needed</h3>
-        <span class="review-status">0/${upgrades.length} reviewed</span>
+      <div class="ucm-header">
+        <h3>⚠️ New Upgrades Started</h3>
+        <span class="ucm-review-status">0 / ${upgrades.length} reviewed</span>
       </div>
-      
-      <div class="builder-tabs">
-        ${upgrades.map((builderData, index) => `
-          <button class="tab ${index === 0 ? 'active' : ''}" 
-                  data-builder="${builderData.builder}"
-                  data-index="${index}">
-            ${builderData.builder.replace('_', ' ')}
-            <span class="reviewed-indicator" style="display: none;">✓</span>
+
+      <div class="ucm-tabs">
+        ${upgrades.map((b, i) => `
+          <button class="ucm-tab ${i === 0 ? 'active' : ''}"
+                  data-builder="${b.builder}"
+                  data-index="${i}">
+            ${b.builder.replace('_', ' ')}
+            <span class="ucm-check" style="display:none">✓</span>
           </button>
         `).join('')}
       </div>
-      
-      <div class="tab-content-area">
-        ${upgrades.map((builderData, index) => 
-          renderBuilderConfirmationTab(builderData, index === 0)
-        ).join('')}
+
+      <div class="ucm-body">
+        ${upgrades.map((b, i) => buildTabContent(b, i === 0)).join('')}
       </div>
-      
-      <div class="modal-footer">
-        <button class="confirm-all-btn" disabled>
-          Confirm All (Review all tabs first)
+
+      <div class="ucm-footer">
+        <button class="ucm-confirm-all" disabled>
+          Confirm All &nbsp;·&nbsp; Review all tabs first
         </button>
       </div>
     </div>
   `;
-  
+
   document.body.appendChild(modal);
-  
-  // Wire up tab switching
-  modal.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      const index = parseInt(tab.dataset.index);
-      switchConfirmationTab(index);
-    });
-  });
-  
-  // Wire up confirmation buttons
-  modal.querySelectorAll('.builder-confirm-btn').forEach(btn => {
-    btn.addEventListener('click', handleBuilderConfirmation);
-  });
-  
-  modal.querySelectorAll('.builder-pause-btn').forEach(btn => {
-    btn.addEventListener('click', handleBuilderPause);
-  });
-  
-  // Wire up time method radio buttons
-  modal.querySelectorAll('input[name^="time-method-"]').forEach(radio => {
-    radio.addEventListener('change', updateTimePreview);
-  });
-  
-  // Wire up time inputs
-  modal.querySelectorAll('.start-time-input, .remaining-days, .remaining-hours, .remaining-mins').forEach(input => {
-    input.addEventListener('input', updateTimePreview);
-  });
-  
-  // Wire up different upgrade selector
-  modal.querySelectorAll('.show-queue-btn').forEach(btn => {
-    btn.addEventListener('click', showUpgradeQueueModal);
-  });
-  
-  // Initialize first tab preview
-  updateTimePreview();
+  wireConfirmationModal(modal, upgrades);
+  updateAllPreviews(modal, upgrades);
 }
 
 /* =========================
-   RENDER BUILDER CONFIRMATION TAB
+   BUILD ONE TAB CONTENT
    ========================= */
-function renderBuilderConfirmationTab(builderData, isActive) {
-  const builderIndex = builderData.builder.replace('Builder_', '');
-  
+function buildTabContent(builderData, isActive) {
+  const b = builderData.builder;
+  const bLabel = b.replace('_', ' ');
+  const active = builderData.nowActive;
+  const imgSrc = getUpgradeImage(active.upgradeName);
+
+  // Parse total duration for pre-filling remaining fields
+  const match = active.totalDuration.match(/(\d+)\s*d\s*(\d+)\s*hr\s*(\d+)\s*min/);
+  const prefillDays  = match ? match[1] : '0';
+  const prefillHours = match ? match[2] : '0';
+  const prefillMins  = match ? match[3] : '0';
+
+  // Default datetime for exact input (scheduled start)
+  const defaultDT = scheduledToDatetimeLocal(active.scheduledStart);
+
   return `
-    <div class="tab-content ${isActive ? 'active' : ''}" data-builder="${builderData.builder}">
-      <div class="builder-confirmation">
-        ${builderData.finished.map(finished => `
-          <div class="finished-section">
-            <h4>✓ ${finished.upgradeName} finished</h4>
-            <p class="finished-time">Completed: ${finished.finishedTime}</p>
-          </div>
-        `).join('')}
-        
-        ${builderData.finished.length > 1 ? `
-          <div class="cascade-warning">
-            ⚠️ Multiple upgrades finished. If an earlier upgrade didn't start, 
-            later ones couldn't have started either.
-          </div>
-        ` : ''}
-        
-        <div class="active-section">
-          <h4>Next upgrade: ${builderData.nowActive.upgradeName}</h4>
-          <p class="scheduled-start">Scheduled: ${builderData.nowActive.scheduledStart}</p>
-          
-          <div class="upgrade-options">
-            <label class="upgrade-option">
-              <input type="radio" 
-                     name="upgrade-choice-${builderData.builder}" 
-                     value="planned" 
-                     checked>
-              <span>Started as planned (${builderData.nowActive.upgradeName})</span>
-            </label>
-            
-            <label class="upgrade-option">
-              <input type="radio" 
-                     name="upgrade-choice-${builderData.builder}" 
-                     value="different">
-              <span>Started a different upgrade</span>
-              <button class="show-queue-btn" 
-                      data-builder="${builderData.builder}"
-                      style="display: none;">
-                Select from queue
-              </button>
-            </label>
-          </div>
-          
-          <div class="selected-different-upgrade" style="display: none;">
-            <p><strong>Selected:</strong> <span class="different-upgrade-name"></span></p>
-          </div>
-          
-          <div class="time-entry-section">
-            <h5>When did you start?</h5>
-            
-            <label class="time-option">
-              <input type="radio" 
-                     name="time-method-${builderData.builder}" 
-                     value="exact" 
-                     checked>
-              <span>I remember the exact time</span>
-              <input type="datetime-local" 
-                     class="start-time-input"
-                     data-builder="${builderData.builder}"
-                     value="${getDefaultDateTime(builderData.nowActive.scheduledStart)}">
-            </label>
-            
-            <label class="time-option">
-              <input type="radio" 
-                     name="time-method-${builderData.builder}" 
-                     value="remaining">
-              <span>I know the time remaining (look at game now)</span>
-              <div class="remaining-duration-inputs">
-                <input type="number" 
-                       class="remaining-days" 
-                       data-builder="${builderData.builder}"
-                       placeholder="Days" 
-                       min="0" 
-                       value="0">
-                <input type="number" 
-                       class="remaining-hours" 
-                       data-builder="${builderData.builder}"
-                       placeholder="Hours" 
-                       min="0" 
-                       max="23" 
-                       value="0">
-                <input type="number" 
-                       class="remaining-mins" 
-                       data-builder="${builderData.builder}"
-                       placeholder="Mins" 
-                       min="0" 
-                       max="59" 
-                       value="0">
-              </div>
-            </label>
-          </div>
-          
-          <div class="time-preview">
-            <h5>Preview:</h5>
-            <p>Start: <strong class="preview-start">${builderData.nowActive.scheduledStart}</strong></p>
-            <p>End: <strong class="preview-end">Calculating...</strong></p>
-            <p>Total Duration: <strong>${builderData.nowActive.totalDuration}</strong></p>
-          </div>
-          
-          <div class="builder-actions">
-            <button class="builder-pause-btn" 
-                    data-builder="${builderData.builder}">
-              Not Started (Pause Builder)
-            </button>
-            <button class="builder-confirm-btn" 
-                    data-builder="${builderData.builder}">
-              Confirm
-            </button>
+    <div class="ucm-tab-content ${isActive ? 'active' : ''}" data-builder="${b}">
+
+      <!-- FINISHED SECTION -->
+      ${builderData.finished.map(f => `
+        <div class="ucm-finished-row">
+          ✅ <strong>${f.upgradeName}</strong> finished &nbsp;·&nbsp; ${f.finishedTime}
+        </div>
+      `).join('')}
+
+      ${builderData.finished.length > 1 ? `
+        <div class="ucm-cascade-warn">
+          ⚠️ Multiple upgrades finished — if an earlier one didn't start, later ones couldn't have either.
+        </div>
+      ` : ''}
+
+      <!-- ACTIVE SECTION -->
+      <div class="ucm-active-section">
+
+        <div class="ucm-active-header">
+          <img src="${imgSrc}"
+               class="ucm-active-img"
+               alt="${active.upgradeName}"
+               onerror="this.src='Images/Upgrades/PH.png'">
+          <div>
+            <div class="ucm-active-name">${active.upgradeName}</div>
+            <div class="ucm-active-sub">Scheduled start: ${active.scheduledStart}</div>
           </div>
         </div>
+
+        <!-- UPGRADE CHOICE -->
+        <div class="ucm-section-label">What did you start?</div>
+        <div class="ucm-choice-group">
+          <label class="ucm-choice">
+            <input type="radio" name="upgrade-choice-${b}" value="planned" checked>
+            <span>Started as planned &nbsp;·&nbsp; ${active.upgradeName}</span>
+          </label>
+          <label class="ucm-choice">
+            <input type="radio" name="upgrade-choice-${b}" value="different">
+            <span>Started a different upgrade</span>
+            <button class="ucm-show-queue" data-builder="${b}" style="display:none">
+              Select from queue →
+            </button>
+          </label>
+        </div>
+
+        <div class="ucm-diff-selected" style="display:none">
+          Selected: <strong class="ucm-diff-name"></strong>
+        </div>
+
+        <!-- TIME METHOD -->
+        <div class="ucm-section-label">When did you start?</div>
+        <div class="ucm-time-methods">
+
+          <!-- METHOD 1: Exact time -->
+          <label class="ucm-time-method">
+            <input type="radio" name="time-method-${b}" value="exact" checked>
+            <span>I remember the exact time</span>
+          </label>
+          <div class="ucm-exact-inputs" data-for="${b}">
+            <input type="datetime-local"
+                   class="ucm-exact-dt"
+                   data-builder="${b}"
+                   value="${defaultDT}">
+          </div>
+
+          <!-- METHOD 2: Time remaining -->
+          <label class="ucm-time-method">
+            <input type="radio" name="time-method-${b}" value="remaining">
+            <span>I know the time remaining right now</span>
+          </label>
+          <div class="ucm-remaining-inputs" data-for="${b}" style="opacity:0.4;pointer-events:none">
+            <div class="ucm-spinner-group">
+              <label>Days</label>
+              <button class="ucm-spin ucm-spin-up" data-field="ucm-rd-${b}">+</button>
+              <input type="number" id="ucm-rd-${b}" class="ucm-spin-input remaining-days"
+                     data-builder="${b}" min="0" max="365" value="${prefillDays}">
+              <button class="ucm-spin ucm-spin-dn" data-field="ucm-rd-${b}">−</button>
+            </div>
+            <div class="ucm-spinner-group">
+              <label>Hours</label>
+              <button class="ucm-spin ucm-spin-up" data-field="ucm-rh-${b}">+</button>
+              <input type="number" id="ucm-rh-${b}" class="ucm-spin-input remaining-hours"
+                     data-builder="${b}" min="0" max="23" value="${prefillHours}">
+              <button class="ucm-spin ucm-spin-dn" data-field="ucm-rh-${b}">−</button>
+            </div>
+            <div class="ucm-spinner-group">
+              <label>Mins</label>
+              <button class="ucm-spin ucm-spin-up" data-field="ucm-rm-${b}">+</button>
+              <input type="number" id="ucm-rm-${b}" class="ucm-spin-input remaining-mins"
+                     data-builder="${b}" min="0" max="59" value="${prefillMins}">
+              <button class="ucm-spin ucm-spin-dn" data-field="ucm-rm-${b}">−</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- PREVIEW -->
+        <div class="ucm-preview">
+          <div class="ucm-preview-row">
+            <span class="ucm-preview-label">Start</span>
+            <strong class="ucm-preview-start">—</strong>
+          </div>
+          <div class="ucm-preview-row">
+            <span class="ucm-preview-label">Duration</span>
+            <strong>${active.totalDuration}</strong>
+          </div>
+          <div class="ucm-preview-row">
+            <span class="ucm-preview-label">End</span>
+            <strong class="ucm-preview-end">—</strong>
+          </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="ucm-actions">
+          <button class="ucm-pause-btn" data-builder="${b}">
+            ⏸️ Not Started — Pause ${bLabel}
+          </button>
+          <button class="ucm-confirm-btn" data-builder="${b}">
+            Confirm ${bLabel}
+          </button>
+        </div>
+
       </div>
     </div>
   `;
 }
 
 /* =========================
-   SWITCH CONFIRMATION TAB
+   WIRE ALL EVENTS ON MODAL
    ========================= */
-function switchConfirmationTab(index) {
-  const modal = document.querySelector('.upgrade-confirmation-modal');
-  
-  // Update tabs
-  modal.querySelectorAll('.tab').forEach((tab, i) => {
-    if (i === index) {
-      tab.classList.add('active');
-    } else {
-      tab.classList.remove('active');
-    }
+function wireConfirmationModal(modal, upgrades) {
+
+  // Tab switching
+  modal.querySelectorAll('.ucm-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const idx = parseInt(tab.dataset.index);
+      modal.querySelectorAll('.ucm-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+      modal.querySelectorAll('.ucm-tab-content').forEach((c, i) => c.classList.toggle('active', i === idx));
+      updateAllPreviews(modal, upgrades);
+    });
   });
-  
-  // Update content
-  modal.querySelectorAll('.tab-content').forEach((content, i) => {
-    if (i === index) {
-      content.classList.add('active');
-    } else {
-      content.classList.remove('active');
-    }
+
+  // Time method radio → enable/disable inputs
+  modal.querySelectorAll('input[name^="time-method-"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const b = radio.name.replace('time-method-', '');
+      const tab = modal.querySelector(`.ucm-tab-content[data-builder="${b}"]`);
+      const exactDiv = tab.querySelector(`.ucm-exact-inputs[data-for="${b}"]`);
+      const remDiv   = tab.querySelector(`.ucm-remaining-inputs[data-for="${b}"]`);
+      const isExact  = radio.value === 'exact';
+      exactDiv.style.opacity = isExact ? '1' : '0.4';
+      exactDiv.style.pointerEvents = isExact ? 'auto' : 'none';
+      remDiv.style.opacity  = isExact ? '0.4' : '1';
+      remDiv.style.pointerEvents = isExact ? 'none' : 'auto';
+      updateAllPreviews(modal, upgrades);
+    });
   });
-  
-  // Update time preview for this tab
-  updateTimePreview();
+
+  // Exact datetime input
+  modal.querySelectorAll('.ucm-exact-dt').forEach(input => {
+    input.addEventListener('input', () => updateAllPreviews(modal, upgrades));
+  });
+
+  // Spinner buttons
+  modal.querySelectorAll('.ucm-spin').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const fieldId = btn.dataset.field;
+      const input = document.getElementById(fieldId);
+      if (!input) return;
+      const isUp  = btn.classList.contains('ucm-spin-up');
+      const cur   = parseInt(input.value) || 0;
+      const max   = parseInt(input.max);
+      const min   = parseInt(input.min);
+      if (isUp  && cur < max) input.value = cur + 1;
+      if (!isUp && cur > min) input.value = cur - 1;
+      updateAllPreviews(modal, upgrades);
+    });
+  });
+
+  // Remaining number inputs (typed)
+  modal.querySelectorAll('.ucm-spin-input').forEach(input => {
+    input.addEventListener('input', () => updateAllPreviews(modal, upgrades));
+  });
+
+  // Upgrade choice radio → show queue button
+  modal.querySelectorAll('input[name^="upgrade-choice-"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const b = radio.name.replace('upgrade-choice-', '');
+      const tab = modal.querySelector(`.ucm-tab-content[data-builder="${b}"]`);
+      const btn = tab.querySelector('.ucm-show-queue');
+      btn.style.display = radio.value === 'different' ? 'inline-block' : 'none';
+      if (radio.value !== 'different') {
+        tab.querySelector('.ucm-diff-selected').style.display = 'none';
+      }
+    });
+  });
+
+  // Show queue modal
+  modal.querySelectorAll('.ucm-show-queue').forEach(btn => {
+    btn.addEventListener('click', () => showUpgradeQueueModal(btn.dataset.builder, modal));
+  });
+
+  // Confirm buttons
+  modal.querySelectorAll('.ucm-confirm-btn').forEach(btn => {
+    btn.addEventListener('click', () => handleBuilderConfirmation(btn, modal, upgrades));
+  });
+
+  // Pause buttons
+  modal.querySelectorAll('.ucm-pause-btn').forEach(btn => {
+    btn.addEventListener('click', () => handleBuilderPause(btn, modal, upgrades));
+  });
+
+  // Confirm All
+  modal.querySelector('.ucm-confirm-all').addEventListener('click', () => {
+    modal.remove();
+    const container = document.getElementById("builders-container");
+    if (container) container.innerHTML = "";
+    refreshDashboard();
+  });
 }
 
 /* =========================
-   UPDATE TIME PREVIEW
+   UPDATE PREVIEWS
    ========================= */
-function updateTimePreview() {
-  const activeTab = document.querySelector('.tab-content.active');
+function updateAllPreviews(modal, upgrades) {
+  const activeTab = modal.querySelector('.ucm-tab-content.active');
   if (!activeTab) return;
-  
-  const builder = activeTab.dataset.builder;
-  const builderData = finishedUpgradesData.find(b => b.builder === builder);
+
+  const b = activeTab.dataset.builder;
+  const builderData = upgrades.find(u => u.builder === b);
   if (!builderData) return;
-  
-  const timeMethod = activeTab.querySelector(`input[name="time-method-${builder}"]:checked`)?.value;
-  
-  // Parse total duration
+
   const totalDuration = builderData.nowActive.totalDuration;
-  const durationMatch = totalDuration.match(/(\d+)\s*d\s*(\d+)\s*hr\s*(\d+)\s*min/);
-  const totalDays = durationMatch ? parseInt(durationMatch[1]) : 0;
-  const totalHours = durationMatch ? parseInt(durationMatch[2]) : 0;
-  const totalMins = durationMatch ? parseInt(durationMatch[3]) : 0;
-  const totalMinutes = (totalDays * 24 * 60) + (totalHours * 60) + totalMins;
-  
+  const match = totalDuration.match(/(\d+)\s*d\s*(\d+)\s*hr\s*(\d+)\s*min/);
+  const totalMinutes = match
+    ? parseInt(match[1]) * 24 * 60 + parseInt(match[2]) * 60 + parseInt(match[3])
+    : 0;
+
+  const timeMethod = activeTab.querySelector(`input[name="time-method-${b}"]:checked`)?.value;
+
   let startTime, endTime;
-  
+
   if (timeMethod === 'exact') {
-    // User entered exact start time
-    const startInput = activeTab.querySelector('.start-time-input');
-    startTime = new Date(startInput.value);
-    endTime = new Date(startTime.getTime() + (totalMinutes * 60 * 1000));
+    const val = activeTab.querySelector('.ucm-exact-dt')?.value;
+    startTime = val ? new Date(val) : null;
+    if (startTime && !isNaN(startTime)) {
+      endTime = new Date(startTime.getTime() + totalMinutes * 60000);
+    }
   } else {
-    // User entered remaining duration
-    const days = parseInt(activeTab.querySelector('.remaining-days').value) || 0;
-    const hours = parseInt(activeTab.querySelector('.remaining-hours').value) || 0;
-    const mins = parseInt(activeTab.querySelector('.remaining-mins').value) || 0;
-    const remainingMinutes = (days * 24 * 60) + (hours * 60) + mins;
-    
-    // Calculate start time = NOW - (total - remaining)
-    const elapsedMinutes = totalMinutes - remainingMinutes;
+    const days  = parseInt(activeTab.querySelector('.remaining-days')?.value)  || 0;
+    const hours = parseInt(activeTab.querySelector('.remaining-hours')?.value) || 0;
+    const mins  = parseInt(activeTab.querySelector('.remaining-mins')?.value)  || 0;
+    const remainingMins = days * 24 * 60 + hours * 60 + mins;
+    const elapsedMins   = totalMinutes - remainingMins;
     const now = new Date();
-    startTime = new Date(now.getTime() - (elapsedMinutes * 60 * 1000));
-    endTime = new Date(now.getTime() + (remainingMinutes * 60 * 1000));
+    startTime = new Date(now.getTime() - elapsedMins * 60000);
+    endTime   = new Date(now.getTime() + remainingMins * 60000);
   }
-  
-  // Update preview
-  if (!isNaN(startTime.getTime())) {
-    activeTab.querySelector('.preview-start').textContent = formatFinishTime(startTime);
-  }
-  if (!isNaN(endTime.getTime())) {
-    activeTab.querySelector('.preview-end').textContent = formatFinishTime(endTime);
+
+  const fmtNoYear = (d) => {
+    if (!d || isNaN(d)) return '—';
+    return d.toLocaleString("en-US", {
+      timeZone: "America/New_York",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true
+    });
+  };
+
+  activeTab.querySelector('.ucm-preview-start').textContent = fmtNoYear(startTime);
+  activeTab.querySelector('.ucm-preview-end').textContent   = fmtNoYear(endTime);
+}
+
+/* =========================
+   GET START TIME FROM ACTIVE TAB
+   ========================= */
+function getStartTimeFromTab(tab, totalMinutes) {
+  const b = tab.dataset.builder;
+  const timeMethod = tab.querySelector(`input[name="time-method-${b}"]:checked`)?.value;
+
+  if (timeMethod === 'exact') {
+    const val = tab.querySelector('.ucm-exact-dt')?.value;
+    return val ? new Date(val) : null;
+  } else {
+    const days  = parseInt(tab.querySelector('.remaining-days')?.value)  || 0;
+    const hours = parseInt(tab.querySelector('.remaining-hours')?.value) || 0;
+    const mins  = parseInt(tab.querySelector('.remaining-mins')?.value)  || 0;
+    const remainingMins = days * 24 * 60 + hours * 60 + mins;
+    const elapsedMins   = totalMinutes - remainingMins;
+    return new Date(Date.now() - elapsedMins * 60000);
   }
 }
 
 /* =========================
-   HANDLE BUILDER CONFIRMATION
+   HANDLE CONFIRM
    ========================= */
-async function handleBuilderConfirmation(e) {
-  const button = e.target;
-  const builder = button.dataset.builder;
-  const activeTab = document.querySelector(`.tab-content[data-builder="${builder}"]`);
-  
-  const builderData = finishedUpgradesData.find(b => b.builder === builder);
+async function handleBuilderConfirmation(btn, modal, upgrades) {
+  const b = btn.dataset.builder;
+  const tab = modal.querySelector(`.ucm-tab-content[data-builder="${b}"]`);
+  const builderData = upgrades.find(u => u.builder === b);
   if (!builderData) return;
-  
-  // Get selected upgrade
-  const upgradeChoice = activeTab.querySelector(`input[name="upgrade-choice-${builder}"]:checked`).value;
+
+  const totalDuration = builderData.nowActive.totalDuration;
+  const match = totalDuration.match(/(\d+)\s*d\s*(\d+)\s*hr\s*(\d+)\s*min/);
+  const totalMinutes = match
+    ? parseInt(match[1]) * 24 * 60 + parseInt(match[2]) * 60 + parseInt(match[3])
+    : 0;
+
+  const upgradeChoice = tab.querySelector(`input[name="upgrade-choice-${b}"]:checked`)?.value;
   let upgradeName = builderData.nowActive.upgradeName;
   let differentUpgrade = null;
-  
+
   if (upgradeChoice === 'different') {
-    differentUpgrade = activeTab.querySelector('.different-upgrade-name').textContent;
+    differentUpgrade = tab.querySelector('.ucm-diff-name')?.textContent?.trim();
     if (!differentUpgrade) {
       alert('Please select which upgrade you started');
       return;
     }
   }
-  
-  // Get start time
-  const timeMethod = activeTab.querySelector(`input[name="time-method-${builder}"]:checked`).value;
-  let startTime;
-  
-  if (timeMethod === 'exact') {
-    startTime = new Date(activeTab.querySelector('.start-time-input').value);
-  } else {
-    // Calculate from remaining duration
-    const previewStart = activeTab.querySelector('.preview-start').textContent;
-    // Parse the formatted date back
-    startTime = new Date(activeTab.querySelector('.start-time-input').value);
-  }
-  
-  if (isNaN(startTime.getTime())) {
-    alert('Invalid start time');
+
+  const startTime = getStartTimeFromTab(tab, totalMinutes);
+  if (!startTime || isNaN(startTime)) {
+    alert('Please enter a valid start time');
     return;
   }
-  
-  // Show loading
-  button.disabled = true;
-  button.textContent = 'Confirming...';
-  
+
+  btn.disabled = true;
+  btn.textContent = 'Confirming…';
+
   try {
     const params = new URLSearchParams({
       action: 'confirm_upgrade_start',
-      builder: builder,
+      builder: b,
       upgradeName: upgradeName,
       startTime: startTime.toISOString(),
       confirmAction: upgradeChoice === 'different' ? 'different' : 'confirm',
       differentUpgrade: differentUpgrade || ''
     });
-    
-    const res = await fetch(API_BASE + '?' + params.toString());
+
+    const res  = await fetch(API_BASE + '?' + params.toString());
     const data = await res.json();
-    
+
     if (data.error) {
       alert('Error: ' + data.error);
-      button.disabled = false;
-      button.textContent = 'Confirm';
+      btn.disabled = false;
+      btn.textContent = `Confirm ${b.replace('_', ' ')}`;
       return;
     }
-    
-    // Mark this tab as reviewed
-    reviewedTabs.add(builder);
-    updateReviewedStatus();
-    
-    // Show success indicator
-    button.textContent = '✓ Confirmed';
-    button.classList.add('confirmed');
-    
-    // Mark tab as reviewed
-    const tab = document.querySelector(`.tab[data-builder="${builder}"]`);
-    tab.querySelector('.reviewed-indicator').style.display = 'inline';
-    
-    // Check if all reviewed
-    if (reviewedTabs.size === finishedUpgradesData.length) {
-      // Enable confirm all button
-      document.querySelector('.confirm-all-btn').disabled = false;
-    }
-    
+
+    markTabReviewed(b, modal, upgrades);
+    btn.textContent = '✓ Confirmed';
+    btn.classList.add('ucm-btn-confirmed');
+
   } catch (err) {
     console.error('Confirmation failed:', err);
     alert('Failed to confirm upgrade');
-    button.disabled = false;
-    button.textContent = 'Confirm';
+    btn.disabled = false;
+    btn.textContent = `Confirm ${b.replace('_', ' ')}`;
   }
 }
 
 /* =========================
-   HANDLE BUILDER PAUSE
+   HANDLE PAUSE
    ========================= */
-async function handleBuilderPause(e) {
-  const button = e.target;
-  const builder = button.dataset.builder;
-  
-  if (!confirm(`Pause ${builder}? This means the upgrade has not started yet.`)) {
-    return;
-  }
-  
-  button.disabled = true;
-  button.textContent = 'Pausing...';
-  
+async function handleBuilderPause(btn, modal, upgrades) {
+  const b = btn.dataset.builder;
+  const bLabel = b.replace('_', ' ');
+
+  if (!confirm(`Pause ${bLabel}? This means the upgrade has not started yet.`)) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Pausing…';
+
   try {
     const params = new URLSearchParams({
       action: 'confirm_upgrade_start',
-      builder: builder,
+      builder: b,
       upgradeName: '',
       startTime: '',
-      confirmAction: 'pause'
+      confirmAction: 'pause',
+      differentUpgrade: ''
     });
-    
-    const res = await fetch(API_BASE + '?' + params.toString());
+
+    const res  = await fetch(API_BASE + '?' + params.toString());
     const data = await res.json();
-    
+
     if (data.error) {
       alert('Error: ' + data.error);
-      button.disabled = false;
-      button.textContent = 'Not Started (Pause Builder)';
+      btn.disabled = false;
+      btn.textContent = `⏸️ Not Started — Pause ${bLabel}`;
       return;
     }
-    
-    // Mark as reviewed
-    reviewedTabs.add(builder);
-    updateReviewedStatus();
-    
-    button.textContent = '⏸️ Paused';
-    button.classList.add('paused');
-    
-    const tab = document.querySelector(`.tab[data-builder="${builder}"]`);
-    tab.querySelector('.reviewed-indicator').style.display = 'inline';
-    
-    if (reviewedTabs.size === finishedUpgradesData.length) {
-      document.querySelector('.confirm-all-btn').disabled = false;
-    }
-    
+
+    markTabReviewed(b, modal, upgrades);
+    btn.textContent = `⏸️ ${bLabel} Paused`;
+    btn.classList.add('ucm-btn-paused');
+
   } catch (err) {
     console.error('Pause failed:', err);
     alert('Failed to pause builder');
-    button.disabled = false;
-    button.textContent = 'Not Started (Pause Builder)';
+    btn.disabled = false;
+    btn.textContent = `⏸️ Not Started — Pause ${bLabel}`;
   }
 }
 
 /* =========================
-   UPDATE REVIEWED STATUS
+   MARK TAB AS REVIEWED
    ========================= */
-function updateReviewedStatus() {
-  const statusEl = document.querySelector('.review-status');
-  if (statusEl) {
-    statusEl.textContent = `${reviewedTabs.size}/${finishedUpgradesData.length} reviewed`;
+function markTabReviewed(builder, modal, upgrades) {
+  reviewedTabs.add(builder);
+
+  // Show checkmark on tab
+  const tab = modal.querySelector(`.ucm-tab[data-builder="${builder}"]`);
+  tab?.querySelector('.ucm-check')?.removeAttribute('style');
+
+  // Update counter
+  const statusEl = modal.querySelector('.ucm-review-status');
+  if (statusEl) statusEl.textContent = `${reviewedTabs.size} / ${upgrades.length} reviewed`;
+
+  // Enable confirm-all if all tabs reviewed
+  if (reviewedTabs.size === upgrades.length) {
+    const confirmAll = modal.querySelector('.ucm-confirm-all');
+    confirmAll.disabled = false;
+    confirmAll.textContent = 'Confirm All ✓';
   }
 }
 
 /* =========================
    SHOW UPGRADE QUEUE MODAL
    ========================= */
-async function showUpgradeQueueModal(e) {
-  const button = e.target;
-  const builder = button.dataset.builder;
-  
+async function showUpgradeQueueModal(builder, parentModal) {
   try {
-    const res = await fetch(API_BASE + `?action=get_builder_queue&builder=${builder}`);
+    const res  = await fetch(API_BASE + `?action=get_builder_queue&builder=${builder}`);
     const data = await res.json();
-    
-    if (data.error) {
-      alert('Error: ' + data.error);
-      return;
-    }
-    
-    const modal = document.createElement('div');
-    modal.className = 'upgrade-queue-modal-overlay';
-    modal.innerHTML = `
-      <div class="upgrade-queue-modal">
+
+    if (data.error) { alert('Error: ' + data.error); return; }
+
+    const qModal = document.createElement('div');
+    qModal.className = 'ucm-queue-overlay';
+    qModal.innerHTML = `
+      <div class="ucm-queue-modal">
         <h3>Select Upgrade You Started</h3>
-        <p class="queue-subtitle">Choose from ${builder}'s queued upgrades:</p>
-        
-        <div class="upgrade-queue-list">
-          ${data.queue.map((upgrade, index) => `
-            <label class="queue-upgrade-item">
-              <input type="radio" 
-                     name="selected-upgrade" 
-                     value="${upgrade.upgradeName}"
-                     ${index === 0 ? 'checked' : ''}>
-              <div class="queue-upgrade-content">
-                <img src="${getUpgradeImage(upgrade.upgradeName)}" 
-                     class="queue-upgrade-icon"
+        <p class="ucm-queue-sub">${builder.replace('_', ' ')} · Queued upgrades</p>
+
+        <div class="ucm-queue-list">
+          ${data.queue.length === 0
+            ? '<p class="ucm-empty">No queued upgrades found.</p>'
+            : data.queue.map((upg, i) => `
+              <label class="ucm-queue-item">
+                <input type="radio" name="ucm-queue-pick" value="${upg.upgradeName}" ${i === 0 ? 'checked' : ''}>
+                <img src="${getUpgradeImage(upg.upgradeName)}"
+                     class="ucm-queue-icon"
                      onerror="this.src='Images/Upgrades/PH.png'">
-                <div class="queue-upgrade-info">
-                  <span class="queue-upgrade-name">${upgrade.upgradeName}</span>
-                  <span class="queue-upgrade-duration">${upgrade.duration}</span>
+                <div class="ucm-queue-info">
+                  <span class="ucm-queue-name">${upg.upgradeName}</span>
+                  <span class="ucm-queue-dur">${upg.duration}</span>
                 </div>
-              </div>
-            </label>
-          `).join('')}
+              </label>
+            `).join('')
+          }
         </div>
-        
-        <div class="queue-modal-actions">
-          <button class="queue-cancel-btn">Cancel</button>
-          <button class="queue-select-btn">Select</button>
+
+        <div class="ucm-queue-actions">
+          <button class="ucm-queue-cancel">Cancel</button>
+          <button class="ucm-queue-select">Select</button>
         </div>
       </div>
     `;
-    
-    document.body.appendChild(modal);
-    
-    modal.querySelector('.queue-cancel-btn').addEventListener('click', () => {
-      modal.remove();
-    });
-    
-    modal.querySelector('.queue-select-btn').addEventListener('click', () => {
-      const selected = modal.querySelector('input[name="selected-upgrade"]:checked');
-      if (selected) {
-        const activeTab = document.querySelector('.tab-content.active');
-        activeTab.querySelector('.different-upgrade-name').textContent = selected.value;
-        activeTab.querySelector('.selected-different-upgrade').style.display = 'block';
+
+    document.body.appendChild(qModal);
+
+    qModal.querySelector('.ucm-queue-cancel').addEventListener('click', () => qModal.remove());
+    qModal.querySelector('.ucm-queue-select').addEventListener('click', () => {
+      const picked = qModal.querySelector('input[name="ucm-queue-pick"]:checked');
+      if (picked) {
+        const tab = parentModal.querySelector(`.ucm-tab-content[data-builder="${builder}"]`);
+        tab.querySelector('.ucm-diff-name').textContent = picked.value;
+        tab.querySelector('.ucm-diff-selected').style.display = 'block';
       }
-      modal.remove();
+      qModal.remove();
     });
-    
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.remove();
-      }
-    });
-    
+
+    qModal.addEventListener('click', e => { if (e.target === qModal) qModal.remove(); });
+
   } catch (err) {
     console.error('Failed to load queue:', err);
     alert('Failed to load upgrade queue');
@@ -1778,64 +1820,196 @@ async function showUpgradeQueueModal(e) {
 }
 
 /* =========================
-   CONFIRM ALL BUTTON
+   SHOW START PAUSED BUILDER MODAL
    ========================= */
-document.addEventListener('click', (e) => {
-  if (e.target.classList.contains('confirm-all-btn') && !e.target.disabled) {
-    const modal = document.querySelector('.upgrade-confirmation-modal-overlay');
-    if (modal) {
-      modal.remove();
-      
-      // Refresh the dashboard
-      const container = document.getElementById("builders-container");
-      container.innerHTML = "";
-      refreshDashboard();
-    }
-  }
-});
+function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
+  const b = `Builder_${builderNum}`;
+  const bLabel = `Builder ${builderNum}`;
 
-/* =========================
-   PAUSED BUILDER UI
-   ========================= */
-function showPausedBuilderUI() {
-  // This is called when rendering builder cards
-  // Check if builder is paused and show special UI
-  const cards = document.querySelectorAll('.builder-card');
-  
-  cards.forEach(card => {
-    const builderNum = card.dataset.builder;
-    // Check if this builder is paused (you'll need to add this to the data)
-    // For now, this is a placeholder
+  const match = totalDuration?.match(/(\d+)\s*d\s*(\d+)\s*hr\s*(\d+)\s*min/);
+  const prefillDays  = match ? match[1] : '0';
+  const prefillHours = match ? match[2] : '0';
+  const prefillMins  = match ? match[3] : '0';
+
+  const modal = document.createElement('div');
+  modal.className = 'ucm-queue-overlay';
+  modal.innerHTML = `
+    <div class="ucm-start-modal">
+      <h3>▶️ Start ${bLabel}</h3>
+      <div class="ucm-active-header" style="margin:16px 0">
+        <img src="${getUpgradeImage(upgradeName)}"
+             class="ucm-active-img"
+             onerror="this.src='Images/Upgrades/PH.png'">
+        <div>
+          <div class="ucm-active-name">${upgradeName}</div>
+          <div class="ucm-active-sub">Total duration: ${totalDuration}</div>
+        </div>
+      </div>
+
+      <div class="ucm-section-label">When did you start?</div>
+      <div class="ucm-time-methods">
+
+        <label class="ucm-time-method">
+          <input type="radio" name="sp-time-method" value="exact" checked>
+          <span>I remember the exact time</span>
+        </label>
+        <div class="sp-exact-wrap">
+          <input type="datetime-local" class="ucm-exact-dt sp-exact-dt"
+                 value="${toDatetimeLocal(new Date())}">
+        </div>
+
+        <label class="ucm-time-method">
+          <input type="radio" name="sp-time-method" value="remaining">
+          <span>I know the time remaining right now</span>
+        </label>
+        <div class="ucm-remaining-inputs sp-rem-wrap" style="opacity:0.4;pointer-events:none">
+          <div class="ucm-spinner-group">
+            <label>Days</label>
+            <button class="ucm-spin ucm-spin-up" data-field="sp-rd">+</button>
+            <input type="number" id="sp-rd" class="ucm-spin-input" min="0" max="365" value="${prefillDays}">
+            <button class="ucm-spin ucm-spin-dn" data-field="sp-rd">−</button>
+          </div>
+          <div class="ucm-spinner-group">
+            <label>Hours</label>
+            <button class="ucm-spin ucm-spin-up" data-field="sp-rh">+</button>
+            <input type="number" id="sp-rh" class="ucm-spin-input" min="0" max="23" value="${prefillHours}">
+            <button class="ucm-spin ucm-spin-dn" data-field="sp-rh">−</button>
+          </div>
+          <div class="ucm-spinner-group">
+            <label>Mins</label>
+            <button class="ucm-spin ucm-spin-up" data-field="sp-rm">+</button>
+            <input type="number" id="sp-rm" class="ucm-spin-input" min="0" max="59" value="${prefillMins}">
+            <button class="ucm-spin ucm-spin-dn" data-field="sp-rm">−</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ucm-queue-actions" style="margin-top:20px">
+        <button class="ucm-queue-cancel">Cancel</button>
+        <button class="ucm-queue-select sp-start-btn">▶️ Start Now</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const totalMinutes = (parseInt(prefillDays) * 24 * 60)
+                     + (parseInt(prefillHours) * 60)
+                     + parseInt(prefillMins);
+
+  // Radio switch
+  modal.querySelectorAll('input[name="sp-time-method"]').forEach(r => {
+    r.addEventListener('change', () => {
+      const isExact = r.value === 'exact';
+      modal.querySelector('.sp-exact-wrap').style.opacity = isExact ? '1' : '0.4';
+      modal.querySelector('.sp-exact-wrap').style.pointerEvents = isExact ? 'auto' : 'none';
+      modal.querySelector('.sp-rem-wrap').style.opacity = isExact ? '0.4' : '1';
+      modal.querySelector('.sp-rem-wrap').style.pointerEvents = isExact ? 'none' : 'auto';
+    });
+  });
+
+  // Spinners
+  modal.querySelectorAll('.ucm-spin').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.field);
+      if (!input) return;
+      const isUp = btn.classList.contains('ucm-spin-up');
+      const cur  = parseInt(input.value) || 0;
+      if (isUp && cur < parseInt(input.max)) input.value = cur + 1;
+      if (!isUp && cur > parseInt(input.min)) input.value = cur - 1;
+    });
+  });
+
+  modal.querySelector('.ucm-queue-cancel').addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+
+  modal.querySelector('.sp-start-btn').addEventListener('click', async () => {
+    const method = modal.querySelector('input[name="sp-time-method"]:checked')?.value;
+    let startTime;
+
+    if (method === 'exact') {
+      startTime = new Date(modal.querySelector('.sp-exact-dt').value);
+    } else {
+      const d = parseInt(document.getElementById('sp-rd').value) || 0;
+      const h = parseInt(document.getElementById('sp-rh').value) || 0;
+      const m = parseInt(document.getElementById('sp-rm').value) || 0;
+      const remaining = d * 24 * 60 + h * 60 + m;
+      const elapsed   = totalMinutes - remaining;
+      startTime = new Date(Date.now() - elapsed * 60000);
+    }
+
+    if (!startTime || isNaN(startTime)) {
+      alert('Please enter a valid start time');
+      return;
+    }
+
+    const startBtn = modal.querySelector('.sp-start-btn');
+    startBtn.disabled = true;
+    startBtn.textContent = 'Starting…';
+
+    try {
+      const params = new URLSearchParams({
+        action: 'start_paused_builder',
+        builder: b,
+        startTime: startTime.toISOString()
+      });
+      const res  = await fetch(API_BASE + '?' + params.toString());
+      const data = await res.json();
+
+      if (data.error) {
+        alert('Error: ' + data.error);
+        startBtn.disabled = false;
+        startBtn.textContent = '▶️ Start Now';
+        return;
+      }
+
+      modal.remove();
+
+      // Refresh builder cards
+      const container = document.getElementById("builders-container");
+      if (container) container.innerHTML = "";
+      await Promise.all([loadCurrentWork(), loadTodaysBoost()]);
+      renderBuilderCards();
+
+    } catch (err) {
+      console.error('Start failed:', err);
+      alert('Failed to start builder');
+      startBtn.disabled = false;
+      startBtn.textContent = '▶️ Start Now';
+    }
   });
 }
 
 /* =========================
-   HELPER FUNCTIONS
+   PAUSED BUILDER CARD WIRE-UP
+   Called from wireBuilderCardClicks after cards render
    ========================= */
-function getDefaultDateTime(scheduledStart) {
-  // Convert "Feb 13 11:46 AM" to datetime-local format
-  const date = new Date(scheduledStart);
-  if (isNaN(date.getTime())) {
-    return new Date().toISOString().slice(0, 16);
-  }
-  return date.toISOString().slice(0, 16);
+function wirePausedBuilderButtons() {
+  document.querySelectorAll('.start-builder-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const builderNum  = btn.dataset.builder;
+      const upgradeName = btn.dataset.upgrade;
+      const duration    = btn.dataset.duration;
+      showStartPausedBuilderModal(builderNum, upgradeName, duration);
+    });
+  });
 }
 
-// Wire different upgrade radio button
-document.addEventListener('change', (e) => {
-  if (e.target.type === 'radio' && e.target.name.startsWith('upgrade-choice-')) {
-    const builder = e.target.name.replace('upgrade-choice-', '');
-    const activeTab = document.querySelector(`.tab-content[data-builder="${builder}"]`);
-    const showQueueBtn = activeTab.querySelector('.show-queue-btn');
-    
-    if (e.target.value === 'different') {
-      showQueueBtn.style.display = 'inline-block';
-    } else {
-      showQueueBtn.style.display = 'none';
-      activeTab.querySelector('.selected-different-upgrade').style.display = 'none';
-    }
- }
-});
+/* =========================
+   HELPERS
+   ========================= */
+function scheduledToDatetimeLocal(scheduledStr) {
+  // "Feb 13 11:46 AM" → datetime-local value
+  const d = new Date(scheduledStr + " 2026"); // attach a year
+  if (isNaN(d)) return toDatetimeLocal(new Date());
+  return toDatetimeLocal(d);
+}
+
+function toDatetimeLocal(d) {
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 /* =========================
    INIT
    ========================= */
