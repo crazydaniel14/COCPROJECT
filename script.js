@@ -1835,6 +1835,7 @@ document.addEventListener('change', (e) => {
       activeTab.querySelector('.selected-different-upgrade').style.display = 'none';
     }
  }
+});
 /* =========================
    INIT
    ========================= */
