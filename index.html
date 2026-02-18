@@ -2,8 +2,8 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>COC PROGRAM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>COC PLANNER</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,15 +14,6 @@
   
   <!-- IMAGE ACTION BUTTONS -->
   <div class="action-button">
-    <!-- Builder Potion -->
-    <img
-      src="Images/BuilderPotion.png"
-      alt="Apply Builder Potion"
-      id="builderPotionBtn"
-      class="image-button"
-      width="50"
-      height="50"
-    />
     <!-- Builder Snack -->
     <img
       src="Images/BuilderSnack.png"
@@ -43,86 +34,69 @@
       title="Battle Pass Reduction"
     />
   </div>
- <!-- Builder card -->
- <!-- BUILDERS GRID -->
-<section id="builders-container" class="builders-container">
-<!-- Builder cards injected here by JS -->
-</section>
+
+  <!-- BUILDERS GRID -->
+  <section id="builders-container" class="builders-container">
+    <!-- Builder cards injected here by JS -->
+  </section>
+
   <h4>Boost Plan</h4>
-<div id="boostFocusWrapper">
-  <button class="boost-nav" id="boostPrev" disabled>
-    ←
-  </button>
-  <div id="boostFocusCard">
-    <!-- Three-dot menu button -->
-    <button class="boost-menu-btn" id="boostMenuBtn">⋮</button>
-    
-    <!-- Dropdown menu -->
-    <div class="boost-builder-dropdown hidden" id="boostBuilderDropdown">
-      <button data-builder-select="Builder_1">Builder 1</button>
-      <button data-builder-select="Builder_2">Builder 2</button>
-      <button data-builder-select="Builder_3">Builder 3</button>
-      <button data-builder-select="Builder_4">Builder 4</button>
-      <button data-builder-select="Builder_5">Builder 5</button>
-      <button data-builder-select="Builder_6">Builder 6</button>
+  <div id="boostFocusWrapper">
+    <button class="boost-nav" id="boostPrev" disabled>
+      ←
+    </button>
+    <div id="boostFocusCard">
+      <!-- Three-dot menu button -->
+      <button class="boost-menu-btn" id="boostMenuBtn">⋮</button>
+      
+      <!-- Dropdown menu -->
+      <div class="boost-builder-dropdown hidden" id="boostBuilderDropdown">
+        <button data-builder-select="Builder_1">Builder 1</button>
+        <button data-builder-select="Builder_2">Builder 2</button>
+        <button data-builder-select="Builder_3">Builder 3</button>
+        <button data-builder-select="Builder_4">Builder 4</button>
+        <button data-builder-select="Builder_5">Builder 5</button>
+        <button data-builder-select="Builder_6">Builder 6</button>
+      </div>
+      
+      <div class="boost-day">TODAY</div>
+      <div class="boost-status boost-active">
+        Boost Planned
+      </div>
+      <div class="boost-builder">
+        Builder
+      </div>
+      <div class="boost-extra">
+        <div class="boost-finish">
+          <img src="Images/Clock vector.png" class="boost-clock" />
+          <span class="boost-finish-text">
+            New finish: <span id="boostFinishTime"></span>
+          </span>
+        </div>
+        <div class="boost-mode" id="boostMode"></div>
+      </div>
     </div>
     
-    <div class="boost-day">TODAY</div>
-    <div class="boost-status boost-active">
-      Boost Planned
-    </div>
-    <div class="boost-builder">
-      Builder
-    </div>
-    <!-- ✅ MUST BE INSIDE THE CARD -->
-    <div class="boost-extra">
-   <div class="boost-finish">
-   <img src="Images/Clock vector.png" class="boost-clock" />
-   <span class="boost-finish-text">
-   New finish: <span id="boostFinishTime"></span>
-   </span>
-   </div>
-      <div class="boost-mode" id="boostMode"></div>
-    </div>
+    <button class="boost-nav" id="boostNext">
+      →
+    </button>
   </div>
-  
-  <button class="boost-nav" id="boostNext">
-    →
-  </button>
-</div>
+
   <button id="runBoostSimBtn">
-  Run Boost Simulation
-</button>
+    Run Boost Simulation
+  </button>
+
   <div id="lastRefreshed" style="margin: 10px 0; font-size: 13px; color: #555;">
     Last refreshed: —
   </div>
-  <!-- 🔹 BUILDER POTION MODAL (UNCHANGED) -->
-  <div id="builderPotionModal" class="modal hidden">
-    <div class="modal-content">
-      <h2>Builder Potion</h2>
-      <p>How many Builder Potions do you want to apply?</p>
-      <input
-        type="number"
-        id="potionCount"
-        min="1"
-        step="1"
-        value="1"
-      />
-      <div id="builderPotionPreview" class="preview-box"></div>
-      <div class="modal-actions">
-        <button id="previewPotionBtn">Preview</button>
-        <button id="confirmPotionBtn" disabled>Confirm</button>
-        <button id="cancelPotionBtn">Cancel</button>
-      </div>
-    </div>
-  </div>
+
   <!-- SCRIPT MUST BE LAST -->
   <script src="script.js"></script>
+  
   <!-- Vercel Speed Insights -->
   <script>
     window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
   </script>
   <script defer src="/_vercel/speed-insights/script.js"></script>
-  <!-- FInISH VERSEL SPEED -->
 </body>
 </html>
