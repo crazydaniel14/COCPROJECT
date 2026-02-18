@@ -1195,20 +1195,21 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
   modal.querySelector('.sp-start-btn').addEventListener('click', async () => {
     const method = modal.querySelector('input[name="sp-time-method"]:checked')?.value;
-    let startTime;
-    if (method === 'exact') {
-      startTime = new Date(modal.querySelector('.sp-exact-dt').value);
-    } else {
-      const d=parseInt(document.getElementById('sp-rd').value)||0;
-      const h=parseInt(document.getElementById('sp-rh').value)||0;
-      const m=parseInt(document.getElementById('sp-rm').value)||0;
-      startTime = new Date(Date.now() - (totalMinutes-(d*24*60+h*60+m))*60000);
-    }
-    if (!startTime || isNaN(startTime)) { alert('Please enter a valid start time'); return; }
     const startBtn = modal.querySelector('.sp-start-btn');
     startBtn.disabled = true; startBtn.textContent = 'Starting…';
     try {
-      const params = new URLSearchParams({ action:'start_paused_builder', builder:b, startTime:startTime.toISOString() });
+      let params;
+      if (method === 'exact') {
+        const exactTime = new Date(modal.querySelector('.sp-exact-dt').value);
+        if (!exactTime || isNaN(exactTime)) { alert('Please enter a valid start time'); startBtn.disabled=false; startBtn.textContent='▶️ Start Now'; return; }
+        params = new URLSearchParams({ action:'start_paused_builder', builder:b, method:'exact', startTime:exactTime.toISOString() });
+      } else {
+        const d=parseInt(document.getElementById('sp-rd').value)||0;
+        const h=parseInt(document.getElementById('sp-rh').value)||0;
+        const m=parseInt(document.getElementById('sp-rm').value)||0;
+        const remainingMinutes = d*24*60 + h*60 + m;
+        params = new URLSearchParams({ action:'start_paused_builder', builder:b, method:'remaining', remainingMinutes:remainingMinutes.toString() });
+      }
       const res  = await fetch(API_BASE + '?' + params.toString());
       const data = await res.json();
       if (data.error) { alert('Error: '+data.error); startBtn.disabled=false; startBtn.textContent='▶️ Start Now'; return; }
