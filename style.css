@@ -1794,3 +1794,20 @@ button:disabled {
     touch-action: manipulation; /* Prevent double-tap zoom */
   }
 }
+
+/* =====================================================
+   BOOST FINISH INDICATOR (on builder cards)
+   ===================================================== */
+.boost-finish-indicator {
+  margin-left: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #4caf50;
+  opacity: 0.7;
+  letter-spacing: 0.3px;
+}
+
+/* Slightly more visible on hover */
+.builder-card:hover .boost-finish-indicator {
+  opacity: 0.9;
+}
