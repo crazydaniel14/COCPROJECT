@@ -1760,3 +1760,37 @@ button:disabled {
   background: rgba(255,255,255,0.05);
   padding: 2px;
 }
+
+/* =====================================================
+   BOOST LOADING SPINNER
+   ===================================================== */
+.boost-loading-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 32px;
+  color: #f5d04c;
+  animation: spin 1s linear infinite;
+  z-index: 10;
+  pointer-events: none;
+}
+
+@keyframes spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* =====================================================
+   MOBILE: PREVENT ZOOM ON NUMBER INPUTS
+   ===================================================== */
+@media (max-width: 768px) {
+  .ucm-spin-input,
+  .ucm-exact-dt,
+  .sp-exact-dt,
+  input[type="number"],
+  input[type="datetime-local"] {
+    font-size: 16px !important; /* iOS doesn't zoom if font-size >= 16px */
+    touch-action: manipulation; /* Prevent double-tap zoom */
+  }
+}
