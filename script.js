@@ -683,8 +683,22 @@ function wireApprenticeBoost() {
     if (!confirm("Apply today's boost?")) return;
     const card = badge.closest(".builder-card");
     const builderNumber = card?.dataset.builder;
+    
+    // Show loading spinner
+    const originalSrc = badge.src;
+    badge.style.opacity = "0.5";
+    badge.style.filter = "blur(1px)";
+    const spinner = document.createElement("div");
+    spinner.className = "boost-loading-spinner";
+    spinner.innerHTML = "⟳";
+    badge.parentElement.style.position = "relative";
+    badge.parentElement.appendChild(spinner);
+    
     try {
       await fetch(APPLY_TODAYS_BOOST);
+      spinner.remove();
+      badge.style.opacity = "1";
+      badge.style.filter = "none";
       badge.src = "Images/Badge/Builder Apprentice applied.png";
       if (todaysBoostInfo) todaysBoostInfo.status = "APPLIED";
       await loadCurrentWork();
@@ -809,9 +823,48 @@ async function checkForFinishedUpgrades() {
   } catch (e) { console.error("Failed to check finished upgrades:", e); }
 }
 
+async function autoConfirmSingleBuilder(builder, builderData) {
+  try {
+    const params = new URLSearchParams({
+      action: 'confirm_upgrade_start',
+      builder: builder,
+      upgradeName: builderData.nowActive.upgradeName,
+      startTime: new Date(builderData.nowActive.scheduledStart + " 2026").toISOString(),
+      confirmAction: 'confirm',
+      differentUpgrade: ''
+    });
+    
+    await fetch(API_BASE + '?' + params.toString());
+    
+    // Refresh the dashboard after auto-confirming
+    const container = document.getElementById("builders-container");
+    if (container) container.innerHTML = "";
+    await new Promise(resolve => setTimeout(resolve, 500));
+    refreshDashboard();
+  } catch (err) {
+    console.error('Auto-confirm failed:', err);
+    // Fall back to showing the modal
+    showUpgradeConfirmationModalFallback([builderData]);
+  }
+}
+
+function showUpgradeConfirmationModalFallback(upgrades) {
+  // This is the original modal function (in case auto-confirm fails)
+  reviewedTabs = new Set();
+  document.querySelector('.upgrade-confirmation-modal-overlay')?.remove();
+  
 function showUpgradeConfirmationModal(upgrades) {
   reviewedTabs = new Set();
   document.querySelector('.upgrade-confirmation-modal-overlay')?.remove();
+  
+  // If only ONE builder with finished upgrades, auto-confirm it
+  if (upgrades.length === 1) {
+    const builder = upgrades[0].builder;
+    const builderData = upgrades[0];
+    // Auto-confirm the single upgrade with default values (as planned, scheduled time)
+    autoConfirmSingleBuilder(builder, builderData);
+    return;
+  }
   const modal = document.createElement('div');
   modal.className = 'upgrade-confirmation-modal-overlay';
   modal.innerHTML = `
@@ -875,17 +928,10 @@ function buildTabContent(builderData, isActive) {
         <div class="ucm-section-label">When did you start?</div>
         <div class="ucm-time-methods">
           <label class="ucm-time-method">
-            <input type="radio" name="time-method-${b}" value="exact" checked>
-            <span>I remember the exact time</span>
-          </label>
-          <div class="ucm-exact-inputs" data-for="${b}">
-            <input type="datetime-local" class="ucm-exact-dt" data-builder="${b}" value="${defaultDT}">
-          </div>
-          <label class="ucm-time-method">
-            <input type="radio" name="time-method-${b}" value="remaining">
+            <input type="radio" name="time-method-${b}" value="remaining" checked>
             <span>I know the time remaining right now</span>
           </label>
-          <div class="ucm-remaining-inputs" data-for="${b}" style="opacity:0.4;pointer-events:none">
+          <div class="ucm-remaining-inputs" data-for="${b}">
             <div class="ucm-spinner-group">
               <label>Days</label>
               <button class="ucm-spin ucm-spin-up" data-field="ucm-rd-${b}">+</button>
@@ -907,6 +953,13 @@ function buildTabContent(builderData, isActive) {
                      data-builder="${b}" min="0" max="59" value="${prefillMins}">
               <button class="ucm-spin ucm-spin-dn" data-field="ucm-rm-${b}">−</button>
             </div>
+          </div>
+          <label class="ucm-time-method">
+            <input type="radio" name="time-method-${b}" value="exact">
+            <span>I remember the exact time</span>
+          </label>
+          <div class="ucm-exact-inputs" data-for="${b}" style="opacity:0.4;pointer-events:none">
+            <input type="datetime-local" class="ucm-exact-dt" data-builder="${b}" value="${defaultDT}">
           </div>
         </div>
         <div class="ucm-preview">
@@ -1137,17 +1190,10 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
       <div class="ucm-section-label">When did you start?</div>
       <div class="ucm-time-methods">
         <label class="ucm-time-method">
-          <input type="radio" name="sp-time-method" value="exact" checked>
-          <span>I remember the exact time</span>
-        </label>
-        <div class="sp-exact-wrap">
-          <input type="datetime-local" class="ucm-exact-dt sp-exact-dt" value="${toDatetimeLocal(new Date())}">
-        </div>
-        <label class="ucm-time-method">
-          <input type="radio" name="sp-time-method" value="remaining">
+          <input type="radio" name="sp-time-method" value="remaining" checked>
           <span>I know the time remaining right now</span>
         </label>
-        <div class="ucm-remaining-inputs sp-rem-wrap" style="opacity:0.4;pointer-events:none">
+        <div class="ucm-remaining-inputs sp-rem-wrap">
           <div class="ucm-spinner-group">
             <label>Days</label>
             <button class="ucm-spin ucm-spin-up" data-field="sp-rd">+</button>
@@ -1166,6 +1212,13 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
             <input type="number" id="sp-rm" class="ucm-spin-input" min="0" max="59" value="${prefillMins}">
             <button class="ucm-spin ucm-spin-dn" data-field="sp-rm">−</button>
           </div>
+        </div>
+        <label class="ucm-time-method">
+          <input type="radio" name="sp-time-method" value="exact">
+          <span>I remember the exact time</span>
+        </label>
+        <div class="sp-exact-wrap" style="opacity:0.4;pointer-events:none">
+          <input type="datetime-local" class="ucm-exact-dt sp-exact-dt" value="${toDatetimeLocal(new Date())}">
         </div>
       </div>
       <div class="ucm-queue-actions" style="margin-top:20px">
