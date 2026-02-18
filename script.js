@@ -339,9 +339,12 @@ function renderBuilderCards() {
 
     if (isPaused) {
       card.classList.add("paused");
+      const pausedUpgradeImg = getUpgradeImage(pauseInfo.upgradeName || "");
       card.innerHTML = `
         <img src="Images/Builders/Builder ${builderNumber}.png"
              class="builder-character" alt="Builder ${builderNumber}" />
+        <img src="${pausedUpgradeImg}" class="current-upgrade-icon"
+             alt="${pauseInfo.upgradeName || ''}" onerror="this.src='Images/Upgrades/PH.png'" />
         <div class="builder-text">
           <div class="pause-badge">⏸️ Paused</div>
           <div class="builder-name">BUILDER ${builderNumber}</div>
@@ -377,7 +380,11 @@ function renderBuilderCards() {
                data-builder="Builder_${builderNumber}" data-upgrade="${row[1]}"
                data-row="2" title="Click to edit duration">${row[3]}</div>
           <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}</div>
-          <div class="builder-next">▶ Next: ${row[4]}</div>
+          <div class="builder-next">
+            <img src="${getUpgradeImage(row[4])}" class="next-upgrade-icon"
+                 alt="${row[4]}" onerror="this.src='Images/Upgrades/PH.png'" />
+            ▶ Next: ${row[4]}
+          </div>
         </div>`;
       const durationEl = card.querySelector('.editable-card-duration');
       if (durationEl) setupCardDurationEditor(durationEl);
@@ -959,10 +966,12 @@ function wireConfirmationModal(modal, upgrades) {
   modal.querySelectorAll('.ucm-show-queue').forEach(btn => btn.addEventListener('click', () => showUpgradeQueueModal(btn.dataset.builder, modal)));
   modal.querySelectorAll('.ucm-confirm-btn').forEach(btn => btn.addEventListener('click', () => handleBuilderConfirmation(btn, modal, upgrades)));
   modal.querySelectorAll('.ucm-pause-btn').forEach(btn => btn.addEventListener('click', () => handleBuilderPause(btn, modal, upgrades)));
-  modal.querySelector('.ucm-confirm-all').addEventListener('click', () => {
+  modal.querySelector('.ucm-confirm-all').addEventListener('click', async () => {
     modal.remove();
     const container = document.getElementById("builders-container");
     if (container) container.innerHTML = "";
+    // Wait for Google Sheets formulas to recalculate
+    await new Promise(resolve => setTimeout(resolve, 500));
     refreshDashboard();
   });
 }
@@ -1206,6 +1215,8 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
       modal.remove();
       const container = document.getElementById("builders-container");
       if (container) container.innerHTML = "";
+      // Wait 500ms for Google Sheets formulas to recalculate
+      await new Promise(resolve => setTimeout(resolve, 500));
       await Promise.all([loadCurrentWork(), loadTodaysBoost(), loadPausedBuilders()]);
       renderBuilderCards();
     } catch (err) {
