@@ -288,6 +288,11 @@ function renderBuilderDetails(details) {
             <div class="upgrade-time">
               <span>${upg.start}</span><span>→</span><span>${upg.end}</span>
             </div>
+            <button class="transfer-builder-btn"
+                    data-upgrade-name="${upg.upgrade}"
+                    data-current-builder="${upg.builder}"
+                    data-row="${upg.row}"
+                    title="Move to another builder">👤</button>
             <div class="upgrade-controls">
               <button class="transfer-builder-btn"
                       data-upgrade-name="${upg.upgrade}"
@@ -843,16 +848,12 @@ async function autoConfirmSingleBuilder(builder, builderData) {
     refreshDashboard();
   } catch (err) {
     console.error('Auto-confirm failed:', err);
-    // Fall back to showing the modal
-    showUpgradeConfirmationModalFallback([builderData]);
+    // Fall back to showing the modal the normal way
+    finishedUpgradesData = [builderData];
+    showUpgradeConfirmationModal([builderData]);
   }
 }
 
-function showUpgradeConfirmationModalFallback(upgrades) {
-  // This is the original modal function (in case auto-confirm fails)
-  reviewedTabs = new Set();
-  document.querySelector('.upgrade-confirmation-modal-overlay')?.remove();
-}
 function showUpgradeConfirmationModal(upgrades) {
   reviewedTabs = new Set();
   document.querySelector('.upgrade-confirmation-modal-overlay')?.remove();
