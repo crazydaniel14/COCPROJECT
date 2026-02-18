@@ -129,13 +129,21 @@ async function updateActiveStatusSmart() {
    SOFT REFRESH
    ========================= */
 async function softRefreshBuilderCards() {
-  if (openBuilders.length > 0) return;
+  if (openBuilders.length > 0) {
+    console.log("[Soft Refresh] Skipped - builder details open");
+    return;
+  }
+  console.log("[Soft Refresh] Starting...");
   try {
     await loadCurrentWork();
     await loadTodaysBoost();
     await loadPausedBuilders();
     const container = document.getElementById("builders-container");
-    if (container) { container.innerHTML = ""; renderBuilderCards(); }
+    if (container) { 
+      console.log("[Soft Refresh] Clearing and re-rendering cards");
+      container.innerHTML = ""; 
+      renderBuilderCards(); 
+    }
   } catch (e) { console.error("Soft refresh failed:", e); }
 }
 
@@ -337,7 +345,13 @@ function formatBoostTime(timeStr) {
 
 function getBoostFinishTimeForBuilder(builderNumber, currentUpgradeName) {
   // Find the LAST boost for this builder this week
-  if (!boostPlanData || boostPlanData.length === 0) return null;
+  if (!boostPlanData || boostPlanData.length === 0) {
+    console.log('No boost plan data available');
+    return null;
+  }
+  
+  console.log('Checking boosts for Builder', builderNumber, 'upgrade:', currentUpgradeName);
+  console.log('Boost plan data:', boostPlanData);
   
   let lastBoostFinish = null;
   
@@ -345,21 +359,39 @@ function getBoostFinishTimeForBuilder(builderNumber, currentUpgradeName) {
     if (!day.hasBoost) continue;
     
     // Check if this boost is for this builder
+    // day.builder is like "Builder 1" (with space, from boost plan)
+    // builderNumber is just the number like "1"
     const boostBuilderNum = day.builder.match(/(\d+)/)?.[1];
+    console.log('Day:', day.day, 'Builder:', day.builder, 'Extracted num:', boostBuilderNum, 'Comparing to:', builderNumber, 'Match:', boostBuilderNum === builderNumber);
+    
     if (boostBuilderNum !== builderNumber) continue;
     
     // We found a boost for this builder - save the finish time
     // (we want the LAST one, so keep overwriting)
     lastBoostFinish = day.newFinishTime;
+    console.log('Found boost finish time:', lastBoostFinish);
   }
   
+  console.log('Final boost finish for Builder', builderNumber, ':', lastBoostFinish);
   return lastBoostFinish;
 }
 
 function renderBuilderCards() {
-  if (!currentWorkData) return;
+  console.log("[Render] renderBuilderCards called");
+  if (!currentWorkData) {
+    console.log("[Render] No currentWorkData");
+    return;
+  }
   const container = document.getElementById("builders-container");
-  if (!container || container.children.length > 0) return;
+  if (!container) {
+    console.log("[Render] No container found");
+    return;
+  }
+  if (container.children.length > 0) {
+    console.log("[Render] Container already has children, skipping");
+    return;
+  }
+  console.log("[Render] Proceeding to render cards");
 
   let earliestFinish = Infinity;
   for (let i = 1; i < currentWorkData.length; i++) {
