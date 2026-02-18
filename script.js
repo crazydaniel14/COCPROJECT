@@ -315,6 +315,47 @@ function renderBuilderDetails(details) {
   return wrapper;
 }
 
+function formatBoostTime(timeStr) {
+  // Input: "Feb 26 11:40 AM" or similar
+  // Output: "2/26 11:40am"
+  try {
+    const d = new Date(timeStr + " 2026"); // Attach year for parsing
+    if (isNaN(d)) return "";
+    
+    const month = d.getMonth() + 1;
+    const day = d.getDate();
+    let hours = d.getHours();
+    const mins = String(d.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    hours = hours % 12 || 12;
+    
+    return `${month}/${day} ${hours}:${mins}${ampm}`;
+  } catch (e) {
+    return "";
+  }
+}
+
+function getBoostFinishTimeForBuilder(builderNumber, currentUpgradeName) {
+  // Find the LAST boost for this builder this week
+  if (!boostPlanData || boostPlanData.length === 0) return null;
+  
+  let lastBoostFinish = null;
+  
+  for (const day of boostPlanData) {
+    if (!day.hasBoost) continue;
+    
+    // Check if this boost is for this builder
+    const boostBuilderNum = day.builder.match(/(\d+)/)?.[1];
+    if (boostBuilderNum !== builderNumber) continue;
+    
+    // We found a boost for this builder - save the finish time
+    // (we want the LAST one, so keep overwriting)
+    lastBoostFinish = day.newFinishTime;
+  }
+  
+  return lastBoostFinish;
+}
+
 function renderBuilderCards() {
   if (!currentWorkData) return;
   const container = document.getElementById("builders-container");
@@ -372,6 +413,10 @@ function renderBuilderCards() {
         }
         badgeHTML = `<img src="${img}" class="apprentice-badge" data-apply-boost="true" />`;
       }
+      // Check if there's a boost planned for this builder
+      const boostFinish = getBoostFinishTimeForBuilder(builderNumber, row[1]);
+      const boostHTML = boostFinish ? `<span class="boost-finish-indicator">${formatBoostTime(boostFinish)}</span>` : '';
+      
       card.innerHTML = `
         ${badgeHTML}
         <img src="Images/Builders/Builder ${builderNumber}.png"
@@ -379,7 +424,7 @@ function renderBuilderCards() {
         <img src="${currentUpgradeImg}" class="current-upgrade-icon"
              alt="${row[1]}" onerror="this.src='Images/Upgrades/PH.png'" />
         <div class="builder-text">
-          <div class="builder-name">BUILDER ${builderNumber}</div>
+          <div class="builder-name">BUILDER ${builderNumber}${boostHTML}</div>
           <div class="builder-upgrade">${row[1]}</div>
           <div class="builder-time-left editable-card-duration"
                data-builder="Builder_${builderNumber}" data-upgrade="${row[1]}"
