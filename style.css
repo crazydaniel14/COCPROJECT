@@ -1728,6 +1728,7 @@ button:disabled {
   transform: scale(1.04);
   box-shadow: 0 4px 14px rgba(76,175,80,0.4);
 }
+
 /* =====================================================
    RESPONSIVE
    ===================================================== */
@@ -1744,4 +1745,18 @@ button:disabled {
   .ucm-start-modal { padding: 20px; }
   .ucm-queue-actions { flex-direction: column; }
   .sp-exact-wrap { padding-left: 0; }
+}
+
+/* =====================================================
+   NEXT UPGRADE ICON (for builder cards)
+   ===================================================== */
+.next-upgrade-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  vertical-align: middle;
+  margin-right: 6px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.05);
+  padding: 2px;
 }
