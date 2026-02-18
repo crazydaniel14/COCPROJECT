@@ -852,7 +852,7 @@ function showUpgradeConfirmationModalFallback(upgrades) {
   // This is the original modal function (in case auto-confirm fails)
   reviewedTabs = new Set();
   document.querySelector('.upgrade-confirmation-modal-overlay')?.remove();
-  
+}
 function showUpgradeConfirmationModal(upgrades) {
   reviewedTabs = new Set();
   document.querySelector('.upgrade-confirmation-modal-overlay')?.remove();
