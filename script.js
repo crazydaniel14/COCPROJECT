@@ -23,11 +23,12 @@ function APPLY_TODAYS_BOOST_URL() { return endpoint("apply_todays_boost"); }
 function SET_BOOST_BUILDER_URL(b) { return endpoint("set_todays_boost_builder") + "&builder=" + b; }
 
 // Mutation endpoints already had username via endpoint() or builder-scoped params
-const REORDER_BUILDER_UPGRADES = API_BASE + "?action=reorder_builder_upgrades";
-const BUILDER_SNACK            = API_BASE + "?action=apply_one_hour_boost";
-const BATTLE_PASS              = API_BASE + "?action=apply_battle_pass";
-const BUILDER_DETAILS_ENDPOINT = API_BASE + "?action=builder_details&builder=";
-const PAUSED_BUILDERS_ENDPOINT = API_BASE + "?action=get_paused_builders";
+// reorder uses inline endpoint() call
+function BUILDER_SNACK_URL()  { return endpoint("apply_one_hour_boost"); }
+function BATTLE_PASS_URL()    { return endpoint("apply_battle_pass"); }
+// builder_details needs username for sheet resolution
+function BUILDER_DETAILS_URL(builderName) { return endpoint("builder_details") + "&builder=" + builderName; }
+function PAUSED_BUILDERS_URL() { return endpoint("get_paused_builders"); }
 
 /* =========================
    IMAGE MATCHING
@@ -182,7 +183,7 @@ async function loadTodaysBoost() {
 
 async function loadPausedBuilders() {
   try {
-    const res = await fetch(PAUSED_BUILDERS_ENDPOINT);
+    const res = await fetch(PAUSED_BUILDERS_URL());
     window._pausedBuilders = await res.json();
   } catch (e) {
     console.error("Failed to load paused builders:", e);
@@ -285,7 +286,8 @@ function renderBoostFocusCard() {
    BUILDER CARDS
    ========================= */
 async function fetchBuilderDetails(builderNumber) {
-  const res  = await fetch(BUILDER_DETAILS_ENDPOINT + "Builder_" + builderNumber);
+  // Server expects the bare base name (e.g. "Builder_1"); it prefixes username itself.
+  const res  = await fetch(endpoint("builder_details") + "&builder=Builder_" + builderNumber);
   const data = await res.json();
   if (data.error) throw new Error(data.error);
   if (!data.builder) throw new Error("Unexpected response: " + JSON.stringify(data));
@@ -395,7 +397,10 @@ function renderBuilderCards() {
     const finishMs          = new Date(row[2]).getTime();
     const currentUpgradeImg = getUpgradeImage(row[1]);
 
-    const builderKey = "Builder_" + builderNumber;
+    // Key returned by server is prefixed with username (e.g. "Daniel_Builder_1")
+    const builderKey = window._pausedBuilders?.["Builder_" + builderNumber] !== undefined
+      ? "Builder_" + builderNumber
+      : (window.COC_USERNAME ? window.COC_USERNAME + "_Builder_" + builderNumber : "Builder_" + builderNumber);
     const pauseInfo  = window._pausedBuilders?.[builderKey];
     const isPaused   = pauseInfo?.paused === true;
 
@@ -499,7 +504,7 @@ async function updateCardDuration(builderName, newMinutes, newDurationHr, durati
   const originalText = durationEl.textContent;
   durationEl.textContent = 'Saving...';
   try {
-    const res  = await fetch(`${API_BASE}?action=update_active_upgrade_time&builder=${builderName}&remaining_minutes=${newMinutes}`);
+    const res  = await fetch(`${API_BASE}?action=update_active_upgrade_time&username=${window.COC_USERNAME}&builder=${builderName}&remaining_minutes=${newMinutes}`);
     const data = await res.json();
     if (data.error) { alert('Failed to update: ' + data.error); durationEl.textContent = originalText; return; }
     durationEl.textContent = '✓ Saved!';
@@ -601,7 +606,7 @@ async function updateUpgradeDuration(builderName, row, newMinutes, newDurationHr
   const originalText = durationEl.textContent;
   durationEl.textContent = 'Saving...';
   try {
-    const res  = await fetch(`${API_BASE}?action=update_upgrade_duration&builder=${builderName}&row=${row}&minutes=${newMinutes}&duration_hr=${encodeURIComponent(newDurationHr)}`);
+    const res  = await fetch(`${API_BASE}?action=update_upgrade_duration&username=${window.COC_USERNAME}&builder=${builderName}&row=${row}&minutes=${newMinutes}&duration_hr=${encodeURIComponent(newDurationHr)}`);
     const data = await res.json();
     if (data.error) { alert('Failed to update: ' + data.error); durationEl.textContent = originalText; return; }
     durationEl.textContent = '✓ Saved!';
@@ -685,7 +690,7 @@ function showBuilderPicker(currentBuilder, callback) {
 
 async function transferUpgradeToBuilder(upgradeName, fromBuilder, row, toBuilder, detailsWrapper) {
   try {
-    const res  = await fetch(`${API_BASE}?action=transfer_upgrade&upgrade=${encodeURIComponent(upgradeName)}&from_builder=${fromBuilder}&row=${row}&to_builder=${toBuilder}`);
+    const res  = await fetch(`${API_BASE}?action=transfer_upgrade&username=${window.COC_USERNAME}&upgrade=${encodeURIComponent(upgradeName)}&from_builder=${fromBuilder}&row=${row}&to_builder=${toBuilder}`);
     const data = await res.json();
     if (data.error) { alert('Failed to transfer: ' + data.error); return; }
     alert(`✓ Moved "${upgradeName}" to ${toBuilder}`);
@@ -741,7 +746,7 @@ function setupDragAndDrop(detailsWrapper) {
     const newOrder = Array.from(currentItems).map(i => i.dataset.index).join(',');
     saveBtn.disabled = true; saveBtn.textContent = 'Saving...';
     try {
-      const res  = await fetch(`${API_BASE}?action=reorder_builder_upgrades&builder=Builder_${num}&order=${newOrder}`);
+      const res  = await fetch(`${API_BASE}?action=reorder_builder_upgrades&username=${window.COC_USERNAME}&builder=Builder_${num}&order=${newOrder}`);
       const data = await res.json();
       if (data.error) { alert('Failed to save: ' + data.error); return; }
       originalOrder = newOrder; upgradeList.dataset.originalOrder = newOrder;
@@ -818,8 +823,8 @@ function wireApprenticeBoost() {
 }
 
 function wireImageButtons() {
-  document.getElementById("oneHourBoostBtn")?.addEventListener("click", async () => { await fetch(BUILDER_SNACK); refreshDashboard(); });
-  document.getElementById("battlePassBtn")?.addEventListener("click",  async () => { await fetch(BATTLE_PASS);  refreshDashboard(); });
+  document.getElementById("oneHourBoostBtn")?.addEventListener("click", async () => { await fetch(BUILDER_SNACK_URL()); refreshDashboard(); });
+  document.getElementById("battlePassBtn")?.addEventListener("click",  async () => { await fetch(BATTLE_PASS_URL());  refreshDashboard(); });
 }
 
 function wireBoostSimulation() {
@@ -935,6 +940,7 @@ async function autoConfirmSingleBuilder(builder, builderData) {
   try {
     const params = new URLSearchParams({
       action: 'confirm_upgrade_start',
+      username: window.COC_USERNAME,
       builder,
       upgradeName: builderData.nowActive.upgradeName,
       startTime: new Date(builderData.nowActive.scheduledStart + " 2026").toISOString(),
@@ -1179,7 +1185,7 @@ async function handleBuilderConfirmation(btn, modal, upgrades) {
   if (!startTime || isNaN(startTime)) { alert('Please enter a valid start time'); return; }
   btn.disabled = true; btn.textContent = 'Confirming…';
   try {
-    const params = new URLSearchParams({ action:'confirm_upgrade_start', builder:b, upgradeName, startTime:startTime.toISOString(), confirmAction:choice==='different'?'different':'confirm', differentUpgrade:differentUpgrade||'' });
+    const params = new URLSearchParams({ action:'confirm_upgrade_start', username:window.COC_USERNAME, builder:b, upgradeName, startTime:startTime.toISOString(), confirmAction:choice==='different'?'different':'confirm', differentUpgrade:differentUpgrade||'' });
     const res  = await fetch(API_BASE + '?' + params.toString());
     const data = await res.json();
     if (data.error) { alert('Error: '+data.error); btn.disabled=false; btn.textContent=`Confirm ${b.replace('_',' ')}`; return; }
@@ -1196,7 +1202,7 @@ async function handleBuilderPause(btn, modal, upgrades) {
   if (!confirm(`Pause ${bLabel}? This means the upgrade has not started yet.`)) return;
   btn.disabled = true; btn.textContent = 'Pausing…';
   try {
-    const params = new URLSearchParams({ action:'confirm_upgrade_start', builder:b, upgradeName:'', startTime:'', confirmAction:'pause', differentUpgrade:'' });
+    const params = new URLSearchParams({ action:'confirm_upgrade_start', username:window.COC_USERNAME, builder:b, upgradeName:'', startTime:'', confirmAction:'pause', differentUpgrade:'' });
     const res  = await fetch(API_BASE + '?' + params.toString());
     const data = await res.json();
     if (data.error) { alert('Error: '+data.error); btn.disabled=false; btn.textContent=`⏸️ Not Started — Pause ${bLabel}`; return; }
@@ -1221,7 +1227,7 @@ function markTabReviewed(builder, modal, upgrades) {
 
 async function showUpgradeQueueModal(builder, parentModal) {
   try {
-    const res  = await fetch(API_BASE + `?action=get_builder_queue&builder=${builder}`);
+    const res  = await fetch(endpoint("get_builder_queue") + `&builder=${builder}`);
     const data = await res.json();
     if (data.error) { alert('Error: '+data.error); return; }
     const qModal = document.createElement('div');
@@ -1348,12 +1354,12 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
       if (method === 'exact') {
         const exactTime = new Date(modal.querySelector('.sp-exact-dt').value);
         if (!exactTime || isNaN(exactTime)) { alert('Please enter a valid start time'); startBtn.disabled=false; startBtn.textContent='▶️ Start Now'; return; }
-        params = new URLSearchParams({ action:'start_paused_builder', builder:b, method:'exact', startTime:exactTime.toISOString() });
+        params = new URLSearchParams({ action:'start_paused_builder', username:window.COC_USERNAME, builder:b, method:'exact', startTime:exactTime.toISOString() });
       } else {
         const d = parseInt(document.getElementById('sp-rd').value)||0;
         const h = parseInt(document.getElementById('sp-rh').value)||0;
         const m = parseInt(document.getElementById('sp-rm').value)||0;
-        params = new URLSearchParams({ action:'start_paused_builder', builder:b, method:'remaining', remainingMinutes:String(d*24*60+h*60+m) });
+        params = new URLSearchParams({ action:'start_paused_builder', username:window.COC_USERNAME, builder:b, method:'remaining', remainingMinutes:String(d*24*60+h*60+m) });
       }
       const res  = await fetch(API_BASE + '?' + params.toString());
       const data = await res.json();
@@ -1399,7 +1405,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     username = username.replace("_CURRENT_WORK", "");
     localStorage.setItem("coc_username", username);
   }
+  // Reject literal "null"/"undefined" strings left over from old code
+  if (!username || username === "null" || username === "undefined" || username.trim() === "") {
+    username = prompt("Enter your username to continue:");
+    if (username && username.trim()) {
+      username = username.trim();
+      localStorage.setItem("coc_username", username);
+    } else {
+      document.body.innerHTML = "<div style='padding:40px;font-family:sans-serif'><h2>Username required</h2><p>Reload the page and enter your username.</p></div>";
+      return;
+    }
+  }
   window.COC_USERNAME = username;
+  console.log("[Init] Username:", username);
 
   await refreshDashboard();
   startAutoRefresh();
