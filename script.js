@@ -285,8 +285,11 @@ function renderBoostFocusCard() {
    BUILDER CARDS
    ========================= */
 async function fetchBuilderDetails(builderNumber) {
-  const res = await fetch(BUILDER_DETAILS_ENDPOINT + "Builder_" + builderNumber);
-  return await res.json();
+  const res  = await fetch(BUILDER_DETAILS_ENDPOINT + "Builder_" + builderNumber);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  if (!data.builder) throw new Error("Unexpected response: " + JSON.stringify(data));
+  return data;
 }
 
 function renderBuilderDetails(details) {
@@ -604,7 +607,8 @@ async function updateUpgradeDuration(builderName, row, newMinutes, newDurationHr
     durationEl.textContent = '✓ Saved!';
     setTimeout(() => {
       fetchBuilderDetails(detailsWrapper.dataset.builder).then(bd => {
-        detailsWrapper.replaceWith(renderBuilderDetails(bd));
+        if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
+        else { console.error('Bad response from fetchBuilderDetails:', bd); alert('Failed to reload builder details.'); }
       });
     }, 800);
   } catch (err) {
@@ -625,7 +629,13 @@ function setupBuilderRefresh(detailsWrapper) {
     const orig = refreshBtn.textContent;
     refreshBtn.textContent = '⟳'; refreshBtn.disabled = true; refreshBtn.classList.add('spinning');
     try {
-      detailsWrapper.replaceWith(renderBuilderDetails(await fetchBuilderDetails(detailsWrapper.dataset.builder)));
+      (async () => {
+        try {
+          const bd = await fetchBuilderDetails(detailsWrapper.dataset.builder);
+          if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
+        else { console.error('Bad response from fetchBuilderDetails:', bd); alert('Failed to reload builder details.'); }
+        } catch (e) { console.error('Refresh failed:', e); alert('Failed to reload builder: ' + e.message); }
+      })();
     } catch (err) {
       refreshBtn.textContent = orig; refreshBtn.disabled = false; refreshBtn.classList.remove('spinning');
     }
@@ -679,7 +689,13 @@ async function transferUpgradeToBuilder(upgradeName, fromBuilder, row, toBuilder
     const data = await res.json();
     if (data.error) { alert('Failed to transfer: ' + data.error); return; }
     alert(`✓ Moved "${upgradeName}" to ${toBuilder}`);
-    detailsWrapper.replaceWith(renderBuilderDetails(await fetchBuilderDetails(detailsWrapper.dataset.builder)));
+    (async () => {
+        try {
+          const bd = await fetchBuilderDetails(detailsWrapper.dataset.builder);
+          if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
+        else { console.error('Bad response from fetchBuilderDetails:', bd); alert('Failed to reload builder details.'); }
+        } catch (e) { console.error('Refresh failed:', e); alert('Failed to reload builder: ' + e.message); }
+      })();
   } catch (err) { console.error('Transfer failed:', err); alert('Failed to transfer upgrade'); }
 }
 
@@ -732,12 +748,21 @@ function setupDragAndDrop(detailsWrapper) {
       currentItems.forEach(i => i.classList.remove('unsaved')); saveContainer.classList.add('hidden');
       saveBtn.textContent = '✓ Saved!';
       setTimeout(() => { saveBtn.textContent = 'Save Order'; saveBtn.disabled = false; }, 1500);
-      detailsWrapper.replaceWith(renderBuilderDetails(await fetchBuilderDetails(num)));
+      (async () => {
+          try {
+            const bd = await fetchBuilderDetails(num);
+            if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
+        else { console.error('Bad response from fetchBuilderDetails:', bd); alert('Failed to reload builder details.'); }
+          } catch(e) { console.error('Reload failed:', e); alert('Failed to reload builder: ' + e.message); }
+        })();
     } catch (err) { console.error('Save failed:', err); alert('Failed to save order'); saveBtn.textContent = 'Save Order'; saveBtn.disabled = false; }
   });
 
   cancelBtn?.addEventListener('click', () => {
-    fetchBuilderDetails(detailsWrapper.dataset.builder).then(bd => detailsWrapper.replaceWith(renderBuilderDetails(bd)));
+    fetchBuilderDetails(detailsWrapper.dataset.builder).then(bd => {
+      if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
+      else { console.error('Cancel-reload: bad response', bd); }
+    }).catch(e => console.error('Cancel-reload failed:', e));
   });
 }
 
@@ -877,6 +902,12 @@ function wireBuilderCardClicks() {
       console.error("Failed to load builder details:", err);
       openBuilders = openBuilders.filter(b => b !== builder);
       card.classList.remove("expanded");
+      // Show inline error so the user (and developer) can see what went wrong
+      const errDiv = document.createElement("div");
+      errDiv.className = "builder-details-error";
+      errDiv.dataset.builder = builder;
+      errDiv.textContent = "⚠️ Could not load builder details: " + err.message;
+      card.after(errDiv);
     } finally { loadingBuilders.delete(builder); card.classList.remove("loading"); }
   });
 }
