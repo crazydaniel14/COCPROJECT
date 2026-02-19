@@ -1384,14 +1384,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   let username = localStorage.getItem("coc_username");
 
-  if (!username) {
-    username = prompt("Enter your username:");
-    if (!username) {
-      alert("Username is required.");
-      return;
-    }
-    localStorage.setItem("coc_username", username);
-  }
+if (username && username.endsWith("_CURRENT_WORK")) {
+  username = username.replace("_CURRENT_WORK", "");
+  localStorage.setItem("coc_username", username);
+}
   // Make globally accessible
   window.COC_USERNAME = username
    
