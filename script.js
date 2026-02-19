@@ -1448,7 +1448,7 @@ function showLoginScreen(onConfirm) {
     "padding:24px", "box-sizing:border-box"
   ].join(";");
 
-  overlay.innerHTML = \`
+  overlay.innerHTML = \
     <div style="
       background:#1e1e2e; border-radius:16px; padding:32px 28px;
       width:100%; max-width:360px; box-shadow:0 8px 32px rgba(0,0,0,0.6);
