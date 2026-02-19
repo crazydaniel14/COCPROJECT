@@ -11,8 +11,6 @@ function endpoint(action) {
 }
 
 const REFRESH_ENDPOINT      = API_BASE + "?action=refresh_sheet";
-const RUN_BOOST_SIM         = API_BASE + "?action=run_boost_simulation";
-
 function TODAYS_BOOST_URL()       { return endpoint("todays_boost"); }
 function BOOST_PLAN_URL()         { return endpoint("boost_plan"); }
 function APPLY_TODAYS_BOOST_URL() { return endpoint("apply_todays_boost"); }
@@ -888,7 +886,7 @@ function wireBoostSimulation() {
   btn.addEventListener("click", async () => {
     btn.disabled = true; btn.textContent = "Running…";
     try {
-      await fetch(RUN_BOOST_SIM, { redirect: 'follow' });
+      await fetch(endpoint("run_boost_simulation"), { redirect: 'follow' });
       await refreshDashboard();
     } catch (e) { console.error("Boost sim failed:", e); }
     btn.textContent = "Run Boost Simulation"; btn.disabled = false;
@@ -918,7 +916,7 @@ function wireBoostFocusNavigation() {
         const data = await res.json();
         if (data.error) { alert(data.error); statusEl.textContent = origStatus; builderEl.textContent = origBuilder; menuBtn.disabled = false; return; }
         statusEl.textContent = "Recalculating...";
-        await fetch(RUN_BOOST_SIM);
+        await fetch(endpoint("run_boost_simulation"), { redirect: 'follow' });
         if (todaysBoostInfo) todaysBoostInfo.builder = num;
         const container = document.getElementById("builders-container");
         container.innerHTML = "";
