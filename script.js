@@ -1407,18 +1407,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   // Reject literal "null"/"undefined" strings left over from old code
   if (!username || username === "null" || username === "undefined" || username.trim() === "") {
-    username = prompt("Enter your username to continue:");
-    if (username && username.trim()) {
-      username = username.trim();
-      localStorage.setItem("coc_username", username);
-    } else {
-      document.body.innerHTML = "<div style='padding:40px;font-family:sans-serif'><h2>Username required</h2><p>Reload the page and enter your username.</p></div>";
-      return;
-    }
+    showLoginScreen(async (confirmedUsername) => {
+      window.COC_USERNAME = confirmedUsername;
+      console.log("[Init] Username set to:", confirmedUsername);
+      await bootApp();
+    });
+    return;
   }
   window.COC_USERNAME = username;
   console.log("[Init] Username:", username);
+  await bootApp();
+});
 
+async function bootApp() {
   await refreshDashboard();
   startAutoRefresh();
   wireApprenticeBoost();
@@ -1427,4 +1428,82 @@ document.addEventListener("DOMContentLoaded", async () => {
   wireBuilderCardClicks();
   wireImageButtons();
   await checkForFinishedUpgrades();
-});
+}
+
+// Call switchUser() from browser console to change account, or wire to a button
+function switchUser() {
+  localStorage.removeItem("coc_username");
+  window.COC_USERNAME = null;
+  location.reload();
+}
+
+function showLoginScreen(onConfirm) {
+  // Overlay that works on mobile — no prompt()
+  const overlay = document.createElement("div");
+  overlay.id = "login-overlay";
+  overlay.style.cssText = [
+    "position:fixed", "inset:0", "z-index:99999",
+    "background:rgba(0,0,0,0.85)",
+    "display:flex", "align-items:center", "justify-content:center",
+    "padding:24px", "box-sizing:border-box"
+  ].join(";");
+
+  overlay.innerHTML = \`
+    <div style="
+      background:#1e1e2e; border-radius:16px; padding:32px 28px;
+      width:100%; max-width:360px; box-shadow:0 8px 32px rgba(0,0,0,0.6);
+      font-family:sans-serif; color:#fff; text-align:center;
+    ">
+      <div style="font-size:48px; margin-bottom:8px">⚒️</div>
+      <h2 style="margin:0 0 6px; font-size:1.3rem">Builder Tracker</h2>
+      <p style="margin:0 0 24px; color:#aaa; font-size:0.9rem">Enter your username to continue</p>
+      <input
+        id="login-username-input"
+        type="text"
+        placeholder="e.g. Daniel"
+        autocomplete="username"
+        autocapitalize="off"
+        style="
+          width:100%; box-sizing:border-box;
+          padding:14px 16px; border-radius:10px;
+          border:2px solid #444; background:#2a2a3e;
+          color:#fff; font-size:1rem; outline:none;
+          margin-bottom:16px;
+        "
+      />
+      <button id="login-confirm-btn" style="
+        width:100%; padding:14px; border-radius:10px;
+        border:none; background:#5865f2; color:#fff;
+        font-size:1rem; font-weight:600; cursor:pointer;
+        transition:background 0.2s;
+      ">Continue →</button>
+      <p id="login-error" style="color:#f87171; font-size:0.85rem; margin:12px 0 0; display:none">
+        Please enter a username.
+      </p>
+    </div>
+  \`;
+
+  document.body.appendChild(overlay);
+
+  const input = overlay.querySelector("#login-username-input");
+  const btn   = overlay.querySelector("#login-confirm-btn");
+  const err   = overlay.querySelector("#login-error");
+
+  // Auto-focus — works on desktop; on mobile user taps the field
+  setTimeout(() => input.focus(), 100);
+
+  function confirm() {
+    const val = input.value.replace(/[^a-zA-Z0-9_]/g, "").trim();
+    if (!val) { err.style.display = "block"; return; }
+    err.style.display = "none";
+    localStorage.setItem("coc_username", val);
+    overlay.remove();
+    onConfirm(val);
+  }
+
+  btn.addEventListener("click", confirm);
+  input.addEventListener("keydown", e => { if (e.key === "Enter") confirm(); });
+  // Hover style
+  btn.addEventListener("mouseenter", () => btn.style.background = "#4752c4");
+  btn.addEventListener("mouseleave", () => btn.style.background = "#5865f2");
+}
