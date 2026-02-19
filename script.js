@@ -168,7 +168,6 @@ async function loadCurrentWork() {
 }
 
 async function loadTodaysBoost() {
-  // ← FIX: was TODAYS_BOOST_ENDPOINT (no username); now uses endpoint()
   const res = await fetch(TODAYS_BOOST_URL());
   const data = await res.json();
   if (data?.builder && data?.status) {
@@ -193,7 +192,6 @@ async function loadPausedBuilders() {
 
 async function loadBoostPlan() {
   try {
-    // ← FIX: was BOOST_PLAN_ENDPOINT (no username); now uses endpoint()
     const res = await fetch(BOOST_PLAN_URL());
     const data = await res.json();
     if (!data?.table || data.table.length <= 1) { boostPlanData = []; return; }
@@ -397,10 +395,8 @@ function renderBuilderCards() {
     const finishMs          = new Date(row[2]).getTime();
     const currentUpgradeImg = getUpgradeImage(row[1]);
 
-    // Key returned by server is prefixed with username (e.g. "Daniel_Builder_1")
-    const builderKey = window._pausedBuilders?.["Builder_" + builderNumber] !== undefined
-      ? "Builder_" + builderNumber
-      : (window.COC_USERNAME ? window.COC_USERNAME + "_Builder_" + builderNumber : "Builder_" + builderNumber);
+    // FIX: server returns keys like "Daniel_Builder_1" — always use prefixed key
+    const builderKey = `${window.COC_USERNAME}_Builder_${builderNumber}`;
     const pauseInfo  = window._pausedBuilders?.[builderKey];
     const isPaused   = pauseInfo?.paused === true;
 
@@ -638,7 +634,7 @@ function setupBuilderRefresh(detailsWrapper) {
         try {
           const bd = await fetchBuilderDetails(detailsWrapper.dataset.builder);
           if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
-        else { console.error('Bad response from fetchBuilderDetails:', bd); alert('Failed to reload builder details.'); }
+          else { console.error('Bad response from fetchBuilderDetails:', bd); alert('Failed to reload builder details.'); }
         } catch (e) { console.error('Refresh failed:', e); alert('Failed to reload builder: ' + e.message); }
       })();
     } catch (err) {
@@ -695,12 +691,12 @@ async function transferUpgradeToBuilder(upgradeName, fromBuilder, row, toBuilder
     if (data.error) { alert('Failed to transfer: ' + data.error); return; }
     alert(`✓ Moved "${upgradeName}" to ${toBuilder}`);
     (async () => {
-        try {
-          const bd = await fetchBuilderDetails(detailsWrapper.dataset.builder);
-          if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
+      try {
+        const bd = await fetchBuilderDetails(detailsWrapper.dataset.builder);
+        if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
         else { console.error('Bad response from fetchBuilderDetails:', bd); alert('Failed to reload builder details.'); }
-        } catch (e) { console.error('Refresh failed:', e); alert('Failed to reload builder: ' + e.message); }
-      })();
+      } catch (e) { console.error('Refresh failed:', e); alert('Failed to reload builder: ' + e.message); }
+    })();
   } catch (err) { console.error('Transfer failed:', err); alert('Failed to transfer upgrade'); }
 }
 
@@ -754,12 +750,12 @@ function setupDragAndDrop(detailsWrapper) {
       saveBtn.textContent = '✓ Saved!';
       setTimeout(() => { saveBtn.textContent = 'Save Order'; saveBtn.disabled = false; }, 1500);
       (async () => {
-          try {
-            const bd = await fetchBuilderDetails(num);
-            if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
-        else { console.error('Bad response from fetchBuilderDetails:', bd); alert('Failed to reload builder details.'); }
-          } catch(e) { console.error('Reload failed:', e); alert('Failed to reload builder: ' + e.message); }
-        })();
+        try {
+          const bd = await fetchBuilderDetails(num);
+          if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
+          else { console.error('Bad response from fetchBuilderDetails:', bd); alert('Failed to reload builder details.'); }
+        } catch(e) { console.error('Reload failed:', e); alert('Failed to reload builder: ' + e.message); }
+      })();
     } catch (err) { console.error('Save failed:', err); alert('Failed to save order'); saveBtn.textContent = 'Save Order'; saveBtn.disabled = false; }
   });
 
@@ -793,7 +789,6 @@ function wireApprenticeBoost() {
     badge.parentElement.appendChild(spinner);
 
     try {
-      // ← FIX: was hardcoded APPLY_TODAYS_BOOST (no username)
       await fetch(APPLY_TODAYS_BOOST_URL());
       spinner.remove();
       badge.style.opacity = "1";
@@ -856,7 +851,6 @@ function wireBoostFocusNavigation() {
       statusEl.textContent = "Updating..."; builderEl.textContent = `Changing to Builder ${num}`;
       dropdown.classList.add("hidden"); menuBtn.disabled = true;
       try {
-        // ← FIX: was SET_TODAYS_BOOST_BUILDER + sel (no username)
         const res  = await fetch(SET_BOOST_BUILDER_URL(sel));
         const data = await res.json();
         if (data.error) { alert(data.error); statusEl.textContent = origStatus; builderEl.textContent = origBuilder; menuBtn.disabled = false; return; }
@@ -907,7 +901,6 @@ function wireBuilderCardClicks() {
       console.error("Failed to load builder details:", err);
       openBuilders = openBuilders.filter(b => b !== builder);
       card.classList.remove("expanded");
-      // Show inline error so the user (and developer) can see what went wrong
       const errDiv = document.createElement("div");
       errDiv.className = "builder-details-error";
       errDiv.dataset.builder = builder;
@@ -1448,8 +1441,8 @@ function showLoginScreen(onConfirm) {
     "padding:24px", "box-sizing:border-box"
   ].join(";");
 
-  overlay.innerHTML = \`;
-
+  // FIX: removed erroneous backslash before the backtick template literal
+  overlay.innerHTML = `
     <div style="
       background:#1e1e2e; border-radius:16px; padding:32px 28px;
       width:100%; max-width:360px; box-shadow:0 8px 32px rgba(0,0,0,0.6);
@@ -1482,7 +1475,7 @@ function showLoginScreen(onConfirm) {
         Please enter a username.
       </p>
     </div>
-  \`;
+  `;
 
   document.body.appendChild(overlay);
 
