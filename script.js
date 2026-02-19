@@ -887,7 +887,10 @@ function wireBoostSimulation() {
   if (!btn) return;
   btn.addEventListener("click", async () => {
     btn.disabled = true; btn.textContent = "Running…";
-    await fetch(RUN_BOOST_SIM); await refreshDashboard();
+    try {
+      await fetch(RUN_BOOST_SIM, { redirect: 'follow' });
+      await refreshDashboard();
+    } catch (e) { console.error("Boost sim failed:", e); }
     btn.textContent = "Run Boost Simulation"; btn.disabled = false;
   });
 }
