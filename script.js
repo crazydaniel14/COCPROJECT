@@ -4,7 +4,7 @@ console.log("Loaded script.js – v2");
    CONFIG
    ========================= */
 const API_BASE =
-  "https://script.google.com/macros/s/AKfycbxvPjXAx0ZNHYUu_P4GR1FDc0VgQlMwZ7HRCmUS1n7Rk76WnNORgvOXm4kllUp1HDaVCA/exec";
+  "https://script.google.com/macros/s/AKfycbzaxmuwpTD9cUzrz4e4k75caCpQrTjEDefs-B5nuEaqlFoMrBHjrhDun3Iy7kPkc9j2/exec";
 
 function endpoint(action) {
   return `${API_BASE}?action=${action}&username=${window.COC_USERNAME}`;
