@@ -784,9 +784,9 @@ function setupDragAndDrop(detailsWrapper) {
     saveBtn.textContent = 'Saving...';
 
     try {
-      const url = `${API_BASE}?action=reorder_builder_upgrades&username=${window.COC_USERNAME}&builder=Builder_${builderNum}&order=${newOrder}`;
+      const url = `${API_BASE}?action=reorder_builder_upgrades&username=${encodeURIComponent(window.COC_USERNAME)}&builder=Builder_${builderNum}&order=${encodeURIComponent(newOrder)}`;
       console.log("[SaveOrder] Fetching:", url);
-      const res  = await fetch(url);
+      const res  = await fetch(url, { redirect: 'follow' });
       const data = await res.json();
       console.log("[SaveOrder] Response:", data);
 
