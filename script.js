@@ -1,22 +1,33 @@
-console.log("Loaded script.js – v1");
+console.log("Loaded script.js – v2");
 
 /* =========================
    CONFIG
    ========================= */
-const API_BASE = 
-    "https://script.google.com/macros/s/AKfycbxvPjXAx0ZNHYUu_P4GR1FDc0VgQlMwZ7HRCmUS1n7Rk76WnNORgvOXm4kllUp1HDaVCA/exec"
-function endpoint(action) {return `${API_BASE}?action=${action}&username=${window.COC_USERNAME}`;}
-const REFRESH_ENDPOINT = API_BASE + "?action=refresh_sheet";
-const TODAYS_BOOST_ENDPOINT = API_BASE + "?action=todays_boost";
-const BOOST_PLAN_ENDPOINT = API_BASE + "?action=boost_plan";
-const APPLY_TODAYS_BOOST = API_BASE + "?action=apply_todays_boost";
-const SET_TODAYS_BOOST_BUILDER = API_BASE + "?action=set_todays_boost_builder&builder=";
+const API_BASE =
+  "https://script.google.com/macros/s/AKfycbxvPjXAx0ZNHYUu_P4GR1FDc0VgQlMwZ7HRCmUS1n7Rk76WnNORgvOXm4kllUp1HDaVCA/exec";
+
+function endpoint(action) {
+  return `${API_BASE}?action=${action}&username=${window.COC_USERNAME}`;
+}
+
+// ── All stateful/user-scoped endpoints now go through endpoint() ─────────────
+// Read-only constants that don't mutate sheets can stay as-is (ping, refresh).
+const REFRESH_ENDPOINT      = API_BASE + "?action=refresh_sheet";
+const RUN_BOOST_SIM         = API_BASE + "?action=run_boost_simulation";
+
+// These previously lacked &username= — fixed by using endpoint() at call sites.
+// Keeping the names for clarity but they now resolve dynamically.
+function TODAYS_BOOST_URL()       { return endpoint("todays_boost"); }
+function BOOST_PLAN_URL()         { return endpoint("boost_plan"); }
+function APPLY_TODAYS_BOOST_URL() { return endpoint("apply_todays_boost"); }
+function SET_BOOST_BUILDER_URL(b) { return endpoint("set_todays_boost_builder") + "&builder=" + b; }
+
+// Mutation endpoints already had username via endpoint() or builder-scoped params
 const REORDER_BUILDER_UPGRADES = API_BASE + "?action=reorder_builder_upgrades";
-const RUN_BOOST_SIM = API_BASE + "?action=run_boost_simulation";
-const BUILDER_SNACK = API_BASE + "?action=apply_one_hour_boost";
-const BATTLE_PASS = API_BASE + "?action=apply_battle_pass";
+const BUILDER_SNACK            = API_BASE + "?action=apply_one_hour_boost";
+const BATTLE_PASS              = API_BASE + "?action=apply_battle_pass";
 const BUILDER_DETAILS_ENDPOINT = API_BASE + "?action=builder_details&builder=";
-const PAUSED_BUILDERS_ENDPOINT = API_BASE + "?action=get_paused_builders"; // NEW
+const PAUSED_BUILDERS_ENDPOINT = API_BASE + "?action=get_paused_builders";
 
 /* =========================
    IMAGE MATCHING
@@ -120,7 +131,7 @@ async function updateActiveStatusSmart() {
   const now = Date.now();
   if (now - lastActiveStatusUpdate < 5 * 60 * 1000) return;
   try {
-    await fetch(API_BASE + "?action=update_active_status");
+    await fetch(endpoint("update_active_status"));
     lastActiveStatusUpdate = now;
   } catch (e) { console.error("Failed to update Active? status:", e); }
 }
@@ -139,10 +150,10 @@ async function softRefreshBuilderCards() {
     await loadTodaysBoost();
     await loadPausedBuilders();
     const container = document.getElementById("builders-container");
-    if (container) { 
+    if (container) {
       console.log("[Soft Refresh] Clearing and re-rendering cards");
-      container.innerHTML = ""; 
-      renderBuilderCards(); 
+      container.innerHTML = "";
+      renderBuilderCards();
     }
   } catch (e) { console.error("Soft refresh failed:", e); }
 }
@@ -156,14 +167,17 @@ async function loadCurrentWork() {
 }
 
 async function loadTodaysBoost() {
-  const res = await fetch(TODAYS_BOOST_ENDPOINT);
+  // ← FIX: was TODAYS_BOOST_ENDPOINT (no username); now uses endpoint()
+  const res = await fetch(TODAYS_BOOST_URL());
   const data = await res.json();
   if (data?.builder && data?.status) {
     todaysBoostInfo = {
       builder: data.builder.toString().match(/(\d+)/)?.[1] || null,
       status: data.status
     };
-  } else { todaysBoostInfo = null; }
+  } else {
+    todaysBoostInfo = null;
+  }
 }
 
 async function loadPausedBuilders() {
@@ -178,7 +192,8 @@ async function loadPausedBuilders() {
 
 async function loadBoostPlan() {
   try {
-    const res = await fetch(BOOST_PLAN_ENDPOINT);
+    // ← FIX: was BOOST_PLAN_ENDPOINT (no username); now uses endpoint()
+    const res = await fetch(BOOST_PLAN_URL());
     const data = await res.json();
     if (!data?.table || data.table.length <= 1) { boostPlanData = []; return; }
     boostPlanData = data.table.slice(1).map((row, i) => ({
@@ -203,8 +218,11 @@ async function refreshDashboard() {
     if (openBuilders.length === 0) renderBuilderCards();
     await loadBoostPlan();
     updateLastRefreshed();
-  } catch (e) { console.error("Refresh failed", e);
-  } finally { isRefreshing = false; }
+  } catch (e) {
+    console.error("Refresh failed", e);
+  } finally {
+    isRefreshing = false;
+  }
 }
 
 /* =========================
@@ -212,16 +230,17 @@ async function refreshDashboard() {
    ========================= */
 function renderBoostFocusCard() {
   if (!boostPlanData.length) return;
-  const day      = boostPlanData[currentBoostIndex];
-  const dayEl    = document.querySelector(".boost-day");
-  const statusEl = document.querySelector(".boost-status");
+  const day       = boostPlanData[currentBoostIndex];
+  const dayEl     = document.querySelector(".boost-day");
+  const statusEl  = document.querySelector(".boost-status");
   const builderEl = document.querySelector(".boost-builder");
-  const extraEl  = document.querySelector(".boost-extra");
-  const finishEl = document.getElementById("boostFinishTime");
-  const modeEl   = document.getElementById("boostMode");
-  const menuBtn  = document.getElementById("boostMenuBtn");
-  const dropdown = document.getElementById("boostBuilderDropdown");
+  const extraEl   = document.querySelector(".boost-extra");
+  const finishEl  = document.getElementById("boostFinishTime");
+  const modeEl    = document.getElementById("boostMode");
+  const menuBtn   = document.getElementById("boostMenuBtn");
+  const dropdown  = document.getElementById("boostBuilderDropdown");
   if (!dayEl) return;
+
   dayEl.textContent = day.day;
   if (day.hasBoost) {
     statusEl.textContent = "Boost Planned For";
@@ -234,9 +253,13 @@ function renderBoostFocusCard() {
     modeEl.className = "boost-mode " + day.mode.toLowerCase();
     if (menuBtn && dropdown && day.day === "TODAY") {
       if (todaysBoostInfo?.status === "APPLIED") {
-        menuBtn.style.opacity = "0.3"; menuBtn.style.cursor = "not-allowed"; menuBtn.disabled = true;
+        menuBtn.style.opacity = "0.3";
+        menuBtn.style.cursor = "not-allowed";
+        menuBtn.disabled = true;
       } else {
-        menuBtn.style.opacity = "1"; menuBtn.style.cursor = "pointer"; menuBtn.disabled = false;
+        menuBtn.style.opacity = "1";
+        menuBtn.style.cursor = "pointer";
+        menuBtn.disabled = false;
         const currentBuilderNum = todaysBoostInfo?.builder;
         dropdown.querySelectorAll("[data-builder-select]").forEach(btn => {
           const n = btn.dataset.builderSelect.match(/(\d+)/)?.[1];
@@ -244,10 +267,14 @@ function renderBoostFocusCard() {
         });
       }
       menuBtn.style.display = "block";
-    } else if (menuBtn) { menuBtn.style.display = "none"; }
+    } else if (menuBtn) {
+      menuBtn.style.display = "none";
+    }
   } else {
-    statusEl.textContent = "No Boost"; statusEl.classList.remove("boost-active");
-    builderEl.style.display = "none"; extraEl.style.display = "none";
+    statusEl.textContent = "No Boost";
+    statusEl.classList.remove("boost-active");
+    builderEl.style.display = "none";
+    extraEl.style.display = "none";
     if (menuBtn) menuBtn.style.display = "none";
   }
   document.getElementById("boostPrev").disabled = currentBoostIndex === 0;
@@ -296,11 +323,6 @@ function renderBuilderDetails(details) {
             <div class="upgrade-time">
               <span>${upg.start}</span><span>→</span><span>${upg.end}</span>
             </div>
-            <button class="transfer-builder-btn"
-                    data-upgrade-name="${upg.upgrade}"
-                    data-current-builder="${upg.builder}"
-                    data-row="${upg.row}"
-                    title="Move to another builder">👤</button>
             <div class="upgrade-controls">
               <button class="transfer-builder-btn"
                       data-upgrade-name="${upg.upgrade}"
@@ -317,80 +339,46 @@ function renderBuilderDetails(details) {
       <button class="cancel-order-btn">Cancel</button>
     </div>`;
   setTimeout(() => {
-    setupDragAndDrop(wrapper); setupDurationEditor(wrapper);
-    setupBuilderTransfer(wrapper); setupBuilderRefresh(wrapper);
+    setupDragAndDrop(wrapper);
+    setupDurationEditor(wrapper);
+    setupBuilderTransfer(wrapper);
+    setupBuilderRefresh(wrapper);
   }, 0);
   return wrapper;
 }
 
 function formatBoostTime(timeStr) {
-  // Input: "Feb 26 11:40 AM" or similar
-  // Output: "2/26 11:40am"
   try {
-    const d = new Date(timeStr + " 2026"); // Attach year for parsing
+    const d = new Date(timeStr + " 2026");
     if (isNaN(d)) return "";
-    
     const month = d.getMonth() + 1;
-    const day = d.getDate();
-    let hours = d.getHours();
-    const mins = String(d.getMinutes()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'pm' : 'am';
+    const day   = d.getDate();
+    let hours   = d.getHours();
+    const mins  = String(d.getMinutes()).padStart(2, '0');
+    const ampm  = hours >= 12 ? 'pm' : 'am';
     hours = hours % 12 || 12;
-    
     return `${month}/${day} ${hours}:${mins}${ampm}`;
-  } catch (e) {
-    return "";
-  }
+  } catch (e) { return ""; }
 }
 
 function getBoostFinishTimeForBuilder(builderNumber, currentUpgradeName) {
-  // Find the LAST boost for this builder this week
-  if (!boostPlanData || boostPlanData.length === 0) {
-    console.log('No boost plan data available');
-    return null;
-  }
-  
-  console.log('Checking boosts for Builder', builderNumber, 'upgrade:', currentUpgradeName);
-  console.log('Boost plan data:', boostPlanData);
-  
+  if (!boostPlanData || boostPlanData.length === 0) return null;
   let lastBoostFinish = null;
-  
   for (const day of boostPlanData) {
     if (!day.hasBoost) continue;
-    
-    // Check if this boost is for this builder
-    // day.builder is like "Builder 1" (with space, from boost plan)
-    // builderNumber is just the number like "1"
     const boostBuilderNum = day.builder.match(/(\d+)/)?.[1];
-    console.log('Day:', day.day, 'Builder:', day.builder, 'Extracted num:', boostBuilderNum, 'Comparing to:', builderNumber, 'Match:', boostBuilderNum === builderNumber);
-    
     if (boostBuilderNum !== builderNumber) continue;
-    
-    // We found a boost for this builder - save the finish time
-    // (we want the LAST one, so keep overwriting)
     lastBoostFinish = day.newFinishTime;
-    console.log('Found boost finish time:', lastBoostFinish);
   }
-  
-  console.log('Final boost finish for Builder', builderNumber, ':', lastBoostFinish);
   return lastBoostFinish;
 }
 
 function renderBuilderCards() {
   console.log("[Render] renderBuilderCards called");
-  if (!currentWorkData) {
-    console.log("[Render] No currentWorkData");
-    return;
-  }
+  if (!currentWorkData) { console.log("[Render] No currentWorkData"); return; }
   const container = document.getElementById("builders-container");
-  if (!container) {
-    console.log("[Render] No container found");
-    return;
-  }
-  if (container.children.length > 0) {
-    console.log("[Render] Container already has children, skipping");
-    return;
-  }
+  if (!container) { console.log("[Render] No container found"); return; }
+  if (container.children.length > 0) { console.log("[Render] Container already has children, skipping"); return; }
   console.log("[Render] Proceeding to render cards");
 
   let earliestFinish = Infinity;
@@ -400,7 +388,7 @@ function renderBuilderCards() {
   }
 
   for (let i = 1; i < currentWorkData.length; i++) {
-    const row = currentWorkData[i];
+    const row               = currentWorkData[i];
     const builderNumber     = row[0].toString().match(/(\d+)/)?.[1];
     const finishMs          = new Date(row[2]).getTime();
     const currentUpgradeImg = getUpgradeImage(row[1]);
@@ -445,10 +433,11 @@ function renderBuilderCards() {
         }
         badgeHTML = `<img src="${img}" class="apprentice-badge" data-apply-boost="true" />`;
       }
-      // Check if there's a boost planned for this builder
       const boostFinish = getBoostFinishTimeForBuilder(builderNumber, row[1]);
-      const boostHTML = boostFinish ? `<span class="boost-finish-indicator">${formatBoostTime(boostFinish)}</span>` : '';
-      
+      const boostHTML   = boostFinish
+        ? `<span class="boost-finish-indicator">${formatBoostTime(boostFinish)}</span>`
+        : '';
+
       card.innerHTML = `
         ${badgeHTML}
         <img src="Images/Builders/Builder ${builderNumber}.png"
@@ -765,22 +754,21 @@ function wireApprenticeBoost() {
     if (!confirm("Apply today's boost?")) return;
     const card = badge.closest(".builder-card");
     const builderNumber = card?.dataset.builder;
-    
-    // Show loading spinner
-    const originalSrc = badge.src;
+
     badge.style.opacity = "0.5";
-    badge.style.filter = "blur(1px)";
+    badge.style.filter  = "blur(1px)";
     const spinner = document.createElement("div");
     spinner.className = "boost-loading-spinner";
     spinner.innerHTML = "⟳";
     badge.parentElement.style.position = "relative";
     badge.parentElement.appendChild(spinner);
-    
+
     try {
-      await fetch(APPLY_TODAYS_BOOST);
+      // ← FIX: was hardcoded APPLY_TODAYS_BOOST (no username)
+      await fetch(APPLY_TODAYS_BOOST_URL());
       spinner.remove();
       badge.style.opacity = "1";
-      badge.style.filter = "none";
+      badge.style.filter  = "none";
       badge.src = "Images/Badge/Builder Apprentice applied.png";
       if (todaysBoostInfo) todaysBoostInfo.status = "APPLIED";
       await loadCurrentWork();
@@ -798,13 +786,16 @@ function wireApprenticeBoost() {
       const container = document.getElementById("builders-container");
       container.innerHTML = "";
       renderBuilderCards();
-    } catch (err) { console.error("Failed to apply today's boost", err); alert("Failed to apply today's boost."); }
+    } catch (err) {
+      console.error("Failed to apply today's boost", err);
+      alert("Failed to apply today's boost.");
+    }
   });
 }
 
 function wireImageButtons() {
   document.getElementById("oneHourBoostBtn")?.addEventListener("click", async () => { await fetch(BUILDER_SNACK); refreshDashboard(); });
-  document.getElementById("battlePassBtn")?.addEventListener("click",  async () => { await fetch(BATTLE_PASS); refreshDashboard(); });
+  document.getElementById("battlePassBtn")?.addEventListener("click",  async () => { await fetch(BATTLE_PASS);  refreshDashboard(); });
 }
 
 function wireBoostSimulation() {
@@ -820,7 +811,8 @@ function wireBoostSimulation() {
 function wireBoostFocusNavigation() {
   document.getElementById("boostPrev")?.addEventListener("click", () => { if (currentBoostIndex > 0) { currentBoostIndex--; renderBoostFocusCard(); } });
   document.getElementById("boostNext")?.addEventListener("click", () => { if (currentBoostIndex < boostPlanData.length-1) { currentBoostIndex++; renderBoostFocusCard(); } });
-  const menuBtn = document.getElementById("boostMenuBtn");
+
+  const menuBtn  = document.getElementById("boostMenuBtn");
   const dropdown = document.getElementById("boostBuilderDropdown");
   if (menuBtn && dropdown) {
     menuBtn.addEventListener("click", e => { e.stopPropagation(); dropdown.classList.toggle("hidden"); });
@@ -829,12 +821,14 @@ function wireBoostFocusNavigation() {
       const builderBtn = e.target.closest("[data-builder-select]");
       if (!builderBtn) return;
       const sel = builderBtn.dataset.builderSelect, num = sel.match(/(\d+)/)?.[1];
-      const statusEl = document.querySelector(".boost-status"), builderEl = document.querySelector(".boost-builder");
-      const origStatus = statusEl.textContent, origBuilder = builderEl.textContent;
+      const statusEl  = document.querySelector(".boost-status");
+      const builderEl = document.querySelector(".boost-builder");
+      const origStatus  = statusEl.textContent, origBuilder = builderEl.textContent;
       statusEl.textContent = "Updating..."; builderEl.textContent = `Changing to Builder ${num}`;
       dropdown.classList.add("hidden"); menuBtn.disabled = true;
       try {
-        const res  = await fetch(SET_TODAYS_BOOST_BUILDER + sel);
+        // ← FIX: was SET_TODAYS_BOOST_BUILDER + sel (no username)
+        const res  = await fetch(SET_BOOST_BUILDER_URL(sel));
         const data = await res.json();
         if (data.error) { alert(data.error); statusEl.textContent = origStatus; builderEl.textContent = origBuilder; menuBtn.disabled = false; return; }
         statusEl.textContent = "Recalculating...";
@@ -846,7 +840,9 @@ function wireBoostFocusNavigation() {
         renderBuilderCards(); updateLastRefreshed();
         statusEl.textContent = "✓ Updated!";
         setTimeout(() => renderBoostFocusCard(), 1500);
-      } catch (err) { console.error("Failed to change builder:", err); alert("Failed: " + err.message); statusEl.textContent = origStatus; builderEl.textContent = origBuilder;
+      } catch (err) {
+        console.error("Failed to change builder:", err); alert("Failed: " + err.message);
+        statusEl.textContent = origStatus; builderEl.textContent = origBuilder;
       } finally { menuBtn.disabled = false; }
     });
   }
@@ -855,7 +851,7 @@ function wireBoostFocusNavigation() {
 function wireBuilderCardClicks() {
   document.addEventListener("click", async e => {
     if (e.target.closest("[data-apply-boost]")) { e.stopPropagation(); e.preventDefault(); return; }
-    if (e.target.closest(".start-builder-btn")) return; // handled by wirePausedBuilderButtons
+    if (e.target.closest(".start-builder-btn")) return;
     const card = e.target.closest(".builder-card");
     if (!card) return;
     const builder = card.dataset.builder;
@@ -896,7 +892,7 @@ function startAutoRefresh() {
    ========================= */
 async function checkForFinishedUpgrades() {
   try {
-    const res  = await fetch(API_BASE + "?action=check_finished_upgrades");
+    const res  = await fetch(endpoint("check_finished_upgrades"));
     const data = await res.json();
     if (data.finishedUpgrades?.length > 0) {
       finishedUpgradesData = data.finishedUpgrades;
@@ -909,23 +905,19 @@ async function autoConfirmSingleBuilder(builder, builderData) {
   try {
     const params = new URLSearchParams({
       action: 'confirm_upgrade_start',
-      builder: builder,
+      builder,
       upgradeName: builderData.nowActive.upgradeName,
       startTime: new Date(builderData.nowActive.scheduledStart + " 2026").toISOString(),
       confirmAction: 'confirm',
       differentUpgrade: ''
     });
-    
     await fetch(API_BASE + '?' + params.toString());
-    
-    // Refresh the dashboard after auto-confirming
     const container = document.getElementById("builders-container");
     if (container) container.innerHTML = "";
     await new Promise(resolve => setTimeout(resolve, 500));
     refreshDashboard();
   } catch (err) {
     console.error('Auto-confirm failed:', err);
-    // Fall back to showing the modal the normal way
     finishedUpgradesData = [builderData];
     showUpgradeConfirmationModal([builderData]);
   }
@@ -934,13 +926,8 @@ async function autoConfirmSingleBuilder(builder, builderData) {
 function showUpgradeConfirmationModal(upgrades) {
   reviewedTabs = new Set();
   document.querySelector('.upgrade-confirmation-modal-overlay')?.remove();
-  
-  // If only ONE builder with finished upgrades, auto-confirm it
   if (upgrades.length === 1) {
-    const builder = upgrades[0].builder;
-    const builderData = upgrades[0];
-    // Auto-confirm the single upgrade with default values (as planned, scheduled time)
-    autoConfirmSingleBuilder(builder, builderData);
+    autoConfirmSingleBuilder(upgrades[0].builder, upgrades[0]);
     return;
   }
   const modal = document.createElement('div');
@@ -1065,7 +1052,7 @@ function wireConfirmationModal(modal, upgrades) {
   modal.querySelectorAll('input[name^="time-method-"]').forEach(radio => {
     radio.addEventListener('change', () => {
       const b = radio.name.replace('time-method-','');
-      const tab = modal.querySelector(`.ucm-tab-content[data-builder="${b}"]`);
+      const tab      = modal.querySelector(`.ucm-tab-content[data-builder="${b}"]`);
       const exactDiv = tab.querySelector(`.ucm-exact-inputs[data-for="${b}"]`);
       const remDiv   = tab.querySelector(`.ucm-remaining-inputs[data-for="${b}"]`);
       const isExact  = radio.value === 'exact';
@@ -1077,8 +1064,7 @@ function wireConfirmationModal(modal, upgrades) {
   modal.querySelectorAll('.ucm-exact-dt').forEach(i => i.addEventListener('input', () => updateAllPreviews(modal, upgrades)));
   modal.querySelectorAll('.ucm-spin').forEach(btn => {
     btn.addEventListener('click', () => {
-      const input = document.getElementById(btn.dataset.field);
-      if (!input) return;
+      const input = document.getElementById(btn.dataset.field); if (!input) return;
       const isUp = btn.classList.contains('ucm-spin-up'), cur = parseInt(input.value)||0;
       if (isUp  && cur < parseInt(input.max)) input.value = cur+1;
       if (!isUp && cur > parseInt(input.min)) input.value = cur-1;
@@ -1088,7 +1074,7 @@ function wireConfirmationModal(modal, upgrades) {
   modal.querySelectorAll('.ucm-spin-input').forEach(i => i.addEventListener('input', () => updateAllPreviews(modal, upgrades)));
   modal.querySelectorAll('input[name^="upgrade-choice-"]').forEach(radio => {
     radio.addEventListener('change', () => {
-      const b = radio.name.replace('upgrade-choice-','');
+      const b   = radio.name.replace('upgrade-choice-','');
       const tab = modal.querySelector(`.ucm-tab-content[data-builder="${b}"]`);
       tab.querySelector('.ucm-show-queue').style.display = radio.value==='different'?'inline-block':'none';
       if (radio.value !== 'different') tab.querySelector('.ucm-diff-selected').style.display = 'none';
@@ -1101,7 +1087,6 @@ function wireConfirmationModal(modal, upgrades) {
     modal.remove();
     const container = document.getElementById("builders-container");
     if (container) container.innerHTML = "";
-    // Wait for Google Sheets formulas to recalculate
     await new Promise(resolve => setTimeout(resolve, 500));
     refreshDashboard();
   });
@@ -1110,7 +1095,7 @@ function wireConfirmationModal(modal, upgrades) {
 function updateAllPreviews(modal, upgrades) {
   const activeTab = modal.querySelector('.ucm-tab-content.active');
   if (!activeTab) return;
-  const b = activeTab.dataset.builder;
+  const b  = activeTab.dataset.builder;
   const bd = upgrades.find(u => u.builder === b);
   if (!bd) return;
   const m = bd.nowActive.totalDuration.match(/(\d+)\s*d\s*(\d+)\s*hr\s*(\d+)\s*min/);
@@ -1135,7 +1120,7 @@ function updateAllPreviews(modal, upgrades) {
 }
 
 function getStartTimeFromTab(tab, totalMinutes) {
-  const b = tab.dataset.builder;
+  const b      = tab.dataset.builder;
   const method = tab.querySelector(`input[name="time-method-${b}"]:checked`)?.value;
   if (method === 'exact') {
     const val = tab.querySelector('.ucm-exact-dt')?.value;
@@ -1148,7 +1133,7 @@ function getStartTimeFromTab(tab, totalMinutes) {
 }
 
 async function handleBuilderConfirmation(btn, modal, upgrades) {
-  const b = btn.dataset.builder;
+  const b   = btn.dataset.builder;
   const tab = modal.querySelector(`.ucm-tab-content[data-builder="${b}"]`);
   const bd  = upgrades.find(u => u.builder === b);
   if (!bd) return;
@@ -1308,10 +1293,10 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
   modal.querySelectorAll('input[name="sp-time-method"]').forEach(r => {
     r.addEventListener('change', () => {
       const isExact = r.value==='exact';
-      modal.querySelector('.sp-exact-wrap').style.opacity = isExact?'1':'0.4';
+      modal.querySelector('.sp-exact-wrap').style.opacity       = isExact?'1':'0.4';
       modal.querySelector('.sp-exact-wrap').style.pointerEvents = isExact?'auto':'none';
-      modal.querySelector('.sp-rem-wrap').style.opacity = isExact?'0.4':'1';
-      modal.querySelector('.sp-rem-wrap').style.pointerEvents = isExact?'none':'auto';
+      modal.querySelector('.sp-rem-wrap').style.opacity         = isExact?'0.4':'1';
+      modal.querySelector('.sp-rem-wrap').style.pointerEvents   = isExact?'none':'auto';
     });
   });
   modal.querySelectorAll('.ucm-spin').forEach(btn => {
@@ -1325,7 +1310,7 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
   modal.querySelector('.ucm-queue-cancel').addEventListener('click', () => modal.remove());
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
   modal.querySelector('.sp-start-btn').addEventListener('click', async () => {
-    const method = modal.querySelector('input[name="sp-time-method"]:checked')?.value;
+    const method   = modal.querySelector('input[name="sp-time-method"]:checked')?.value;
     const startBtn = modal.querySelector('.sp-start-btn');
     startBtn.disabled = true; startBtn.textContent = 'Starting…';
     try {
@@ -1335,11 +1320,10 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
         if (!exactTime || isNaN(exactTime)) { alert('Please enter a valid start time'); startBtn.disabled=false; startBtn.textContent='▶️ Start Now'; return; }
         params = new URLSearchParams({ action:'start_paused_builder', builder:b, method:'exact', startTime:exactTime.toISOString() });
       } else {
-        const d=parseInt(document.getElementById('sp-rd').value)||0;
-        const h=parseInt(document.getElementById('sp-rh').value)||0;
-        const m=parseInt(document.getElementById('sp-rm').value)||0;
-        const remainingMinutes = d*24*60 + h*60 + m;
-        params = new URLSearchParams({ action:'start_paused_builder', builder:b, method:'remaining', remainingMinutes:remainingMinutes.toString() });
+        const d = parseInt(document.getElementById('sp-rd').value)||0;
+        const h = parseInt(document.getElementById('sp-rh').value)||0;
+        const m = parseInt(document.getElementById('sp-rm').value)||0;
+        params = new URLSearchParams({ action:'start_paused_builder', builder:b, method:'remaining', remainingMinutes:String(d*24*60+h*60+m) });
       }
       const res  = await fetch(API_BASE + '?' + params.toString());
       const data = await res.json();
@@ -1347,7 +1331,6 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
       modal.remove();
       const container = document.getElementById("builders-container");
       if (container) container.innerHTML = "";
-      // Wait 500ms for Google Sheets formulas to recalculate
       await new Promise(resolve => setTimeout(resolve, 500));
       await Promise.all([loadCurrentWork(), loadTodaysBoost(), loadPausedBuilders()]);
       renderBuilderCards();
@@ -1381,16 +1364,13 @@ function toDatetimeLocal(d) {
    INIT
    ========================= */
 document.addEventListener("DOMContentLoaded", async () => {
-
   let username = localStorage.getItem("coc_username");
+  if (username && username.endsWith("_CURRENT_WORK")) {
+    username = username.replace("_CURRENT_WORK", "");
+    localStorage.setItem("coc_username", username);
+  }
+  window.COC_USERNAME = username;
 
-if (username && username.endsWith("_CURRENT_WORK")) {
-  username = username.replace("_CURRENT_WORK", "");
-  localStorage.setItem("coc_username", username);
-}
-  // Make globally accessible
-  window.COC_USERNAME = username
-   
   await refreshDashboard();
   startAutoRefresh();
   wireApprenticeBoost();
