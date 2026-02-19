@@ -306,8 +306,7 @@ function renderBuilderDetails(details) {
     <div class="upgrade-list" data-original-order="${originalOrder.join(',')}">
       ${details.upgrades.map((upg, idx) => {
         const imgSrc = getUpgradeImage(upg.upgrade);
-        const dm = upg.duration.match(/(\d+)\s*d\s*(\d+)\s*hr\s*(\d+)\s*min/);
-        const totalMinutes = dm ? parseInt(dm[1])*24*60+parseInt(dm[2])*60+parseInt(dm[3]) : 0;
+        const totalMinutes = upg.durationMinutes || 0;
         return `
           <div class="upgrade-item"
                data-builder="${upg.builder}" data-row="${upg.row}"
