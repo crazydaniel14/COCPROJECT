@@ -1,4 +1,4 @@
-console.log("Loaded script.js – v2");
+console.log("Loaded script.js – v3");
 
 /* =========================
    CONFIG
@@ -10,23 +10,16 @@ function endpoint(action) {
   return `${API_BASE}?action=${action}&username=${window.COC_USERNAME}`;
 }
 
-// ── All stateful/user-scoped endpoints now go through endpoint() ─────────────
-// Read-only constants that don't mutate sheets can stay as-is (ping, refresh).
 const REFRESH_ENDPOINT      = API_BASE + "?action=refresh_sheet";
 const RUN_BOOST_SIM         = API_BASE + "?action=run_boost_simulation";
 
-// These previously lacked &username= — fixed by using endpoint() at call sites.
-// Keeping the names for clarity but they now resolve dynamically.
 function TODAYS_BOOST_URL()       { return endpoint("todays_boost"); }
 function BOOST_PLAN_URL()         { return endpoint("boost_plan"); }
 function APPLY_TODAYS_BOOST_URL() { return endpoint("apply_todays_boost"); }
 function SET_BOOST_BUILDER_URL(b) { return endpoint("set_todays_boost_builder") + "&builder=" + b; }
 
-// Mutation endpoints already had username via endpoint() or builder-scoped params
-// reorder uses inline endpoint() call
 function BUILDER_SNACK_URL()  { return endpoint("apply_one_hour_boost"); }
 function BATTLE_PASS_URL()    { return endpoint("apply_battle_pass"); }
-// builder_details needs username for sheet resolution
 function BUILDER_DETAILS_URL(builderName) { return endpoint("builder_details") + "&builder=" + builderName; }
 function PAUSED_BUILDERS_URL() { return endpoint("get_paused_builders"); }
 
@@ -284,7 +277,6 @@ function renderBoostFocusCard() {
    BUILDER CARDS
    ========================= */
 async function fetchBuilderDetails(builderNumber) {
-  // Server expects the bare base name (e.g. "Builder_1"); it prefixes username itself.
   const res  = await fetch(endpoint("builder_details") + "&builder=Builder_" + builderNumber);
   const data = await res.json();
   if (data.error) throw new Error(data.error);
@@ -395,7 +387,6 @@ function renderBuilderCards() {
     const finishMs          = new Date(row[2]).getTime();
     const currentUpgradeImg = getUpgradeImage(row[1]);
 
-    // FIX: server returns keys like "Daniel_Builder_1" — always use prefixed key
     const builderKey = `${window.COC_USERNAME}_Builder_${builderNumber}`;
     const pauseInfo  = window._pausedBuilders?.[builderKey];
     const isPaused   = pauseInfo?.paused === true;
@@ -709,16 +700,55 @@ function setupDragAndDrop(detailsWrapper) {
   const saveBtn       = detailsWrapper.querySelector('.save-order-btn');
   const cancelBtn     = detailsWrapper.querySelector('.cancel-order-btn');
   const saveContainer = detailsWrapper.querySelector('.save-order-container');
-  let draggedItem = null, originalOrder = upgradeList.dataset.originalOrder, isDragging = false;
+  let draggedItem = null;
+  let isDragging = false;
+
+  // Store original order from data-index attributes
+  const getOriginalOrder = () => Array.from(upgradeList.querySelectorAll('.upgrade-item'))
+    .map(el => el.dataset.index)
+    .sort((a, b) => parseInt(a) - parseInt(b))
+    .join(',');
+
+  const originalOrder = getOriginalOrder();
 
   items.forEach(item => {
-    item.addEventListener('dragstart', e => { draggedItem = item; item.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
-    item.addEventListener('dragend',   () => { item.classList.remove('dragging'); draggedItem = null; checkIfOrderChanged(); });
-    item.addEventListener('dragover',  e => { e.preventDefault(); const after = getDragAfterElement(upgradeList, e.clientY); after ? upgradeList.insertBefore(draggedItem, after) : upgradeList.appendChild(draggedItem); });
+    item.addEventListener('dragstart', e => {
+      draggedItem = item;
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      draggedItem = null;
+      checkIfOrderChanged();
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault();
+      const after = getDragAfterElement(upgradeList, e.clientY);
+      after ? upgradeList.insertBefore(draggedItem, after) : upgradeList.appendChild(draggedItem);
+    });
+
+    // Touch support via drag handles
     item.querySelectorAll('.drag-handle').forEach(h => {
-      h?.addEventListener('touchstart', e => { e.preventDefault(); isDragging = true; draggedItem = item; item.classList.add('dragging'); }, { passive: false });
-      h?.addEventListener('touchmove',  e => { if (!isDragging) return; e.preventDefault(); const after = getDragAfterElement(upgradeList, e.touches[0].clientY); after ? upgradeList.insertBefore(draggedItem, after) : upgradeList.appendChild(draggedItem); }, { passive: false });
-      h?.addEventListener('touchend',   () => { if (!isDragging) return; isDragging = false; item.classList.remove('dragging'); draggedItem = null; checkIfOrderChanged(); });
+      h?.addEventListener('touchstart', e => {
+        e.preventDefault();
+        isDragging = true;
+        draggedItem = item;
+        item.classList.add('dragging');
+      }, { passive: false });
+      h?.addEventListener('touchmove', e => {
+        if (!isDragging) return;
+        e.preventDefault();
+        const after = getDragAfterElement(upgradeList, e.touches[0].clientY);
+        after ? upgradeList.insertBefore(draggedItem, after) : upgradeList.appendChild(draggedItem);
+      }, { passive: false });
+      h?.addEventListener('touchend', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        item.classList.remove('dragging');
+        draggedItem = null;
+        checkIfOrderChanged();
+      });
     });
   });
 
@@ -732,31 +762,61 @@ function setupDragAndDrop(detailsWrapper) {
   function checkIfOrderChanged() {
     const currentItems = upgradeList.querySelectorAll('.upgrade-item');
     const currentOrder = Array.from(currentItems).map(i => i.dataset.index).join(',');
-    if (currentOrder !== originalOrder) { saveContainer.classList.remove('hidden'); currentItems.forEach(i => i.classList.add('unsaved')); }
-    else                                { saveContainer.classList.add('hidden');    currentItems.forEach(i => i.classList.remove('unsaved')); }
+    if (currentOrder !== originalOrder) {
+      saveContainer.classList.remove('hidden');
+      currentItems.forEach(i => i.classList.add('unsaved'));
+    } else {
+      saveContainer.classList.add('hidden');
+      currentItems.forEach(i => i.classList.remove('unsaved'));
+    }
   }
 
   saveBtn?.addEventListener('click', async () => {
-    const num = detailsWrapper.dataset.builder;
+    const builderNum = detailsWrapper.dataset.builder;
     const currentItems = upgradeList.querySelectorAll('.upgrade-item');
+
+    // Build the new order as a comma-separated list of original data-index values
     const newOrder = Array.from(currentItems).map(i => i.dataset.index).join(',');
-    saveBtn.disabled = true; saveBtn.textContent = 'Saving...';
+
+    console.log("[SaveOrder] builder:", builderNum, "order:", newOrder, "username:", window.COC_USERNAME);
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+
     try {
-      const res  = await fetch(`${API_BASE}?action=reorder_builder_upgrades&username=${window.COC_USERNAME}&builder=Builder_${num}&order=${newOrder}`);
+      const url = `${API_BASE}?action=reorder_builder_upgrades&username=${window.COC_USERNAME}&builder=Builder_${builderNum}&order=${newOrder}`;
+      console.log("[SaveOrder] Fetching:", url);
+      const res  = await fetch(url);
       const data = await res.json();
-      if (data.error) { alert('Failed to save: ' + data.error); return; }
-      originalOrder = newOrder; upgradeList.dataset.originalOrder = newOrder;
-      currentItems.forEach(i => i.classList.remove('unsaved')); saveContainer.classList.add('hidden');
+      console.log("[SaveOrder] Response:", data);
+
+      if (data.error) {
+        alert('Failed to save: ' + data.error);
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Order';
+        return;
+      }
+
       saveBtn.textContent = '✓ Saved!';
-      setTimeout(() => { saveBtn.textContent = 'Save Order'; saveBtn.disabled = false; }, 1500);
-      (async () => {
+      currentItems.forEach(i => i.classList.remove('unsaved'));
+      saveContainer.classList.add('hidden');
+
+      setTimeout(async () => {
         try {
-          const bd = await fetchBuilderDetails(num);
+          const bd = await fetchBuilderDetails(builderNum);
           if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
-          else { console.error('Bad response from fetchBuilderDetails:', bd); alert('Failed to reload builder details.'); }
-        } catch(e) { console.error('Reload failed:', e); alert('Failed to reload builder: ' + e.message); }
-      })();
-    } catch (err) { console.error('Save failed:', err); alert('Failed to save order'); saveBtn.textContent = 'Save Order'; saveBtn.disabled = false; }
+          else { console.error('Bad response after reorder:', bd); }
+        } catch(e) { console.error('Reload after reorder failed:', e); }
+        saveBtn.textContent = 'Save Order';
+        saveBtn.disabled = false;
+      }, 1000);
+
+    } catch (err) {
+      console.error('Save order failed:', err);
+      alert('Failed to save order: ' + err.message);
+      saveBtn.textContent = 'Save Order';
+      saveBtn.disabled = false;
+    }
   });
 
   cancelBtn?.addEventListener('click', () => {
@@ -1398,7 +1458,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     username = username.replace("_CURRENT_WORK", "");
     localStorage.setItem("coc_username", username);
   }
-  // Reject literal "null"/"undefined" strings left over from old code
   if (!username || username === "null" || username === "undefined" || username.trim() === "") {
     showLoginScreen(async (confirmedUsername) => {
       window.COC_USERNAME = confirmedUsername;
@@ -1423,7 +1482,6 @@ async function bootApp() {
   await checkForFinishedUpgrades();
 }
 
-// Call switchUser() from browser console to change account, or wire to a button
 function switchUser() {
   localStorage.removeItem("coc_username");
   window.COC_USERNAME = null;
@@ -1431,7 +1489,6 @@ function switchUser() {
 }
 
 function showLoginScreen(onConfirm) {
-  // Overlay that works on mobile — no prompt()
   const overlay = document.createElement("div");
   overlay.id = "login-overlay";
   overlay.style.cssText = [
@@ -1441,7 +1498,6 @@ function showLoginScreen(onConfirm) {
     "padding:24px", "box-sizing:border-box"
   ].join(";");
 
-  // FIX: removed erroneous backslash before the backtick template literal
   overlay.innerHTML = `
     <div style="
       background:#1e1e2e; border-radius:16px; padding:32px 28px;
@@ -1483,7 +1539,6 @@ function showLoginScreen(onConfirm) {
   const btn   = overlay.querySelector("#login-confirm-btn");
   const err   = overlay.querySelector("#login-error");
 
-  // Auto-focus — works on desktop; on mobile user taps the field
   setTimeout(() => input.focus(), 100);
 
   function confirm() {
@@ -1497,7 +1552,6 @@ function showLoginScreen(onConfirm) {
 
   btn.addEventListener("click", confirm);
   input.addEventListener("keydown", e => { if (e.key === "Enter") confirm(); });
-  // Hover style
   btn.addEventListener("mouseenter", () => btn.style.background = "#4752c4");
   btn.addEventListener("mouseleave", () => btn.style.background = "#5865f2");
 }
