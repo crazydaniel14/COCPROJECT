@@ -419,6 +419,10 @@ button:disabled {
   gap: 6px;
 }
 
+.upgrade-item > .drag-handle {
+  display: none;
+}
+
 .upgrade-name {
   font-weight: 600;
   text-align: left;
