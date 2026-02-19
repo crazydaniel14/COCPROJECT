@@ -5,7 +5,7 @@ console.log("Loaded script.js – v1");
    ========================= */
 const API_BASE = 
     "https://script.google.com/macros/s/AKfycbxvPjXAx0ZNHYUu_P4GR1FDc0VgQlMwZ7HRCmUS1n7Rk76WnNORgvOXm4kllUp1HDaVCA/exec"
-const TABLE_ENDPOINT = API_BASE + "?action=current_work_table";
+function endpoint(action) {return `${API_BASE}?action=${action}&username=${window.COC_USERNAME}`;}
 const REFRESH_ENDPOINT = API_BASE + "?action=refresh_sheet";
 const TODAYS_BOOST_ENDPOINT = API_BASE + "?action=todays_boost";
 const BOOST_PLAN_ENDPOINT = API_BASE + "?action=boost_plan";
@@ -151,7 +151,7 @@ async function softRefreshBuilderCards() {
    DATA LOADERS
    ========================= */
 async function loadCurrentWork() {
-  const res = await fetch(TABLE_ENDPOINT);
+  const res = await fetch(endpoint("current_work_table"));
   currentWorkData = await res.json();
 }
 
@@ -1381,6 +1381,20 @@ function toDatetimeLocal(d) {
    INIT
    ========================= */
 document.addEventListener("DOMContentLoaded", async () => {
+
+  let username = localStorage.getItem("coc_username");
+
+  if (!username) {
+    username = prompt("Enter your username:");
+    if (!username) {
+      alert("Username is required.");
+      return;
+    }
+    localStorage.setItem("coc_username", username);
+  }
+  // Make globally accessible
+  window.COC_USERNAME = username
+   
   await refreshDashboard();
   startAutoRefresh();
   wireApprenticeBoost();
