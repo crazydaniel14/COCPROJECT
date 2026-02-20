@@ -1,4 +1,4 @@
-console.log("Loaded script.js – v3");
+console.log("Loaded script.js – v4-fixed");
 
 /* =========================
    CONFIG
@@ -116,6 +116,24 @@ function updateLastRefreshed() {
   });
 }
 
+/**
+ * FIX #2: Robust date parsing for scheduledStart strings like "Feb 19 3:00 PM"
+ * Apps Script Utilities.formatDate produces "MMM dd h:mm a" format.
+ * We parse it properly with current year, falling back gracefully.
+ */
+function parseScheduledStart(scheduledStart) {
+  if (!scheduledStart) return null;
+  // Try appending current year first, then next year
+  const currentYear = new Date().getFullYear();
+  for (const year of [currentYear, currentYear + 1]) {
+    const d = new Date(`${scheduledStart} ${year}`);
+    if (!isNaN(d.getTime())) return d;
+  }
+  // Last resort: direct parse
+  const d = new Date(scheduledStart);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 /* =========================
    SMART ACTIVE STATUS UPDATE
    ========================= */
@@ -205,7 +223,12 @@ async function refreshDashboard() {
     updateActiveStatusSmart();
     await fetch(REFRESH_ENDPOINT);
     await Promise.all([loadCurrentWork(), loadTodaysBoost(), loadPausedBuilders()]);
-    if (openBuilders.length === 0) renderBuilderCards();
+    // FIX #1: Always clear container before rendering to avoid stale state
+    if (openBuilders.length === 0) {
+      const container = document.getElementById("builders-container");
+      if (container) container.innerHTML = "";
+      renderBuilderCards();
+    }
     await loadBoostPlan();
     updateLastRefreshed();
   } catch (e) {
@@ -365,12 +388,16 @@ function getBoostFinishTimeForBuilder(builderNumber, currentUpgradeName) {
   return lastBoostFinish;
 }
 
+/**
+ * FIX #1: Removed the "container already has children, skipping" guard.
+ * Callers are responsible for clearing the container before calling this.
+ * This prevents the bug where renderBuilderCards() silently no-ops after refreshDashboard.
+ */
 function renderBuilderCards() {
   console.log("[Render] renderBuilderCards called");
   if (!currentWorkData) { console.log("[Render] No currentWorkData"); return; }
   const container = document.getElementById("builders-container");
   if (!container) { console.log("[Render] No container found"); return; }
-  if (container.children.length > 0) { console.log("[Render] Container already has children, skipping"); return; }
   console.log("[Render] Proceeding to render cards");
 
   let earliestFinish = Infinity;
@@ -701,7 +728,6 @@ function setupDragAndDrop(detailsWrapper) {
   let draggedItem = null;
   let isDragging = false;
 
-  // Store original order from data-index attributes
   const getOriginalOrder = () => Array.from(upgradeList.querySelectorAll('.upgrade-item'))
     .map(el => el.dataset.index)
     .sort((a, b) => parseInt(a) - parseInt(b))
@@ -726,7 +752,6 @@ function setupDragAndDrop(detailsWrapper) {
       after ? upgradeList.insertBefore(draggedItem, after) : upgradeList.appendChild(draggedItem);
     });
 
-    // Touch support via drag handles
     item.querySelectorAll('.drag-handle').forEach(h => {
       h?.addEventListener('touchstart', e => {
         e.preventDefault();
@@ -772,8 +797,6 @@ function setupDragAndDrop(detailsWrapper) {
   saveBtn?.addEventListener('click', async () => {
     const builderNum = detailsWrapper.dataset.builder;
     const currentItems = upgradeList.querySelectorAll('.upgrade-item');
-
-    // Build the new order as a comma-separated list of original data-index values
     const newOrder = Array.from(currentItems).map(i => i.dataset.index).join(',');
 
     console.log("[SaveOrder] builder:", builderNum, "order:", newOrder, "username:", window.COC_USERNAME);
@@ -990,18 +1013,42 @@ async function checkForFinishedUpgrades() {
   } catch (e) { console.error("Failed to check finished upgrades:", e); }
 }
 
+/**
+ * FIX #2: Robust auto-confirm for single builder.
+ * Uses parseScheduledStart() instead of fragile string concatenation.
+ * Shows modal as fallback if date parsing fails.
+ */
 async function autoConfirmSingleBuilder(builder, builderData) {
   try {
+    const scheduledStart = builderData.nowActive.scheduledStart;
+    const parsedStart = parseScheduledStart(scheduledStart);
+
+    if (!parsedStart) {
+      console.warn("[AutoConfirm] Could not parse scheduledStart:", scheduledStart, "— showing modal instead");
+      finishedUpgradesData = [builderData];
+      showUpgradeConfirmationModal([builderData]);
+      return;
+    }
+
     const params = new URLSearchParams({
       action: 'confirm_upgrade_start',
       username: window.COC_USERNAME,
       builder,
       upgradeName: builderData.nowActive.upgradeName,
-      startTime: new Date(builderData.nowActive.scheduledStart + " 2026").toISOString(),
+      startTime: parsedStart.toISOString(),
       confirmAction: 'confirm',
       differentUpgrade: ''
     });
-    await fetch(API_BASE + '?' + params.toString());
+    const res = await fetch(API_BASE + '?' + params.toString());
+    const data = await res.json();
+
+    if (data.error) {
+      console.warn("[AutoConfirm] API error:", data.error, "— showing modal");
+      finishedUpgradesData = [builderData];
+      showUpgradeConfirmationModal([builderData]);
+      return;
+    }
+
     const container = document.getElementById("builders-container");
     if (container) container.innerHTML = "";
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -1440,9 +1487,12 @@ function wirePausedBuilderButtons() {
   });
 }
 
+/**
+ * FIX #2b: scheduledToDatetimeLocal now uses parseScheduledStart for robustness
+ */
 function scheduledToDatetimeLocal(s) {
-  const d = new Date(s + " 2026");
-  return isNaN(d) ? toDatetimeLocal(new Date()) : toDatetimeLocal(d);
+  const d = parseScheduledStart(s);
+  return d ? toDatetimeLocal(d) : toDatetimeLocal(new Date());
 }
 
 function toDatetimeLocal(d) {
