@@ -1020,6 +1020,92 @@ button:disabled {
 }
 
 /* ==================================================
+   SKELETON LOADING CARDS
+   ================================================== */
+.builder-card.skeleton {
+  pointer-events: none;
+  border-left-color: #2a2a35;
+  background: #19191ec7;
+  overflow: hidden;
+}
+
+.builder-card.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,0.04) 50%,
+    transparent 100%
+  );
+  animation: skeleton-shimmer 1.4s infinite;
+  background-size: 200% 100%;
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.skeleton-block {
+  background: #2a2a35;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.skeleton-builder-text {
+  position: absolute;
+  left: 46%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-character {
+  position: absolute;
+  left: 100px;
+  bottom: 10px;
+  width: 80px;
+  height: 100px;
+  background: #2a2a35;
+  border-radius: 8px;
+}
+
+.skeleton-icon {
+  position: absolute;
+  left: 33%;
+  top: 60%;
+  transform: translateY(-50%);
+  width: 70px;
+  height: 70px;
+  background: #2a2a35;
+  border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+  .skeleton-character {
+    left: 20px;
+    bottom: 40px;
+    width: 80px;
+    height: 120px;
+  }
+  .skeleton-icon {
+    left: 28%;
+    top: 70%;
+    width: 55px;
+    height: 55px;
+  }
+  .skeleton-builder-text {
+    left: 42%;
+    width: 54%;
+  }
+}
+
+/* ==================================================
    UPGRADE CONFIRMATION MODAL SYSTEM
    ================================================== */
 .upgrade-confirmation-modal-overlay {
