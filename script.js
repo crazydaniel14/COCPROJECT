@@ -378,23 +378,39 @@ function formatBoostTime(timeStr) {
   } catch (e) { return ""; }
 }
 
-function getBoostFinishTimeForBuilder(builderNumber, currentUpgradeName) {
+function getBoostFinishTimeForBuilder(builderNumber) {
   if (!boostPlanData || boostPlanData.length === 0) return null;
-  let lastBoostFinish = null;
+  // Return the FIRST (soonest/today's) boost for this builder, not the last
   for (const day of boostPlanData) {
     if (!day.hasBoost) continue;
     const boostBuilderNum = day.builder.match(/(\d+)/)?.[1];
     if (boostBuilderNum !== builderNumber) continue;
-    lastBoostFinish = day.newFinishTime;
+    return day.newFinishTime; // stop at first match
   }
-  return lastBoostFinish;
+  return null;
 }
 
-/**
- * FIX #1: Removed the "container already has children, skipping" guard.
- * Callers are responsible for clearing the container before calling this.
- * This prevents the bug where renderBuilderCards() silently no-ops after refreshDashboard.
- */
+function renderSkeletonCards(count = 6) {
+  const container = document.getElementById("builders-container");
+  if (!container) return;
+  container.innerHTML = "";
+  for (let i = 0; i < count; i++) {
+    const card = document.createElement("div");
+    card.className = "builder-card skeleton";
+    card.innerHTML = `
+      <div class="skeleton-character"></div>
+      <div class="skeleton-icon"></div>
+      <div class="skeleton-builder-text">
+        <div class="skeleton-block" style="width:70%;height:14px;"></div>
+        <div class="skeleton-block" style="width:90%;height:13px;"></div>
+        <div class="skeleton-block" style="width:60%;height:22px;margin-top:4px;"></div>
+        <div class="skeleton-block" style="width:80%;height:11px;"></div>
+        <div class="skeleton-block" style="width:75%;height:11px;"></div>
+      </div>`;
+    container.appendChild(card);
+  }
+}
+
 function renderBuilderCards() {
   console.log("[Render] renderBuilderCards called");
   if (!currentWorkData) { console.log("[Render] No currentWorkData"); return; }
@@ -1546,6 +1562,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 async function bootApp() {
+  renderSkeletonCards(6);
   await refreshDashboard();
   startAutoRefresh();
   startLiveCountdown();
