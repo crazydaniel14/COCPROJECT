@@ -1,4 +1,4 @@
-console.log("Loaded script.js – v4-fixed");
+console.log("Loaded script.js – v6-all-fixes");
 
 /* =========================
    CONFIG
@@ -231,6 +231,8 @@ async function refreshDashboard() {
     }
     await loadBoostPlan();
     updateLastRefreshed();
+    // Check for finished upgrades on each refresh (has 2-min cooldown built in)
+    checkForFinishedUpgrades();
   } catch (e) {
     console.error("Refresh failed", e);
   } finally {
@@ -520,6 +522,7 @@ async function updateCardDuration(builderName, newMinutes, newDurationHr, durati
     const data = await res.json();
     if (data.error) { alert('Failed to update: ' + data.error); durationEl.textContent = originalText; return; }
     durationEl.textContent = '✓ Saved!';
+    suppressFinishedCheckFor(60 * 1000);
     setTimeout(async () => {
       const container = document.getElementById("builders-container");
       container.innerHTML = "";
@@ -870,13 +873,25 @@ function wireApprenticeBoost() {
     badge.parentElement.appendChild(spinner);
 
     try {
-      await fetch(APPLY_TODAYS_BOOST_URL());
+      const res  = await fetch(APPLY_TODAYS_BOOST_URL());
+      const data = await res.json();
+
       spinner.remove();
       badge.style.opacity = "1";
       badge.style.filter  = "none";
-      badge.src = "Images/Badge/Builder Apprentice applied.png";
+
+      if (data.error) { alert("Boost failed: " + data.error); return; }
+
+      // Lock status BEFORE any reloads — loadTodaysBoost reads from sheet which
+      // may still show old status due to GAS execution lag (A11 not yet written)
       if (todaysBoostInfo) todaysBoostInfo.status = "APPLIED";
+      else todaysBoostInfo = { status: "APPLIED", builder: builderNumber };
+
+      badge.src = "Images/Badge/Builder Apprentice applied.png";
+
+      // Reload work data for updated durations, but NOT loadTodaysBoost
       await loadCurrentWork();
+
       if (card && currentWorkData && builderNumber) {
         const bd = currentWorkData.find(r => r[0]?.toString().includes(builderNumber));
         if (bd) {
@@ -886,7 +901,8 @@ function wireApprenticeBoost() {
           if (ft) ft.textContent = "Finishes: " + formatFinishTime(bd[2]);
         }
       }
-      await Promise.all([loadTodaysBoost(), loadBoostPlan()]);
+
+      await loadBoostPlan(); // OK — only reads plan rows, not status
       updateLastRefreshed();
       const container = document.getElementById("builders-container");
       container.innerHTML = "";
@@ -1000,9 +1016,56 @@ function startAutoRefresh() {
 }
 
 /* =========================
+   LIVE COUNTDOWN
+   Decrements displayed durations every 60s without hitting the API.
+   Reads the finish time from currentWorkData and recalculates time left.
+   ========================= */
+function startLiveCountdown() {
+  setInterval(() => {
+    if (!currentWorkData) return;
+    const now = Date.now();
+    document.querySelectorAll(".builder-time-left[data-builder]").forEach(el => {
+      const builderName = el.dataset.builder; // e.g. "Builder_1"
+      const builderNum  = builderName.match(/(\d+)/)?.[1];
+      if (!builderNum) return;
+
+      // Find the matching row in currentWorkData (column 0 has builder name, col 2 has finish time)
+      const row = currentWorkData.find(r => r[0]?.toString().includes(`_${builderNum}`) || r[0]?.toString().endsWith(builderNum));
+      if (!row) return;
+
+      const finishMs = new Date(row[2]).getTime();
+      if (isNaN(finishMs)) return;
+
+      const remainingMs = finishMs - now;
+      if (remainingMs <= 0) {
+        el.textContent = "0 d 0 hr 0 min";
+        return;
+      }
+
+      const totalMins  = Math.floor(remainingMs / 60000);
+      const days  = Math.floor(totalMins / (24 * 60));
+      const hours = Math.floor((totalMins % (24 * 60)) / 60);
+      const mins  = totalMins % 60;
+      el.textContent = `${days} d ${hours} hr ${mins} min`;
+    });
+  }, 60 * 1000); // every 60 seconds
+}
+
+/* =========================
    UPGRADE CONFIRMATION MODAL
    ========================= */
-async function checkForFinishedUpgrades() {
+let lastFinishedCheck = 0;
+let suppressFinishedCheck = false;
+
+async function checkForFinishedUpgrades(force = false) {
+  // Suppress for 30s after a duration edit to avoid re-showing the modal
+  // for upgrades that were just confirmed or whose timing just changed
+  if (suppressFinishedCheck && !force) return;
+  // Cooldown: don't re-check more than once every 2 minutes unless forced
+  const now = Date.now();
+  if (!force && now - lastFinishedCheck < 2 * 60 * 1000) return;
+  lastFinishedCheck = now;
+
   try {
     const res  = await fetch(endpoint("check_finished_upgrades"));
     const data = await res.json();
@@ -1013,66 +1076,25 @@ async function checkForFinishedUpgrades() {
   } catch (e) { console.error("Failed to check finished upgrades:", e); }
 }
 
-/**
- * FIX #2: Robust auto-confirm for single builder.
- * Uses parseScheduledStart() instead of fragile string concatenation.
- * Shows modal as fallback if date parsing fails.
- */
-async function autoConfirmSingleBuilder(builder, builderData) {
-  try {
-    const scheduledStart = builderData.nowActive.scheduledStart;
-    const parsedStart = parseScheduledStart(scheduledStart);
-
-    if (!parsedStart) {
-      console.warn("[AutoConfirm] Could not parse scheduledStart:", scheduledStart, "— showing modal instead");
-      finishedUpgradesData = [builderData];
-      showUpgradeConfirmationModal([builderData]);
-      return;
-    }
-
-    const params = new URLSearchParams({
-      action: 'confirm_upgrade_start',
-      username: window.COC_USERNAME,
-      builder,
-      upgradeName: builderData.nowActive.upgradeName,
-      startTime: parsedStart.toISOString(),
-      confirmAction: 'confirm',
-      differentUpgrade: ''
-    });
-    const res = await fetch(API_BASE + '?' + params.toString());
-    const data = await res.json();
-
-    if (data.error) {
-      console.warn("[AutoConfirm] API error:", data.error, "— showing modal");
-      finishedUpgradesData = [builderData];
-      showUpgradeConfirmationModal([builderData]);
-      return;
-    }
-
-    const container = document.getElementById("builders-container");
-    if (container) container.innerHTML = "";
-    await new Promise(resolve => setTimeout(resolve, 500));
-    refreshDashboard();
-  } catch (err) {
-    console.error('Auto-confirm failed:', err);
-    finishedUpgradesData = [builderData];
-    showUpgradeConfirmationModal([builderData]);
-  }
+function suppressFinishedCheckFor(ms) {
+  suppressFinishedCheck = true;
+  setTimeout(() => { suppressFinishedCheck = false; }, ms);
 }
+
+// autoConfirmSingleBuilder is intentionally removed.
+// All confirmations now go through the modal regardless of builder count.
 
 function showUpgradeConfirmationModal(upgrades) {
   reviewedTabs = new Set();
   document.querySelector('.upgrade-confirmation-modal-overlay')?.remove();
-  if (upgrades.length === 1) {
-    autoConfirmSingleBuilder(upgrades[0].builder, upgrades[0]);
-    return;
-  }
+  // Always show the modal — never auto-confirm, even for a single builder.
+  // The user must explicitly confirm start time or pause.
   const modal = document.createElement('div');
   modal.className = 'upgrade-confirmation-modal-overlay';
   modal.innerHTML = `
     <div class="upgrade-confirmation-modal">
       <div class="ucm-header">
-        <h3>⚠️ New Upgrades Started</h3>
+        <h3>⚠️ ${upgrades.length === 1 ? 'Upgrade Finished' : 'New Upgrades Started'}</h3>
         <span class="ucm-review-status">0 / ${upgrades.length} reviewed</span>
       </div>
       <div class="ucm-tabs">
@@ -1086,7 +1108,7 @@ function showUpgradeConfirmationModal(upgrades) {
         ${upgrades.map((b,i) => buildTabContent(b, i===0)).join('')}
       </div>
       <div class="ucm-footer">
-        <button class="ucm-confirm-all" disabled>Confirm All &nbsp;·&nbsp; Review all tabs first</button>
+        <button class="ucm-confirm-all" disabled>${upgrades.length === 1 ? 'Done — review above first' : 'Confirm All &nbsp;·&nbsp; Review all tabs first'}</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
@@ -1322,7 +1344,8 @@ function markTabReviewed(builder, modal, upgrades) {
   if (s) s.textContent = `${reviewedTabs.size} / ${upgrades.length} reviewed`;
   if (reviewedTabs.size === upgrades.length) {
     const ca = modal.querySelector('.ucm-confirm-all');
-    ca.disabled = false; ca.textContent = 'Confirm All ✓';
+    ca.disabled = false;
+    ca.textContent = upgrades.length === 1 ? 'Done ✓' : 'Confirm All ✓';
   }
 }
 
@@ -1525,6 +1548,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 async function bootApp() {
   await refreshDashboard();
   startAutoRefresh();
+  startLiveCountdown();
   wireApprenticeBoost();
   wireBoostSimulation();
   wireBoostFocusNavigation();
