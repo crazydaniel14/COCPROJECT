@@ -91,8 +91,8 @@
     .gantt-bar:hover { filter:brightness(1.2); transform:scaleY(1.06); z-index:5; }
 
     .bar-inner { display:flex; align-items:center; gap:5px; overflow:hidden; pointer-events:none; width:100%; }
-    .bar-icon  { width:22px; height:22px; object-fit:contain; border-radius:4px; flex-shrink:0; background:rgba(0,0,0,.25); padding:2px; }
-    .bar-text  { font-size:10px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:rgba(0,0,0,.85); }
+    .bar-icon  { width:26px; height:26px; object-fit:contain; border-radius:4px; flex-shrink:0; background:rgba(0,0,0,.25); padding:2px; }
+    .bar-text  { font-size:11px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:rgba(0,0,0,.85); }
 
     .gantt-boost-marker {
       position:absolute; top:2px;
@@ -377,31 +377,59 @@ async function fetchCurrentWork() {
 }
 
 /* ── STITCH: chain upgrades end-to-end with no gaps ── */
+function normalizeUpgradeName(n) {
+  return (n || '').trim().toLowerCase().replace(/\s+/g,' ');
+}
+
 function stitchTimelines() {
+  console.log('[Gantt] currentWork:', JSON.stringify(currentWork));
+
   for (const b of ganttData) {
     const cw = currentWork[b.builderNum];
-    if (!cw || !cw.finishTime) continue;
+    console.log(`[Gantt] Builder ${b.builderNum} cw:`, cw, '| first queue:', b.upgrades[0]?.upgrade);
 
-    // cursor starts at the real current finish time from current_work_table
-    let cursor = new Date(cw.finishTime);
+    if (!cw || !cw.finishTime) {
+      // No current work — fall back to raw API dates
+      for (const upg of b.upgrades) {
+        upg._startDate = parseDate(upg.start);
+        upg._endDate   = parseDate(upg.end);
+        upg._isCurrent = false;
+      }
+      continue;
+    }
 
-    for (let i = 0; i < b.upgrades.length; i++) {
+    const now   = new Date();
+    const cwEnd = new Date(cw.finishTime);
+
+    // Determine whether the active upgrade is already the first item in builder_details queue
+    let queueStartIdx = 0;
+    if (b.upgrades.length > 0 &&
+        normalizeUpgradeName(b.upgrades[0].upgrade) === normalizeUpgradeName(cw.upgrade)) {
+      // First queued item IS the active upgrade
+      b.upgrades[0]._startDate = now;
+      b.upgrades[0]._endDate   = cwEnd;
+      b.upgrades[0]._isCurrent = true;
+      queueStartIdx = 1;
+      console.log(`[Gantt] B${b.builderNum}: first item IS current upgrade`);
+    } else {
+      // Active upgrade is not in the queue — inject it as a synthetic bar
+      b.upgrades.unshift({
+        upgrade: cw.upgrade, duration: '', durationMinutes: 0,
+        _startDate: now, _endDate: cwEnd, _isCurrent: true, _synthetic: true
+      });
+      queueStartIdx = 1;
+      console.log(`[Gantt] B${b.builderNum}: injected synthetic current upgrade "${cw.upgrade}"`);
+    }
+
+    // Chain the rest of the queue immediately after the active upgrade ends
+    let cursor = cwEnd;
+    for (let i = queueStartIdx; i < b.upgrades.length; i++) {
       const upg  = b.upgrades[i];
       const mins = upg.durationMinutes || 0;
-
-      // If this is the first queued upgrade and it matches the current active one,
-      // its start = now (already in progress), end = finishTime from current_work
-      if (i === 0 && cw.upgrade === upg.upgrade) {
-        upg._startDate = new Date(); // in progress right now
-        upg._endDate   = new Date(cw.finishTime);
-        upg._isCurrent = true;
-        cursor = upg._endDate;
-      } else {
-        upg._startDate = new Date(cursor);
-        upg._endDate   = new Date(cursor.getTime() + mins * 60000);
-        upg._isCurrent = false;
-        cursor = upg._endDate;
-      }
+      upg._startDate = new Date(cursor);
+      upg._endDate   = new Date(cursor.getTime() + mins * 60000);
+      upg._isCurrent = false;
+      cursor = upg._endDate;
     }
   }
 }
@@ -470,11 +498,11 @@ function renderDesktop() {
   const container = document.getElementById('ganttDesktop');
   container.innerHTML = '';
 
-  const PX  = 72;   // px per day
+  const PX  = 120;  // px per day — wider for less dead space
   const LW  = 120;  // label width
-  const RH  = 64;   // row height
-  const BT  = 11;   // bar top offset
-  const BH  = 40;   // bar height
+  const RH  = 80;   // row height
+  const BT  = 14;   // bar top offset
+  const BH  = 50;   // bar height
 
   const totalDays = Math.ceil(daysBetween(todayStart, rangeEnd)) + 2;
   const days = Array.from({length:totalDays}, (_,i) => { const d=new Date(todayStart); d.setDate(d.getDate()+i); return d; });
@@ -493,8 +521,10 @@ function renderDesktop() {
   header.appendChild(corner);
 
   days.forEach((d,i) => {
+    const isMonthStart = i > 0 && d.getDate() === 1;
     const c = document.createElement('div');
-    c.style.cssText = `width:${PX}px; flex-shrink:0; padding:9px 2px; font-size:${i===0?11:9}px; font-weight:${i===0?800:600}; color:${i===0?'var(--gold)':'var(--text-dim)'}; text-align:center; white-space:nowrap; border-left:1px solid var(--border);`;
+    const borderL = isMonthStart ? '2px solid rgba(255,255,255,0.18)' : '1px solid var(--border)';
+    c.style.cssText = `width:${PX}px; flex-shrink:0; padding:9px 2px; font-size:${i===0?11:9}px; font-weight:${i===0||isMonthStart?800:600}; color:${i===0?'var(--gold)':isMonthStart?'rgba(255,255,255,0.5)':'var(--text-dim)'}; text-align:center; white-space:nowrap; border-left:${borderL};`;
     c.textContent = i===0 ? 'TODAY' : fmtDay(d);
     header.appendChild(c);
   });
@@ -518,10 +548,23 @@ function renderDesktop() {
     const cell = document.createElement('div');
     cell.style.cssText = `position:relative; flex:1; border-bottom:1px solid var(--border); height:${RH}px; overflow:visible;`;
 
-    /* Day tick lines */
-    days.forEach((_,i) => {
+    /* Day tick lines + month boundaries */
+    days.forEach((d,i) => {
+      const isToday    = i === 0;
+      const isMonthStart = i > 0 && d.getDate() === 1;
       const t = document.createElement('div');
-      t.style.cssText = `position:absolute; top:0; bottom:0; left:${i*PX}px; width:1px; background:${i===0?'rgba(245,208,76,0.3)':'var(--border)'};`;
+      if (isMonthStart) {
+        t.style.cssText = `position:absolute; top:0; bottom:0; left:${i*PX}px; width:2px; background:rgba(255,255,255,0.18); z-index:1;`;
+        // Month label at top of first row only
+        if (bi === 0) {
+          const ml = document.createElement('div');
+          ml.style.cssText = `position:absolute; top:0; left:${i*PX+4}px; font-size:9px; font-weight:800; color:rgba(255,255,255,0.35); letter-spacing:1px; text-transform:uppercase; pointer-events:none;`;
+          ml.textContent = d.toLocaleDateString('en-US',{month:'short'}).toUpperCase();
+          cell.appendChild(ml);
+        }
+      } else {
+        t.style.cssText = `position:absolute; top:0; bottom:0; left:${i*PX}px; width:1px; background:${isToday?'rgba(245,208,76,0.3)':'var(--border)'};`;
+      }
       cell.appendChild(t);
     });
 
@@ -643,10 +686,20 @@ function renderMobile() {
     colBody.className = 'mobile-col-body';
     colBody.style.height = bodyH + 'px';
 
-    /* Background day rows */
-    days.forEach((_,i) => {
+    /* Background day rows + month boundaries */
+    days.forEach((d,i) => {
+      const isMonthStart = i > 0 && d.getDate() === 1;
       const dr = document.createElement('div');
-      dr.style.cssText = `position:absolute; left:0; right:0; top:${i*PX}px; height:${PX}px; border-bottom:1px solid ${i===0?'rgba(245,208,76,0.35)':'var(--border)'};`;
+      const borderColor = i===0 ? 'rgba(245,208,76,0.35)' : isMonthStart ? 'rgba(255,255,255,0.2)' : 'var(--border)';
+      const borderWidth = isMonthStart ? '2px' : '1px';
+      dr.style.cssText = `position:absolute; left:0; right:0; top:${i*PX}px; height:${PX}px; border-top:${borderWidth} solid ${borderColor};`;
+      if (isMonthStart && n === 1) {
+        // Month label on time axis col for first builder column
+        const ml = document.createElement('div');
+        ml.style.cssText = `position:absolute; left:0; right:0; top:${i*PX}px; font-size:8px; font-weight:800; color:rgba(255,255,255,0.3); padding:2px 3px; letter-spacing:0.5px; text-transform:uppercase;`;
+        ml.textContent = d.toLocaleDateString('en-US',{month:'short'}).toUpperCase();
+        colBody.appendChild(ml);
+      }
       colBody.appendChild(dr);
     });
 
