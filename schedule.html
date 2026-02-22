@@ -164,25 +164,31 @@
     .mobile-col-header span { font-size:10px; font-weight:700; white-space:nowrap; }
     .mobile-col-body { position:relative; }
 
-    /* Mobile bar */
+    /* Mobile bar — NO overflow:hidden (kills sticky on children) */
     .mobile-bar {
       position:absolute; left:3px; right:3px; border-radius:6px;
       border:1.5px solid rgba(255,255,255,0.2);
-      cursor:pointer; min-height:4px; overflow:hidden;
+      cursor:pointer; min-height:4px;
     }
     .mobile-bar:active { filter:brightness(1.2); }
 
-    /* Sticky label — follows user scroll inside the bar */
-    .mobile-bar-sticky {
+    /* ── STICKY LABEL APPROACH ──
+       position:sticky only works when the scrolling ancestor is the
+       .mobile-columns-wrapper (horizontal scroll) or the page body (vertical scroll).
+       The bar is absolute inside colBody which is NOT a scroll container,
+       so sticky on a child of bar DOES work relative to the page scroll. */
+    .mobile-bar-label {
       position:sticky;
+      top:115px;          /* below header(~51) + toggles(~49) + a little gap */
       padding:3px 4px;
       display:flex; align-items:flex-start; gap:3px;
-      pointer-events:none; z-index:2;
+      pointer-events:none; z-index:3;
+      max-height:60px;    /* prevent label overflow into next bar */
     }
     .mobile-bar-icon { width:16px; height:16px; object-fit:contain; border-radius:3px; background:rgba(0,0,0,.2); padding:1px; flex-shrink:0; }
     .mobile-bar-name { font-size:8px; font-weight:700; color:rgba(0,0,0,.85); line-height:1.2; word-break:break-word; }
 
-    /* Always-visible end time pinned at bottom of bar */
+    /* End time pinned at bottom of bar */
     .mobile-bar-end {
       position:absolute; bottom:2px; left:3px; right:3px;
       font-size:7px; font-weight:700; color:rgba(0,0,0,.65);
@@ -370,7 +376,11 @@ async function fetchCurrentWork() {
       const row = data[i];
       const num = row[0]?.toString().match(/(\d+)/)?.[1];
       if (!num) continue;
-      map[parseInt(num)] = { upgrade: row[1], finishTime: parseDate(row[2]) };
+      // row: [builderName, upgradeName, finishTime, timeLeft, nextUpgrade]
+      const finishTime = parseDate(row[2]);
+      // Parse "3 d 14 hr 22 min" → ms so stitchTimelines can derive bar start
+      const timeLeftMs = parseTimeLeftMs(row[3] || '');
+      map[parseInt(num)] = { upgrade: row[1], finishTime, timeLeftMs };
     }
     return map;
   } catch(e) { return {}; }
@@ -406,13 +416,19 @@ function stitchTimelines() {
     if (b.upgrades.length > 0 &&
         normalizeUpgradeName(b.upgrades[0].upgrade) === normalizeUpgradeName(cw.upgrade)) {
       // First queued item IS the active upgrade
-      b.upgrades[0]._startDate = now;
+      // Derive actual start = finishTime − totalDuration (from builder_details durationMinutes)
+      const mins0 = b.upgrades[0].durationMinutes || 0;
+      b.upgrades[0]._startDate = mins0 > 0
+        ? new Date(cwEnd.getTime() - mins0 * 60000)
+        : new Date(cwEnd.getTime() - (cw.timeLeftMs || 0));  // fallback
       b.upgrades[0]._endDate   = cwEnd;
       b.upgrades[0]._isCurrent = true;
       queueStartIdx = 1;
       console.log(`[Gantt] B${b.builderNum}: first item IS current upgrade`);
     } else {
       // Active upgrade is not in the queue — inject it as a synthetic bar
+      // Synthetic active bar: use now as visual start (upgrade in progress),
+      // deriving exact start is not critical — what matters is finishTime (end)
       b.upgrades.unshift({
         upgrade: cw.upgrade, duration: '', durationMinutes: 0,
         _startDate: now, _endDate: cwEnd, _isCurrent: true, _synthetic: true
@@ -447,6 +463,14 @@ function parseDate(raw) {
 }
 
 function daysBetween(a, b) { return (b - a) / 86400000; }
+
+function parseTimeLeftMs(s) {
+  // Parses "3 d 14 hr 22 min" → milliseconds
+  const dm = (s.match(/(\d+)\s*d/) || [0,0])[1];
+  const hm = (s.match(/(\d+)\s*hr/) || [0,0])[1];
+  const mm = (s.match(/(\d+)\s*min/) || [0,0])[1];
+  return (parseInt(dm)*1440 + parseInt(hm)*60 + parseInt(mm)) * 60000;
+}
 
 function fmtDate(d) {
   if (!d || isNaN(d)) return '—';
@@ -723,14 +747,15 @@ function renderMobile() {
         bar.style.cssText = `top:${topPx}px; height:${hPx}px; background:${color};`;
         if (upg._isCurrent) bar.style.borderColor = 'rgba(255,255,255,0.5)';
 
-        /* Sticky name label — top sticks so text is always visible while scrolling */
-        const sticky = document.createElement('div');
-        sticky.className = 'mobile-bar-sticky';
-        sticky.style.top = STICKY_TOP + 'px'; // stays visible as user scrolls down
-        sticky.innerHTML = `
+        /* Sticky label — position:sticky relative to page scroll,
+           visible as long as bar is on screen. CSS top=115px keeps it
+           below both fixed headers. */
+        const label = document.createElement('div');
+        label.className = 'mobile-bar-label';
+        label.innerHTML = `
           <img class="mobile-bar-icon" src="${getUpgradeImage(upg.upgrade)}" onerror="this.src='Images/Upgrades/PH.png'" alt="">
           <span class="mobile-bar-name">${upg.upgrade||''}</span>`;
-        bar.appendChild(sticky);
+        bar.appendChild(label);
 
         /* End time always visible at the bottom of the bar */
         const endLbl = document.createElement('div');
