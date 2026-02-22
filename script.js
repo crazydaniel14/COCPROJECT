@@ -242,7 +242,6 @@ async function refreshDashboard() {
       renderBuilderCards();
     }
     updateLastRefreshed();
-    checkForFinishedUpgrades();
   } catch (e) {
     console.error("Refresh failed", e);
   } finally {
@@ -1556,7 +1555,7 @@ async function bootApp() {
   wireBoostFocusNavigation();
   wireBuilderCardClicks();
   wireImageButtons();
-  await checkForFinishedUpgrades();
+  setTimeout(() => checkForFinishedUpgrades(true), 1500);
 }
 
 function switchUser() {
