@@ -1609,7 +1609,7 @@ function showLoginScreen(onConfirm) {
       <input
         id="login-username-input"
         type="text"
-        placeholder="e.g. Daniel"
+        placeholder="username"
         autocomplete="username"
         autocapitalize="off"
         style="
