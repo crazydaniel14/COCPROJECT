@@ -10,6 +10,21 @@ function endpoint(action) {
   return `${API_BASE}?action=${action}&username=${window.COC_USERNAME}`;
 }
 
+/* =========================
+   USER PASSWORDS
+   Add passwords here for users that need protection.
+   Users NOT listed can log in with no password at all.
+
+   HOW TO SET A PASSWORD:
+   Remove the // from the example line and fill in the username and password.
+   Example:
+     "Daniel": "mypassword123",
+     "Player2": "abc456",
+   ========================= */
+const USER_PASSWORDS = {
+   "Daniel": "2304",
+};
+
 const REFRESH_ENDPOINT      = API_BASE + "?action=refresh_sheet";
 function TODAYS_BOOST_URL()       { return endpoint("todays_boost"); }
 function BOOST_PLAN_URL()         { return endpoint("boost_plan"); }
@@ -116,20 +131,13 @@ function updateLastRefreshed() {
   });
 }
 
-/**
- * FIX #2: Robust date parsing for scheduledStart strings like "Feb 19 3:00 PM"
- * Apps Script Utilities.formatDate produces "MMM dd h:mm a" format.
- * We parse it properly with current year, falling back gracefully.
- */
 function parseScheduledStart(scheduledStart) {
   if (!scheduledStart) return null;
-  // Try appending current year first, then next year
   const currentYear = new Date().getFullYear();
   for (const year of [currentYear, currentYear + 1]) {
     const d = new Date(`${scheduledStart} ${year}`);
     if (!isNaN(d.getTime())) return d;
   }
-  // Last resort: direct parse
   const d = new Date(scheduledStart);
   return isNaN(d.getTime()) ? null : d;
 }
@@ -222,12 +230,11 @@ async function refreshDashboard() {
   try {
     updateActiveStatusSmart();
     await fetch(REFRESH_ENDPOINT);
-    // Load ALL data in parallel — including boost plan — before rendering cards
     await Promise.all([
       loadCurrentWork(),
       loadTodaysBoost(),
       loadPausedBuilders(),
-      loadBoostPlan()          // ← now runs in parallel, cards render after
+      loadBoostPlan()
     ]);
     if (openBuilders.length === 0) {
       const container = document.getElementById("builders-container");
@@ -383,17 +390,12 @@ function formatBoostTime(timeStr) {
 
 function getBoostFinishTimeForBuilder(builderNumber) {
   if (!boostPlanData || boostPlanData.length === 0) return null;
-
-  // Collect ALL boost entries for this builder
   const matches = boostPlanData.filter(day => {
     if (!day.hasBoost) return false;
     const boostBuilderNum = day.builder.match(/(\d+)/)?.[1];
     return boostBuilderNum === builderNumber;
   });
-
   if (!matches.length) return null;
-
-  // Return the newFinishTime of the very LAST boost (furthest in the plan)
   return matches[matches.length - 1].newFinishTime;
 }
 
@@ -905,14 +907,11 @@ function wireApprenticeBoost() {
 
       if (data.error) { alert("Boost failed: " + data.error); return; }
 
-      // Lock status BEFORE any reloads — loadTodaysBoost reads from sheet which
-      // may still show old status due to GAS execution lag (A11 not yet written)
       if (todaysBoostInfo) todaysBoostInfo.status = "APPLIED";
       else todaysBoostInfo = { status: "APPLIED", builder: builderNumber };
 
       badge.src = "Images/Badge/Builder Apprentice applied.png";
 
-      // Reload work data for updated durations, but NOT loadTodaysBoost
       await loadCurrentWork();
 
       if (card && currentWorkData && builderNumber) {
@@ -925,7 +924,7 @@ function wireApprenticeBoost() {
         }
       }
 
-      await loadBoostPlan(); // OK — only reads plan rows, not status
+      await loadBoostPlan();
       updateLastRefreshed();
       const container = document.getElementById("builders-container");
       container.innerHTML = "";
@@ -1040,38 +1039,28 @@ function startAutoRefresh() {
 
 /* =========================
    LIVE COUNTDOWN
-   Decrements displayed durations every 60s without hitting the API.
-   Reads the finish time from currentWorkData and recalculates time left.
    ========================= */
 function startLiveCountdown() {
   setInterval(() => {
     if (!currentWorkData) return;
     const now = Date.now();
     document.querySelectorAll(".builder-time-left[data-builder]").forEach(el => {
-      const builderName = el.dataset.builder; // e.g. "Builder_1"
+      const builderName = el.dataset.builder;
       const builderNum  = builderName.match(/(\d+)/)?.[1];
       if (!builderNum) return;
-
-      // Find the matching row in currentWorkData (column 0 has builder name, col 2 has finish time)
       const row = currentWorkData.find(r => r[0]?.toString().includes(`_${builderNum}`) || r[0]?.toString().endsWith(builderNum));
       if (!row) return;
-
       const finishMs = new Date(row[2]).getTime();
       if (isNaN(finishMs)) return;
-
       const remainingMs = finishMs - now;
-      if (remainingMs <= 0) {
-        el.textContent = "0 d 0 hr 0 min";
-        return;
-      }
-
+      if (remainingMs <= 0) { el.textContent = "0 d 0 hr 0 min"; return; }
       const totalMins  = Math.floor(remainingMs / 60000);
       const days  = Math.floor(totalMins / (24 * 60));
       const hours = Math.floor((totalMins % (24 * 60)) / 60);
       const mins  = totalMins % 60;
       el.textContent = `${days} d ${hours} hr ${mins} min`;
     });
-  }, 60 * 1000); // every 60 seconds
+  }, 60 * 1000);
 }
 
 /* =========================
@@ -1081,10 +1070,7 @@ let lastFinishedCheck = 0;
 let suppressFinishedCheck = false;
 
 async function checkForFinishedUpgrades(force = false) {
-  // Suppress for 30s after a duration edit to avoid re-showing the modal
-  // for upgrades that were just confirmed or whose timing just changed
   if (suppressFinishedCheck && !force) return;
-  // Cooldown: don't re-check more than once every 2 minutes unless forced
   const now = Date.now();
   if (!force && now - lastFinishedCheck < 2 * 60 * 1000) return;
   lastFinishedCheck = now;
@@ -1104,14 +1090,9 @@ function suppressFinishedCheckFor(ms) {
   setTimeout(() => { suppressFinishedCheck = false; }, ms);
 }
 
-// autoConfirmSingleBuilder is intentionally removed.
-// All confirmations now go through the modal regardless of builder count.
-
 function showUpgradeConfirmationModal(upgrades) {
   reviewedTabs = new Set();
   document.querySelector('.upgrade-confirmation-modal-overlay')?.remove();
-  // Always show the modal — never auto-confirm, even for a single builder.
-  // The user must explicitly confirm start time or pause.
   const modal = document.createElement('div');
   modal.className = 'upgrade-confirmation-modal-overlay';
   modal.innerHTML = `
@@ -1533,9 +1514,6 @@ function wirePausedBuilderButtons() {
   });
 }
 
-/**
- * FIX #2b: scheduledToDatetimeLocal now uses parseScheduledStart for robustness
- */
 function scheduledToDatetimeLocal(s) {
   const d = parseScheduledStart(s);
   return d ? toDatetimeLocal(d) : toDatetimeLocal(new Date());
@@ -1587,6 +1565,11 @@ function switchUser() {
   location.reload();
 }
 
+/* =========================
+   LOGIN SCREEN
+   — Shows password field only for usernames that have
+     a password set in USER_PASSWORDS above.
+   ========================= */
 function showLoginScreen(onConfirm) {
   const overlay = document.createElement("div");
   overlay.id = "login-overlay";
@@ -1597,6 +1580,14 @@ function showLoginScreen(onConfirm) {
     "padding:24px", "box-sizing:border-box"
   ].join(";");
 
+  const sharedInputStyle = `
+    width:100%; box-sizing:border-box;
+    padding:14px 16px; border-radius:10px;
+    border:2px solid #444; background:#2a2a3e;
+    color:#fff; font-size:1rem; outline:none;
+    font-family:sans-serif; transition:border-color 0.2s;
+  `;
+
   overlay.innerHTML = `
     <div style="
       background:#1e1e2e; border-radius:16px; padding:32px 28px;
@@ -1605,26 +1596,30 @@ function showLoginScreen(onConfirm) {
     ">
       <div style="font-size:48px; margin-bottom:8px">⚒️</div>
       <h2 style="margin:0 0 6px; font-size:1.3rem">Builder Tracker</h2>
-      <p style="margin:0 0 24px; color:#aaa; font-size:0.9rem">Enter your username to continue</p>
+      <p style="margin:0 0 24px; color:#aaa; font-size:0.9rem">Enter your credentials to continue</p>
       <input
         id="login-username-input"
         type="text"
-        placeholder="username"
+        placeholder="Username"
         autocomplete="username"
         autocapitalize="off"
-        style="
-          width:100%; box-sizing:border-box;
-          padding:14px 16px; border-radius:10px;
-          border:2px solid #444; background:#2a2a3e;
-          color:#fff; font-size:1rem; outline:none;
-          margin-bottom:16px;
-        "
+        style="${sharedInputStyle} margin-bottom:10px;"
       />
+      <div id="login-password-wrap" style="display:none; margin-bottom:10px;">
+        <input
+          id="login-password-input"
+          type="password"
+          placeholder="Password"
+          autocomplete="current-password"
+          style="${sharedInputStyle}"
+        />
+      </div>
       <button id="login-confirm-btn" style="
         width:100%; padding:14px; border-radius:10px;
         border:none; background:#5865f2; color:#fff;
         font-size:1rem; font-weight:600; cursor:pointer;
-        transition:background 0.2s;
+        transition:background 0.2s; font-family:sans-serif;
+        margin-top:6px;
       ">Continue →</button>
       <p id="login-error" style="color:#f87171; font-size:0.85rem; margin:12px 0 0; display:none">
         Please enter a username.
@@ -1634,23 +1629,53 @@ function showLoginScreen(onConfirm) {
 
   document.body.appendChild(overlay);
 
-  const input = overlay.querySelector("#login-username-input");
-  const btn   = overlay.querySelector("#login-confirm-btn");
-  const err   = overlay.querySelector("#login-error");
+  const usernameInput = overlay.querySelector("#login-username-input");
+  const passwordWrap  = overlay.querySelector("#login-password-wrap");
+  const passwordInput = overlay.querySelector("#login-password-input");
+  const btn           = overlay.querySelector("#login-confirm-btn");
+  const err           = overlay.querySelector("#login-error");
 
-  setTimeout(() => input.focus(), 100);
+  // Show password field only when username matches a protected account
+  usernameInput.addEventListener("blur", () => {
+    const val = usernameInput.value.replace(/[^a-zA-Z0-9_]/g, "").trim();
+    if (val && USER_PASSWORDS[val] !== undefined) {
+      passwordWrap.style.display = "block";
+      setTimeout(() => passwordInput.focus(), 50);
+    } else {
+      passwordWrap.style.display = "none";
+    }
+  });
 
-  function confirm() {
-    const val = input.value.replace(/[^a-zA-Z0-9_]/g, "").trim();
-    if (!val) { err.style.display = "block"; return; }
+  setTimeout(() => usernameInput.focus(), 100);
+
+  function doLogin() {
+    const val = usernameInput.value.replace(/[^a-zA-Z0-9_]/g, "").trim();
+    if (!val) {
+      err.textContent = "Please enter a username.";
+      err.style.display = "block";
+      return;
+    }
+    // Check password if this username has one configured
+    if (USER_PASSWORDS[val] !== undefined) {
+      passwordWrap.style.display = "block";
+      if (passwordInput.value !== USER_PASSWORDS[val]) {
+        err.textContent = "Incorrect password.";
+        err.style.display = "block";
+        passwordInput.style.borderColor = "#f87171";
+        setTimeout(() => { passwordInput.style.borderColor = "#444"; }, 2000);
+        passwordInput.focus();
+        return;
+      }
+    }
     err.style.display = "none";
     localStorage.setItem("coc_username", val);
     overlay.remove();
     onConfirm(val);
   }
 
-  btn.addEventListener("click", confirm);
-  input.addEventListener("keydown", e => { if (e.key === "Enter") confirm(); });
+  btn.addEventListener("click", doLogin);
+  usernameInput.addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+  passwordInput.addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
   btn.addEventListener("mouseenter", () => btn.style.background = "#4752c4");
   btn.addEventListener("mouseleave", () => btn.style.background = "#5865f2");
 }
