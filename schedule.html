@@ -53,22 +53,31 @@
       display:flex; gap:8px; padding:12px 20px;
       background:var(--surface); border-bottom:1px solid var(--border);
       overflow-x:auto; position:sticky; top:57px; z-index:190;
+      justify-content:center;  /* centered on desktop */
     }
     .builder-toggles::-webkit-scrollbar { display:none; }
     .toggle-btn {
-      display:flex; align-items:center; gap:6px; padding:7px 14px;
-      border-radius:20px; border:2px solid transparent;
+      display:flex; align-items:center; gap:7px; padding:8px 16px;
+      border-radius:10px; border:1.5px solid transparent;
       font-family:'Lexend',sans-serif; font-size:12px; font-weight:700;
-      cursor:pointer; transition:all .18s; white-space:nowrap; opacity:.35;
+      cursor:pointer; transition:all .2s; white-space:nowrap;
+      /* Inactive: dark surface, muted border */
+      background:var(--surface2); color:var(--text-dim);
+      border-color:var(--border);
+      opacity:0.55;
     }
-    .toggle-btn.active { opacity:1; }
-    .toggle-btn img { width:20px; height:20px; object-fit:contain; border-radius:4px; }
-    .toggle-btn[data-b="1"] { background:rgba(88,101,242,.15);  border-color:var(--b1); color:var(--b1); }
-    .toggle-btn[data-b="2"] { background:rgba(76,175,80,.15);   border-color:var(--b2); color:var(--b2); }
-    .toggle-btn[data-b="3"] { background:rgba(212,184,62,.15);  border-color:var(--b3); color:var(--b3); }
-    .toggle-btn[data-b="4"] { background:rgba(233,30,140,.15);  border-color:var(--b4); color:var(--b4); }
-    .toggle-btn[data-b="5"] { background:rgba(0,188,212,.15);   border-color:var(--b5); color:var(--b5); }
-    .toggle-btn[data-b="6"] { background:rgba(255,152,0,.15);   border-color:var(--b6); color:var(--b6); }
+    .toggle-btn.active {
+      opacity:1;
+      color:#fff;
+    }
+    .toggle-btn img { width:22px; height:22px; object-fit:contain; border-radius:4px; }
+    /* Active state colours — muted/dark tones, not neon */
+    .toggle-btn[data-b="1"].active { background:rgba(80,90,200,.25);  border-color:rgba(110,125,230,.6);  color:#a0aaff; }
+    .toggle-btn[data-b="2"].active { background:rgba(50,140,60,.25);   border-color:rgba(80,180,90,.6);    color:#7dd87f; }
+    .toggle-btn[data-b="3"].active { background:rgba(180,150,30,.22);  border-color:rgba(210,185,60,.55);  color:#d4be52; }
+    .toggle-btn[data-b="4"].active { background:rgba(180,20,100,.22);  border-color:rgba(215,50,130,.55);  color:#e070b0; }
+    .toggle-btn[data-b="5"].active { background:rgba(0,150,175,.22);   border-color:rgba(0,190,215,.55);   color:#40ccdd; }
+    .toggle-btn[data-b="6"].active { background:rgba(200,100,0,.22);   border-color:rgba(230,135,30,.55);  color:#e0a040; }
 
     /* ── LOADING ── */
     .state-msg {
@@ -82,17 +91,29 @@
     .gantt-wrap { overflow-x:auto; overflow-y:auto; padding-bottom:40px; }
 
     .gantt-bar {
-      position:absolute; border-radius:7px;
-      display:flex; align-items:center; padding:0 8px;
+      position:absolute; border-radius:8px;
+      display:flex; align-items:center; padding:0 10px;
       cursor:pointer; overflow:visible;
-      transition:filter .15s, transform .15s;
-      border:2px solid rgba(255,255,255,0.2);
+      transition:filter .15s, box-shadow .15s;
+      /* Thick white border — primary differentiator between adjacent bars */
+      border:3px solid rgba(255,255,255,0.55);
+      box-shadow: inset 0 -3px 0 rgba(0,0,0,0.25);
     }
-    .gantt-bar:hover { filter:brightness(1.2); transform:scaleY(1.06); z-index:5; }
+    .gantt-bar:hover { filter:brightness(1.18); box-shadow:0 0 0 2px rgba(255,255,255,0.8), inset 0 -3px 0 rgba(0,0,0,0.25); z-index:5; }
 
-    .bar-inner { display:flex; align-items:center; gap:5px; overflow:hidden; pointer-events:none; width:100%; }
-    .bar-icon  { width:26px; height:26px; object-fit:contain; border-radius:4px; flex-shrink:0; background:rgba(0,0,0,.25); padding:2px; }
-    .bar-text  { font-size:11px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:rgba(0,0,0,.85); }
+    /* Sticky label — sticks to left edge as you scroll right */
+    .bar-inner {
+      display:flex; align-items:center; gap:6px;
+      overflow:visible; pointer-events:none; width:100%;
+      position:sticky; left:130px; /* label width + 10px */
+    }
+    .bar-icon  { width:30px; height:30px; object-fit:contain; border-radius:5px; flex-shrink:0; background:rgba(0,0,0,.3); padding:3px; }
+    .bar-text  {
+      font-size:12px; font-weight:800; white-space:nowrap;
+      overflow:hidden; text-overflow:ellipsis;
+      color:#fff;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+    }
 
     .gantt-boost-marker {
       position:absolute; top:2px;
@@ -131,7 +152,7 @@
       .gantt-header { padding:12px 14px; }
       .gantt-title  { font-size:15px; }
       .back-btn, .refresh-btn { padding:7px 11px; font-size:12px; }
-      .builder-toggles { padding:10px 14px; top:51px; }
+      .builder-toggles { padding:10px 14px; top:51px; justify-content:flex-start; }
       .toggle-btn { padding:6px 11px; font-size:11px; }
     }
     @media (min-width:769px) { .gantt-mobile { display:none; } }
@@ -179,19 +200,27 @@
        so sticky on a child of bar DOES work relative to the page scroll. */
     .mobile-bar-label {
       position:sticky;
-      top:115px;          /* below header(~51) + toggles(~49) + a little gap */
-      padding:3px 4px;
-      display:flex; align-items:flex-start; gap:3px;
+      top:115px;
+      padding:4px 5px;
+      display:flex; align-items:flex-start; gap:4px;
       pointer-events:none; z-index:3;
-      max-height:60px;    /* prevent label overflow into next bar */
     }
-    .mobile-bar-icon { width:16px; height:16px; object-fit:contain; border-radius:3px; background:rgba(0,0,0,.2); padding:1px; flex-shrink:0; }
-    .mobile-bar-name { font-size:8px; font-weight:700; color:rgba(0,0,0,.85); line-height:1.2; word-break:break-word; }
+    .mobile-bar-icon {
+      width:22px; height:22px; object-fit:contain; border-radius:4px;
+      background:rgba(0,0,0,.3); padding:2px; flex-shrink:0;
+      box-shadow:0 1px 3px rgba(0,0,0,.4);
+    }
+    .mobile-bar-name {
+      font-size:9px; font-weight:800;
+      color:#fff;
+      text-shadow:0 1px 3px rgba(0,0,0,0.8);
+      line-height:1.25; word-break:break-word;
+    }
 
     /* End time pinned at bottom of bar */
     .mobile-bar-end {
       position:absolute; bottom:2px; left:3px; right:3px;
-      font-size:7px; font-weight:700; color:rgba(0,0,0,.65);
+      font-size:7px; font-weight:700; color:rgba(255,255,255,0.75);
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
       pointer-events:none;
     }
@@ -522,11 +551,11 @@ function renderDesktop() {
   const container = document.getElementById('ganttDesktop');
   container.innerHTML = '';
 
-  const PX  = 120;  // px per day — wider for less dead space
+  const PX  = 140;  // px per day
   const LW  = 120;  // label width
-  const RH  = 80;   // row height
+  const RH  = 90;   // row height
   const BT  = 14;   // bar top offset
-  const BH  = 50;   // bar height
+  const BH  = 60;   // bar height
 
   const totalDays = Math.ceil(daysBetween(todayStart, rangeEnd)) + 2;
   const days = Array.from({length:totalDays}, (_,i) => { const d=new Date(todayStart); d.setDate(d.getDate()+i); return d; });
@@ -612,14 +641,18 @@ function renderDesktop() {
       const leftPx  = daysBetween(todayStart, new Date(clampS)) * PX;
       const widthPx = Math.max(daysBetween(new Date(clampS), new Date(clampE)) * PX, 4);
 
-      // Alternate brightness for adjacent bars — makes boundaries visible
-      const alpha = idx % 2 === 0 ? 1 : 0.7;
-      const color = hexAlpha(BUILDER_COLORS[b.builderNum], alpha);
+      // Alternate: full color vs darker shade, different border brightness
+      const isEven = idx % 2 === 0;
+      const color  = isEven
+        ? BUILDER_COLORS[b.builderNum]
+        : hexAlpha(BUILDER_COLORS[b.builderNum], 0.62);
+      const borderClr = upg._isCurrent
+        ? '#fff'
+        : isEven ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.25)';
 
       const bar = document.createElement('div');
       bar.className = 'gantt-bar';
-      bar.style.cssText = `left:${leftPx}px; width:${widthPx}px; top:${BT}px; height:${BH}px; background:${color};`;
-      if (upg._isCurrent) bar.style.borderColor = 'rgba(255,255,255,0.5)';
+      bar.style.cssText = `left:${leftPx}px; width:${widthPx}px; top:${BT}px; height:${BH}px; background:${color}; border-color:${borderClr};`;
 
       /* ACTIVE badge */
       if (upg._isCurrent) {
@@ -668,7 +701,7 @@ function renderMobile() {
   const wrapper = document.getElementById('mobileColumns');
   wrapper.innerHTML = '';
 
-  const PX = 90; // px per day
+  const PX = 100; // px per day
   // Sticky top for labels = gantt-header(~51px) + toggle bar(~49px) = ~100px
   const STICKY_TOP = 100;
 
@@ -737,15 +770,19 @@ function renderMobile() {
         const clampE = Math.min(endD.getTime(),   rangeEnd.getTime());
         if (clampS >= clampE) return;
 
-        const topPx = daysBetween(todayStart, new Date(clampS)) * PX;
-        const hPx   = Math.max(daysBetween(new Date(clampS), new Date(clampE)) * PX, 6);
-        const alpha  = idx % 2 === 0 ? 1 : 0.7;
-        const color  = hexAlpha(BUILDER_COLORS[n], alpha);
+        const topPx  = daysBetween(todayStart, new Date(clampS)) * PX;
+        const hPx    = Math.max(daysBetween(new Date(clampS), new Date(clampE)) * PX, 6);
+        const isEven = idx % 2 === 0;
+        const color  = isEven
+          ? BUILDER_COLORS[n]
+          : hexAlpha(BUILDER_COLORS[n], 0.58);
+        const borderClr = upg._isCurrent
+          ? '#fff'
+          : isEven ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.18)';
 
         const bar = document.createElement('div');
         bar.className = 'mobile-bar';
-        bar.style.cssText = `top:${topPx}px; height:${hPx}px; background:${color};`;
-        if (upg._isCurrent) bar.style.borderColor = 'rgba(255,255,255,0.5)';
+        bar.style.cssText = `top:${topPx}px; height:${hPx}px; background:${color}; border-color:${borderClr}; border-width:${isEven?'2px':'1.5px'};`;
 
         /* Sticky label — position:sticky relative to page scroll,
            visible as long as bar is on screen. CSS top=115px keeps it
