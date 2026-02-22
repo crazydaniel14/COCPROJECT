@@ -11,654 +11,341 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --gold:       #f5d04c;
-      --gold-dim:   rgba(245,208,76,0.18);
-      --gold-glow:  rgba(245,208,76,0.35);
-      --bg:         #101013;
-      --surface:    #19191e;
-      --surface2:   #23232b;
-      --surface3:   #2f2f38;
-      --border:     rgba(255,255,255,0.08);
-      --text:       #ffffff;
-      --text-dim:   #9999a8;
-      --green:      #4caf50;
-      --orange:     #ff9800;
-      --red:        #f44336;
-      --blue:       #5865f2;
-
-      /* Per-builder accent colors */
-      --b1: #5865f2;
-      --b2: #4caf50;
-      --b3: #f5d04c;
-      --b4: #e91e8c;
-      --b5: #00bcd4;
-      --b6: #ff9800;
+      --gold:     #f5d04c;
+      --bg:       #101013;
+      --surface:  #19191e;
+      --surface2: #23232b;
+      --border:   rgba(255,255,255,0.08);
+      --text:     #ffffff;
+      --text-dim: #9999a8;
+      --b1: #5865f2; --b2: #4caf50; --b3: #d4b83e;
+      --b4: #e91e8c; --b5: #00bcd4; --b6: #ff9800;
     }
 
-    html, body {
-      height: 100%;
-      background: var(--bg);
-      font-family: 'Lexend', sans-serif;
-      color: var(--text);
-      overflow-x: hidden;
-    }
+    html, body { height:100%; background:var(--bg); font-family:'Lexend',sans-serif; color:var(--text); overflow-x:hidden; }
 
-    /* ===================== HEADER ===================== */
+    /* ── HEADER ── */
     .gantt-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 20px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      z-index: 200;
-      gap: 12px;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 20px; background:var(--surface);
+      border-bottom:1px solid var(--border);
+      position:sticky; top:0; z-index:200; gap:12px;
     }
-
-    .gantt-title {
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--gold);
-      letter-spacing: 0.5px;
-      white-space: nowrap;
-    }
-
+    .gantt-title { font-size:18px; font-weight:800; color:var(--gold); letter-spacing:.5px; white-space:nowrap; }
     .back-btn {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 8px 14px;
-      color: var(--text-dim);
-      font-family: 'Lexend', sans-serif;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.18s;
-      white-space: nowrap;
+      display:flex; align-items:center; gap:6px;
+      background:var(--surface2); border:1px solid var(--border); border-radius:10px;
+      padding:8px 14px; color:var(--text-dim); font-family:'Lexend',sans-serif;
+      font-size:13px; font-weight:600; cursor:pointer; transition:all .18s; white-space:nowrap;
     }
-    .back-btn:hover { color: var(--text); border-color: var(--gold); }
-
+    .back-btn:hover { color:var(--text); border-color:var(--gold); }
     .refresh-btn {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--gold);
-      border: none;
-      border-radius: 10px;
-      padding: 8px 14px;
-      color: #000;
-      font-family: 'Lexend', sans-serif;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.18s;
-      white-space: nowrap;
+      display:flex; align-items:center; gap:6px;
+      background:var(--gold); border:none; border-radius:10px;
+      padding:8px 14px; color:#000; font-family:'Lexend',sans-serif;
+      font-size:13px; font-weight:700; cursor:pointer; transition:all .18s; white-space:nowrap;
     }
-    .refresh-btn:hover { background: #ffd700; }
-    .refresh-btn.loading { opacity: 0.7; pointer-events: none; }
+    .refresh-btn:hover { background:#ffd700; }
+    .refresh-btn.loading { opacity:.7; pointer-events:none; }
 
-    /* ===================== BUILDER TOGGLES ===================== */
+    /* ── TOGGLES ── */
     .builder-toggles {
-      display: flex;
-      gap: 8px;
-      padding: 12px 20px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      overflow-x: auto;
-      position: sticky;
-      top: 57px;
-      z-index: 190;
+      display:flex; gap:8px; padding:12px 20px;
+      background:var(--surface); border-bottom:1px solid var(--border);
+      overflow-x:auto; position:sticky; top:57px; z-index:190;
     }
-    .builder-toggles::-webkit-scrollbar { display: none; }
-
+    .builder-toggles::-webkit-scrollbar { display:none; }
     .toggle-btn {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 7px 14px;
-      border-radius: 20px;
-      border: 2px solid transparent;
-      font-family: 'Lexend', sans-serif;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.18s;
-      white-space: nowrap;
-      opacity: 0.4;
+      display:flex; align-items:center; gap:6px; padding:7px 14px;
+      border-radius:20px; border:2px solid transparent;
+      font-family:'Lexend',sans-serif; font-size:12px; font-weight:700;
+      cursor:pointer; transition:all .18s; white-space:nowrap; opacity:.35;
     }
-    .toggle-btn.active { opacity: 1; }
-    .toggle-btn img { width: 20px; height: 20px; object-fit: contain; border-radius: 4px; }
-    .toggle-btn[data-b="1"] { background: rgba(88,101,242,0.15); border-color: var(--b1); color: var(--b1); }
-    .toggle-btn[data-b="2"] { background: rgba(76,175,80,0.15);  border-color: var(--b2); color: var(--b2); }
-    .toggle-btn[data-b="3"] { background: rgba(245,208,76,0.15); border-color: var(--b3); color: var(--b3); }
-    .toggle-btn[data-b="4"] { background: rgba(233,30,140,0.15); border-color: var(--b4); color: var(--b4); }
-    .toggle-btn[data-b="5"] { background: rgba(0,188,212,0.15);  border-color: var(--b5); color: var(--b5); }
-    .toggle-btn[data-b="6"] { background: rgba(255,152,0,0.15);  border-color: var(--b6); color: var(--b6); }
+    .toggle-btn.active { opacity:1; }
+    .toggle-btn img { width:20px; height:20px; object-fit:contain; border-radius:4px; }
+    .toggle-btn[data-b="1"] { background:rgba(88,101,242,.15);  border-color:var(--b1); color:var(--b1); }
+    .toggle-btn[data-b="2"] { background:rgba(76,175,80,.15);   border-color:var(--b2); color:var(--b2); }
+    .toggle-btn[data-b="3"] { background:rgba(212,184,62,.15);  border-color:var(--b3); color:var(--b3); }
+    .toggle-btn[data-b="4"] { background:rgba(233,30,140,.15);  border-color:var(--b4); color:var(--b4); }
+    .toggle-btn[data-b="5"] { background:rgba(0,188,212,.15);   border-color:var(--b5); color:var(--b5); }
+    .toggle-btn[data-b="6"] { background:rgba(255,152,0,.15);   border-color:var(--b6); color:var(--b6); }
 
-    /* ===================== LOADING / EMPTY ===================== */
+    /* ── LOADING ── */
     .state-msg {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      height: 300px;
-      color: var(--text-dim);
-      font-size: 15px;
+      display:flex; flex-direction:column; align-items:center;
+      justify-content:center; gap:16px; height:300px; color:var(--text-dim); font-size:15px;
     }
-    .spinner {
-      width: 36px; height: 36px;
-      border: 3px solid var(--surface3);
-      border-top-color: var(--gold);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { width:36px; height:36px; border:3px solid var(--surface2); border-top-color:var(--gold); border-radius:50%; animation:spin .8s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
 
-    /* ===================== DESKTOP GANTT ===================== */
-    .gantt-wrap {
-      overflow-x: auto;
-      overflow-y: auto;
-      padding: 0 0 40px 0;
-    }
+    /* ── DESKTOP GANTT ── */
+    .gantt-wrap { overflow-x:auto; overflow-y:auto; padding-bottom:40px; }
 
-    .gantt-grid {
-      display: grid;
-      /* col 0: builder label, rest: time columns */
-      min-width: 800px;
-      position: relative;
-    }
-
-    /* Header row: date labels */
-    .gantt-date-header {
-      display: contents;
-    }
-
-    .gantt-label-cell {
-      position: sticky;
-      left: 0;
-      background: var(--bg);
-      z-index: 10;
-      padding: 10px 14px;
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      border-bottom: 1px solid var(--border);
-      min-width: 110px;
-    }
-
-    .gantt-date-cell {
-      padding: 10px 6px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-dim);
-      border-bottom: 1px solid var(--border);
-      text-align: center;
-      white-space: nowrap;
-    }
-    .gantt-date-cell.today-col {
-      color: var(--gold);
-      font-weight: 800;
-    }
-
-    /* Builder rows */
-    .gantt-row {
-      display: contents;
-    }
-
-    .gantt-builder-label {
-      position: sticky;
-      left: 0;
-      background: var(--bg);
-      z-index: 9;
-      padding: 0 14px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      border-bottom: 1px solid var(--border);
-      min-width: 110px;
-    }
-    .gantt-builder-label img {
-      width: 28px;
-      height: 28px;
-      object-fit: contain;
-    }
-    .gantt-builder-label span {
-      font-size: 12px;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-
-    .gantt-row-cells {
-      position: relative;
-      border-bottom: 1px solid var(--border);
-      height: 56px;
-    }
-
-    /* Background column ticks */
-    .gantt-tick {
-      position: absolute;
-      top: 0; bottom: 0;
-      width: 1px;
-      background: var(--border);
-    }
-
-    .gantt-tick.today-tick {
-      background: var(--gold);
-      width: 2px;
-      opacity: 0.6;
-    }
-
-    /* Upgrade bars */
     .gantt-bar {
-      position: absolute;
-      top: 8px;
-      height: 40px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      padding: 0 10px;
-      cursor: pointer;
-      overflow: hidden;
-      transition: filter 0.15s, transform 0.15s;
-      min-width: 4px;
+      position:absolute; border-radius:7px;
+      display:flex; align-items:center; padding:0 8px;
+      cursor:pointer; overflow:visible;
+      transition:filter .15s, transform .15s;
+      border:2px solid rgba(255,255,255,0.2);
     }
-    .gantt-bar:hover {
-      filter: brightness(1.2);
-      transform: scaleY(1.05);
-      z-index: 5;
-    }
+    .gantt-bar:hover { filter:brightness(1.2); transform:scaleY(1.06); z-index:5; }
 
-    .gantt-bar-label {
-      font-size: 11px;
-      font-weight: 700;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      color: rgba(0,0,0,0.85);
-      pointer-events: none;
-    }
+    .bar-inner { display:flex; align-items:center; gap:5px; overflow:hidden; pointer-events:none; width:100%; }
+    .bar-icon  { width:22px; height:22px; object-fit:contain; border-radius:4px; flex-shrink:0; background:rgba(0,0,0,.25); padding:2px; }
+    .bar-text  { font-size:10px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:rgba(0,0,0,.85); }
 
-    /* Boost lightning bolt markers */
     .gantt-boost-marker {
-      position: absolute;
-      top: 4px;
-      width: 14px;
-      height: 14px;
-      background: #fff;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 9px;
-      z-index: 3;
-      pointer-events: none;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+      position:absolute; top:2px;
+      width:14px; height:14px; background:#fff;
+      border-radius:50%; display:flex; align-items:center;
+      justify-content:center; font-size:8px; z-index:3;
+      pointer-events:none; box-shadow:0 1px 4px rgba(0,0,0,.4);
     }
 
-    /* Today line label */
-    .today-label {
-      position: absolute;
-      top: 0;
-      transform: translateX(-50%);
-      background: var(--gold);
-      color: #000;
-      font-size: 9px;
-      font-weight: 800;
-      padding: 2px 6px;
-      border-radius: 0 0 4px 4px;
-      white-space: nowrap;
-      z-index: 20;
+    .bar-active-badge {
+      position:absolute; top:-11px; left:6px;
+      background:var(--gold); color:#000;
+      font-size:8px; font-weight:800; padding:1px 6px;
+      border-radius:3px; white-space:nowrap; pointer-events:none;
     }
 
-    /* ===================== TOOLTIP ===================== */
+    /* ── TOOLTIP ── */
     .gantt-tooltip {
-      position: fixed;
-      background: linear-gradient(135deg, #2a2a2f, #1e1e24);
-      border: 1.5px solid var(--gold-dim);
-      border-radius: 14px;
-      padding: 14px 18px;
-      z-index: 9999;
-      pointer-events: none;
-      max-width: 280px;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.7);
-      display: none;
+      position:fixed; background:linear-gradient(135deg,#2a2a2f,#1e1e24);
+      border:1.5px solid rgba(245,208,76,.3); border-radius:14px;
+      padding:14px 18px; z-index:9999; pointer-events:none;
+      max-width:295px; box-shadow:0 12px 40px rgba(0,0,0,.7); display:none;
     }
-    .gantt-tooltip.visible { display: block; }
-    .tt-name {
-      font-size: 14px;
-      font-weight: 800;
-      color: var(--text);
-      margin-bottom: 8px;
+    .gantt-tooltip.visible { display:block; }
+    .tt-name  { font-size:13px; font-weight:800; color:var(--text); margin-bottom:8px; }
+    .tt-row   { display:flex; justify-content:space-between; gap:16px; margin-bottom:4px; }
+    .tt-label { font-size:10px; color:var(--text-dim); font-weight:700; text-transform:uppercase; letter-spacing:.5px; }
+    .tt-value { font-size:11px; color:var(--text); font-weight:600; text-align:right; }
+    .tt-boost     { margin-top:8px; padding-top:8px; border-top:1px solid var(--border); font-size:11px; color:var(--gold); font-weight:700; }
+    .tt-boost-row { font-size:10px; color:#ccc; margin-top:3px; }
+
+    /* ── MOBILE ── */
+    @media (max-width:768px) {
+      .gantt-wrap   { display:none !important; }
+      .gantt-mobile { display:block; }
+      .gantt-header { padding:12px 14px; }
+      .gantt-title  { font-size:15px; }
+      .back-btn, .refresh-btn { padding:7px 11px; font-size:12px; }
+      .builder-toggles { padding:10px 14px; top:51px; }
+      .toggle-btn { padding:6px 11px; font-size:11px; }
     }
-    .tt-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 20px;
-      font-size: 12px;
-      margin-bottom: 4px;
-    }
-    .tt-label { color: var(--text-dim); font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; }
-    .tt-value { color: var(--text); font-weight: 600; text-align: right; }
-    .tt-boost-row {
-      margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px solid var(--border);
-      font-size: 11px;
-      color: var(--gold);
-      font-weight: 700;
-    }
+    @media (min-width:769px) { .gantt-mobile { display:none; } }
 
-    /* ===================== MOBILE (vertical columns per builder) ===================== */
-    @media (max-width: 768px) {
-      .gantt-header { padding: 12px 14px; }
-      .gantt-title { font-size: 15px; }
-      .back-btn, .refresh-btn { padding: 7px 11px; font-size: 12px; }
+    /* ── MOBILE GANTT ── */
+    .gantt-mobile { padding-bottom:60px; }
+    .mobile-columns-wrapper { display:flex; overflow-x:auto; }
+    .mobile-columns-wrapper::-webkit-scrollbar { display:none; }
 
-      .builder-toggles { padding: 10px 14px; top: 51px; }
-      .toggle-btn { padding: 6px 11px; font-size: 11px; }
-
-      /* Hide desktop gantt */
-      .gantt-wrap { display: none; }
-
-      /* Show mobile gantt */
-      .gantt-mobile { display: block; }
-    }
-
-    @media (min-width: 769px) {
-      .gantt-mobile { display: none; }
-    }
-
-    /* ===================== MOBILE GANTT ===================== */
-    .gantt-mobile {
-      padding: 0 0 40px 0;
-      overflow: hidden;
-    }
-
-    /* Horizontal scroll of builder columns */
-    .mobile-columns-wrapper {
-      display: flex;
-      overflow-x: auto;
-      gap: 0;
-    }
-    .mobile-columns-wrapper::-webkit-scrollbar { display: none; }
-
-    /* Time axis on left */
-    .mobile-time-axis {
-      flex-shrink: 0;
-      width: 54px;
-      position: sticky;
-      left: 0;
-      background: var(--bg);
-      z-index: 10;
-    }
-
+    .mobile-time-axis { flex-shrink:0; width:56px; position:sticky; left:0; background:var(--bg); z-index:10; }
     .mobile-time-header {
-      height: 56px;
-      border-bottom: 1px solid var(--border);
-      border-right: 1px solid var(--border);
-      display: flex;
-      align-items: flex-end;
-      padding: 0 6px 8px;
-      font-size: 9px;
-      font-weight: 700;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      height:60px; border-bottom:1px solid var(--border); border-right:1px solid var(--border);
+      display:flex; align-items:flex-end; padding:0 5px 8px;
+      font-size:9px; font-weight:700; color:var(--text-dim); text-transform:uppercase;
     }
-
     .mobile-time-tick {
-      height: var(--px-per-day, 80px);
-      border-right: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: flex-start;
-      padding: 4px 4px 0;
-      font-size: 9px;
-      font-weight: 700;
-      color: var(--text-dim);
-      white-space: nowrap;
-      position: relative;
+      border-right:1px solid var(--border); border-bottom:1px solid var(--border);
+      display:flex; align-items:flex-start; padding:4px 3px 0;
+      font-size:9px; font-weight:700; color:var(--text-dim); white-space:nowrap;
     }
-    .mobile-time-tick.today-row {
-      color: var(--gold);
-      border-bottom-color: var(--gold);
-    }
+    .mobile-time-tick.today-row { color:var(--gold); border-bottom-color:rgba(245,208,76,.5); }
 
-    /* Builder column */
-    .mobile-builder-col {
-      flex-shrink: 0;
-      width: 120px;
-      border-right: 1px solid var(--border);
-    }
-    .mobile-builder-col.hidden-col { display: none; }
-
+    .mobile-builder-col { flex-shrink:0; width:110px; border-right:1px solid var(--border); }
+    .mobile-builder-col.hidden-col { display:none; }
     .mobile-col-header {
-      height: 56px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 3px;
-      padding: 6px 4px;
+      height:60px; border-bottom:2px solid;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:6px 4px;
     }
-    .mobile-col-header img {
-      width: 22px;
-      height: 22px;
-      object-fit: contain;
-    }
-    .mobile-col-header span {
-      font-size: 10px;
-      font-weight: 700;
-      white-space: nowrap;
-    }
+    .mobile-col-header img { width:22px; height:22px; object-fit:contain; }
+    .mobile-col-header span { font-size:10px; font-weight:700; white-space:nowrap; }
+    .mobile-col-body { position:relative; }
 
-    .mobile-col-body {
-      position: relative;
-    }
-
-    /* Each day row in mobile column body */
-    .mobile-day-row {
-      height: var(--px-per-day, 80px);
-      border-bottom: 1px solid var(--border);
-      position: relative;
-    }
-    .mobile-day-row.today-row {
-      border-bottom-color: var(--gold);
-    }
-
-    /* Mobile bars: absolutely positioned within the column body */
+    /* Mobile bar */
     .mobile-bar {
-      position: absolute;
-      left: 4px;
-      right: 4px;
-      border-radius: 6px;
-      overflow: hidden;
-      cursor: pointer;
-      transition: filter 0.15s;
-      min-height: 4px;
+      position:absolute; left:3px; right:3px; border-radius:6px;
+      border:1.5px solid rgba(255,255,255,0.2);
+      cursor:pointer; min-height:4px; overflow:hidden;
     }
-    .mobile-bar:hover { filter: brightness(1.2); }
+    .mobile-bar:active { filter:brightness(1.2); }
 
-    .mobile-bar-label {
-      font-size: 9px;
-      font-weight: 700;
-      color: rgba(0,0,0,0.85);
-      padding: 3px 5px;
-      overflow: hidden;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
+    /* Sticky label — follows user scroll inside the bar */
+    .mobile-bar-sticky {
+      position:sticky;
+      padding:3px 4px;
+      display:flex; align-items:flex-start; gap:3px;
+      pointer-events:none; z-index:2;
+    }
+    .mobile-bar-icon { width:16px; height:16px; object-fit:contain; border-radius:3px; background:rgba(0,0,0,.2); padding:1px; flex-shrink:0; }
+    .mobile-bar-name { font-size:8px; font-weight:700; color:rgba(0,0,0,.85); line-height:1.2; word-break:break-word; }
+
+    /* Always-visible end time pinned at bottom of bar */
+    .mobile-bar-end {
+      position:absolute; bottom:2px; left:3px; right:3px;
+      font-size:7px; font-weight:700; color:rgba(0,0,0,.65);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      pointer-events:none;
     }
 
+    /* Boost dot */
     .mobile-boost-dot {
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      background: #fff;
-      border-radius: 50%;
-      right: 2px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 7px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+      position:absolute; width:12px; height:12px; background:#fff; border-radius:50%;
+      right:2px; display:flex; align-items:center; justify-content:center;
+      font-size:7px; box-shadow:0 1px 3px rgba(0,0,0,.4); pointer-events:none;
     }
+
+    /* Bottom sheet */
+    .mobile-sheet {
+      position:fixed; bottom:0; left:0; right:0; z-index:9999;
+      background:linear-gradient(160deg,#2a2a2f,#1e1e24);
+      border:1.5px solid rgba(245,208,76,.3); border-bottom:none;
+      border-radius:20px 20px 0 0; padding:20px 20px 36px;
+      box-shadow:0 -8px 40px rgba(0,0,0,.7); animation:slideUp .2s ease;
+    }
+    @keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+    .sheet-handle { width:36px; height:4px; background:rgba(255,255,255,.2); border-radius:2px; margin:0 auto 16px; }
+    .sheet-title  { font-size:15px; font-weight:800; color:#fff; margin-bottom:12px; }
+    .sheet-row    { display:flex; justify-content:space-between; margin-bottom:8px; }
+    .sheet-label  { font-size:10px; color:var(--text-dim); font-weight:700; text-transform:uppercase; }
+    .sheet-value  { font-size:12px; color:#fff; font-weight:600; }
+    .sheet-boost  { margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,.08); font-size:11px; color:var(--gold); font-weight:700; }
   </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <header class="gantt-header">
   <button class="back-btn" onclick="window.location.href='index.html'">← Back</button>
   <div class="gantt-title">⚒️ Build Schedule</div>
   <button class="refresh-btn" id="refreshBtn" onclick="loadGantt()">↻ Refresh</button>
 </header>
 
-<!-- BUILDER TOGGLES -->
 <div class="builder-toggles" id="builderToggles">
   <button class="toggle-btn active" data-b="1" onclick="toggleBuilder(1)">
-    <img src="Images/Builders/Builder 1.png" onerror="this.style.display='none'" alt="">
-    Builder 1
-  </button>
+    <img src="Images/Builders/Builder 1.png" onerror="this.style.display='none'" alt="">Builder 1</button>
   <button class="toggle-btn active" data-b="2" onclick="toggleBuilder(2)">
-    <img src="Images/Builders/Builder 2.png" onerror="this.style.display='none'" alt="">
-    Builder 2
-  </button>
+    <img src="Images/Builders/Builder 2.png" onerror="this.style.display='none'" alt="">Builder 2</button>
   <button class="toggle-btn active" data-b="3" onclick="toggleBuilder(3)">
-    <img src="Images/Builders/Builder 3.png" onerror="this.style.display='none'" alt="">
-    Builder 3
-  </button>
+    <img src="Images/Builders/Builder 3.png" onerror="this.style.display='none'" alt="">Builder 3</button>
   <button class="toggle-btn active" data-b="4" onclick="toggleBuilder(4)">
-    <img src="Images/Builders/Builder 4.png" onerror="this.style.display='none'" alt="">
-    Builder 4
-  </button>
+    <img src="Images/Builders/Builder 4.png" onerror="this.style.display='none'" alt="">Builder 4</button>
   <button class="toggle-btn active" data-b="5" onclick="toggleBuilder(5)">
-    <img src="Images/Builders/Builder 5.png" onerror="this.style.display='none'" alt="">
-    Builder 5
-  </button>
+    <img src="Images/Builders/Builder 5.png" onerror="this.style.display='none'" alt="">Builder 5</button>
   <button class="toggle-btn active" data-b="6" onclick="toggleBuilder(6)">
-    <img src="Images/Builders/Builder 6.png" onerror="this.style.display='none'" alt="">
-    Builder 6
-  </button>
+    <img src="Images/Builders/Builder 6.png" onerror="this.style.display='none'" alt="">Builder 6</button>
 </div>
 
-<!-- DESKTOP GANTT -->
+<!-- DESKTOP -->
 <div class="gantt-wrap" id="ganttWrap">
-  <div class="state-msg" id="stateMsg">
-    <div class="spinner"></div>
-    <span>Loading schedule…</span>
-  </div>
-  <div id="ganttDesktop"></div>
+  <div class="state-msg" id="stateMsg"><div class="spinner"></div><span>Loading schedule…</span></div>
+  <div id="ganttDesktop" style="display:none"></div>
 </div>
 
-<!-- MOBILE GANTT -->
+<!-- MOBILE -->
 <div class="gantt-mobile" id="ganttMobile">
-  <div class="state-msg" id="stateMsgMobile">
-    <div class="spinner"></div>
-    <span>Loading schedule…</span>
-  </div>
+  <div class="state-msg" id="stateMsgMobile"><div class="spinner"></div><span>Loading schedule…</span></div>
   <div class="mobile-columns-wrapper" id="mobileColumns" style="display:none"></div>
 </div>
 
-<!-- TOOLTIP -->
 <div class="gantt-tooltip" id="ganttTooltip"></div>
 
 <script>
-/* ===================================================
-   CONFIG — mirrors script.js
-=================================================== */
+/* ── CONFIG ── */
 const API_BASE = "https://script.google.com/macros/s/AKfycbzaxmuwpTD9cUzrz4e4k75caCpQrTjEDefs-B5nuEaqlFoMrBHjrhDun3Iy7kPkc9j2/exec";
 
-function endpoint(action) {
-  return `${API_BASE}?action=${action}&username=${window.COC_USERNAME}`;
-}
+const BUILDER_COLORS = { 1:'#5865f2', 2:'#4caf50', 3:'#c9a820', 4:'#e91e8c', 5:'#00bcd4', 6:'#ff9800' };
 
-const BUILDER_COLORS = {
-  1: '#5865f2',
-  2: '#4caf50',
-  3: '#f5d04c',
-  4: '#e91e8c',
-  5: '#00bcd4',
-  6: '#ff9800'
+const HERO_NAMES = ["Archer Queen","Barbarian King","Grand Warden","Minion Prince","Royal Champion"];
+const IMAGE_MAP = {
+  "Air Bomb":["Lvl 11"],"Archer Tower":["Lvl 21"],"Blacksmith":["Lvl 9"],
+  "Bomb":["Lvl 11&12","Lvl 13&14"],"Builder Hut":["Level 7&8&9"],
+  "Dark Elixir Drill":["Lvl 10","Lvl 11"],"Dark Elixir Storage":["Lvl 12"],
+  "Elixir Collector":["Lvl 17"],"Elixir Storage":["Lvl 18"],
+  "Giant Bomb":["Lvl 6","Lvl 7&8","Lvl 9&10"],"Gold Mine":["Lvl 17"],
+  "Gold Storage":["Lvl 18"],"Hidden Tesla":["Lvl 16"],"Monolith":["Lvl 2&3&4"],
+  "Mortar":["Lvl 17"],"Scattershot":["Lvl 6&7&8"],"Seeking Air Mine":["Lvl 5&6"],
+  "Spring Trap":["Lvl 7&8","Lvl 9&10"],"Town Hall":["Lvl 18"],
+  "Wizard Tower":["Lvl 17"],"Workshop":["Lvl 8"],"X-Bow":["Lvl 12&13&14"]
 };
 
-/* ===================================================
-   STATE
-=================================================== */
-let ganttData    = [];  // array of { builder, upgrades: [{name, start, end, boostDates}] }
-let boostPlan    = [];  // from boost_plan endpoint
-let activeBuilders = new Set([1,2,3,4,5,6]);
-let todayStart   = null;
-let rangeEnd     = null;
-
-/* ===================================================
-   INIT
-=================================================== */
-document.addEventListener('DOMContentLoaded', () => {
-  let username = localStorage.getItem('coc_username');
-  if (username && username.endsWith('_CURRENT_WORK')) username = username.replace('_CURRENT_WORK', '');
-  if (!username || username === 'null' || username.trim() === '') {
-    window.location.href = 'index.html';
-    return;
+function getUpgradeImage(name) {
+  if (!name) return 'Images/Upgrades/PH.png';
+  const base = 'Images/Upgrades/';
+  for (const h of HERO_NAMES) if (name.includes(h)) return base + h + '.png';
+  const m = name.match(/^(.+?)\s*(?:#\d+)?\s+(?:Level|Lvl)\s+(\d+)/i);
+  if (!m) return base + 'PH.png';
+  const bn = m[1].trim(), lv = parseInt(m[2]);
+  if (!IMAGE_MAP[bn]) return base + 'PH.png';
+  for (const ls of IMAGE_MAP[bn]) {
+    if (ls === `Lvl ${lv}` || ls === `Level ${lv}`) return base + bn + ' ' + ls + '.png';
+    if (ls.includes('&') && ls.match(/\d+/g).map(Number).includes(lv)) return base + bn + ' ' + ls + '.png';
   }
-  window.COC_USERNAME = username;
+  return base + 'PH.png';
+}
+
+/* ── STATE ── */
+let ganttData      = [];
+let boostPlan      = [];
+let currentWork    = {};
+let activeBuilders = new Set([1,2,3,4,5,6]);
+let todayStart     = null;
+let rangeEnd       = null;
+
+/* ── INIT ── */
+document.addEventListener('DOMContentLoaded', () => {
+  let u = localStorage.getItem('coc_username');
+  if (u && u.endsWith('_CURRENT_WORK')) u = u.replace('_CURRENT_WORK','');
+  if (!u || u === 'null' || u.trim() === '') { window.location.href = 'index.html'; return; }
+  window.COC_USERNAME = u;
   loadGantt();
 });
 
-/* ===================================================
-   LOAD DATA
-=================================================== */
+/* ── LOAD ── */
 async function loadGantt() {
   const btn = document.getElementById('refreshBtn');
-  btn.classList.add('loading');
-  btn.textContent = '↻ Loading…';
-
-  document.getElementById('stateMsg').style.display = 'flex';
-  document.getElementById('ganttDesktop').style.display = 'none';
-  document.getElementById('stateMsgMobile').style.display = 'flex';
-  document.getElementById('mobileColumns').style.display = 'none';
-
+  btn.classList.add('loading'); btn.textContent = '↻ Loading…';
+  setLoading(true);
   try {
-    const [detailsRes, boostRes] = await Promise.all([
+    const [details, boosts, work] = await Promise.all([
       fetchAllBuilderDetails(),
-      fetchBoostPlan()
+      fetchBoostPlan(),
+      fetchCurrentWork()
     ]);
-    ganttData = detailsRes;
-    boostPlan = boostRes;
+    ganttData   = details;
+    boostPlan   = boosts;
+    currentWork = work;
+    stitchTimelines();
     computeRange();
     renderDesktop();
     renderMobile();
+    setLoading(false);
   } catch(e) {
     console.error('Gantt load failed:', e);
-    document.getElementById('stateMsg').innerHTML = '<span style="color:#f44336">⚠️ Failed to load. Check connection.</span>';
+    document.getElementById('stateMsg').innerHTML      = '<span style="color:#f44336">⚠️ Failed to load.</span>';
     document.getElementById('stateMsgMobile').innerHTML = '<span style="color:#f44336">⚠️ Failed to load.</span>';
   } finally {
-    btn.classList.remove('loading');
-    btn.textContent = '↻ Refresh';
+    btn.classList.remove('loading'); btn.textContent = '↻ Refresh';
   }
+}
+
+function setLoading(on) {
+  document.getElementById('stateMsg').style.display       = on ? 'flex'  : 'none';
+  document.getElementById('ganttDesktop').style.display   = on ? 'none'  : 'block';
+  document.getElementById('stateMsgMobile').style.display = on ? 'flex'  : 'none';
+  document.getElementById('mobileColumns').style.display  = on ? 'none'  : 'flex';
 }
 
 async function fetchAllBuilderDetails() {
   const results = [];
-  const promises = [1,2,3,4,5,6].map(async n => {
+  await Promise.all([1,2,3,4,5,6].map(async n => {
     try {
       const res  = await fetch(`${API_BASE}?action=builder_details&username=${window.COC_USERNAME}&builder=Builder_${n}`);
       const data = await res.json();
-      if (data.builder && data.upgrades) {
-        results.push({ builderNum: n, upgrades: data.upgrades });
-      }
-    } catch(e) { console.warn(`Builder ${n} failed:`, e); }
-  });
-  await Promise.all(promises);
+      if (data.builder && data.upgrades) results.push({ builderNum:n, upgrades:data.upgrades });
+    } catch(e) { console.warn(`Builder ${n}:`, e); }
+  }));
   results.sort((a,b) => a.builderNum - b.builderNum);
   return results;
 }
@@ -669,504 +356,415 @@ async function fetchBoostPlan() {
     const data = await res.json();
     if (!data?.table || data.table.length <= 1) return [];
     return data.table.slice(1).map(row => ({
-      date:        row[0],
-      builderRaw:  row[2],
-      newFinish:   row[4],
-      mode:        row[5]
+      date: row[0], builderRaw: row[2], newFinish: row[4], mode: row[5]
     }));
   } catch(e) { return []; }
 }
 
-/* ===================================================
-   RANGE COMPUTATION
-=================================================== */
-function computeRange() {
-  todayStart = new Date();
-  todayStart.setHours(0,0,0,0);
-
-  let maxEnd = new Date(todayStart);
-  maxEnd.setDate(maxEnd.getDate() + 7); // minimum 7 days
-
-  for (const b of ganttData) {
-    for (const u of b.upgrades) {
-      const e = parseDate(u.end);
-      if (e && e > maxEnd) maxEnd = e;
+async function fetchCurrentWork() {
+  try {
+    const res  = await fetch(`${API_BASE}?action=current_work_table&username=${window.COC_USERNAME}`);
+    const data = await res.json();
+    const map  = {};
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const num = row[0]?.toString().match(/(\d+)/)?.[1];
+      if (!num) continue;
+      map[parseInt(num)] = { upgrade: row[1], finishTime: parseDate(row[2]) };
     }
-  }
-
-  rangeEnd = new Date(maxEnd);
-  rangeEnd.setHours(23,59,59,999);
+    return map;
+  } catch(e) { return {}; }
 }
 
+/* ── STITCH: chain upgrades end-to-end with no gaps ── */
+function stitchTimelines() {
+  for (const b of ganttData) {
+    const cw = currentWork[b.builderNum];
+    if (!cw || !cw.finishTime) continue;
+
+    // cursor starts at the real current finish time from current_work_table
+    let cursor = new Date(cw.finishTime);
+
+    for (let i = 0; i < b.upgrades.length; i++) {
+      const upg  = b.upgrades[i];
+      const mins = upg.durationMinutes || 0;
+
+      // If this is the first queued upgrade and it matches the current active one,
+      // its start = now (already in progress), end = finishTime from current_work
+      if (i === 0 && cw.upgrade === upg.upgrade) {
+        upg._startDate = new Date(); // in progress right now
+        upg._endDate   = new Date(cw.finishTime);
+        upg._isCurrent = true;
+        cursor = upg._endDate;
+      } else {
+        upg._startDate = new Date(cursor);
+        upg._endDate   = new Date(cursor.getTime() + mins * 60000);
+        upg._isCurrent = false;
+        cursor = upg._endDate;
+      }
+    }
+  }
+}
+
+/* ── DATE HELPERS ── */
 function parseDate(raw) {
   if (!raw) return null;
-  // Handle already-ISO strings
-  const direct = new Date(raw);
-  if (!isNaN(direct.getTime()) && raw.includes('-')) return direct;
-  // Handle "Feb 27 9:20 AM" format (no year) — same fix as script.js parseScheduledStart
-  const currentYear = new Date().getFullYear();
-  for (const year of [currentYear, currentYear + 1]) {
-    const d = new Date(`${raw} ${year}`);
-    if (!isNaN(d.getTime())) return d;
+  if (raw instanceof Date) return raw;
+  if (typeof raw === 'string' && (raw.includes('T') || raw.match(/^\d{4}-/))) {
+    const d = new Date(raw); if (!isNaN(d)) return d;
   }
+  const yr = new Date().getFullYear();
+  for (const y of [yr, yr+1]) { const d = new Date(`${raw} ${y}`); if (!isNaN(d)) return d; }
   return null;
 }
 
-function daysBetween(a, b) {
-  return (b - a) / (1000 * 60 * 60 * 24);
-}
+function daysBetween(a, b) { return (b - a) / 86400000; }
 
-/* ===================================================
-   BOOST LOOKUP — find all boosts for a specific upgrade
-=================================================== */
-function getBoostDatesForUpgrade(builderNum, upgradeName, upgradeStart, upgradeEnd) {
-  const boosts = [];
-  const startD = parseDate(upgradeStart);
-  const endD   = parseDate(upgradeEnd);
-  if (!startD || !endD) return boosts;
-
-  for (const bp of boostPlan) {
-    const bNum = bp.builderRaw.match(/(\d+)/)?.[1];
-    if (!bNum || parseInt(bNum) !== builderNum) continue;
-
-    // Try to parse the boost date (format: "Feb 24" or similar)
-    const boostDate = parseBoostDate(bp.date);
-    if (!boostDate) continue;
-
-    // Check if boost date falls within this upgrade's window
-    if (boostDate >= startD && boostDate <= endD) {
-      boosts.push({ date: boostDate, newFinish: bp.newFinish, mode: bp.mode });
-    }
-  }
-  return boosts;
-}
-
-function parseBoostDate(raw) {
-  if (!raw || raw === 'TODAY') {
-    const d = new Date();
-    d.setHours(12,0,0,0);
-    return d;
-  }
-  const year = new Date().getFullYear();
-  for (const y of [year, year+1]) {
-    const d = new Date(`${raw} ${y}`);
-    if (!isNaN(d)) return d;
-  }
-  return null;
-}
-
-/* ===================================================
-   GET LAST BOOST FINISH for an upgrade (for the indicator)
-=================================================== */
-function getLastBoostFinishForUpgrade(builderNum, upgradeStart, upgradeEnd) {
-  const boosts = getBoostDatesForUpgrade(builderNum, null, upgradeStart, upgradeEnd);
-  if (!boosts.length) return null;
-  // Sort by date desc, return newFinish of the last one
-  boosts.sort((a,b) => b.date - a.date);
-  return boosts[0].newFinish;
-}
-
-/* ===================================================
-   FORMAT HELPERS
-=================================================== */
 function fmtDate(d) {
   if (!d || isNaN(d)) return '—';
-  return d.toLocaleString('en-US', {
-    timeZone: 'America/New_York',
-    month: 'short', day: 'numeric',
-    hour: 'numeric', minute: '2-digit', hour12: true
-  });
+  return d.toLocaleString('en-US', { timeZone:'America/New_York', month:'short', day:'numeric', hour:'numeric', minute:'2-digit', hour12:true });
+}
+function fmtDay(d) { return d.toLocaleDateString('en-US', { month:'short', day:'numeric' }); }
+function fmtShort(d) {
+  if (!d || isNaN(d)) return '';
+  return d.toLocaleString('en-US', { timeZone:'America/New_York', month:'numeric', day:'numeric', hour:'numeric', minute:'2-digit', hour12:true });
 }
 
-function fmtDay(d) {
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+/* ── RANGE ── */
+function computeRange() {
+  todayStart = new Date(); todayStart.setHours(0,0,0,0);
+  let maxEnd = new Date(todayStart); maxEnd.setDate(maxEnd.getDate() + 7);
+  for (const b of ganttData) for (const u of b.upgrades) { if (u._endDate && u._endDate > maxEnd) maxEnd = u._endDate; }
+  rangeEnd = new Date(maxEnd); rangeEnd.setHours(23,59,59,999);
 }
 
-/* ===================================================
+/* ── BOOSTS ── */
+function parseBoostDate(raw) {
+  if (!raw || raw === 'TODAY') { const d = new Date(); d.setHours(12,0,0,0); return d; }
+  const yr = new Date().getFullYear();
+  for (const y of [yr, yr+1]) { const d = new Date(`${raw} ${y}`); if (!isNaN(d)) return d; }
+  return null;
+}
+function getBoosts(builderNum, startD, endD) {
+  const out = [];
+  if (!startD || !endD) return out;
+  for (const bp of boostPlan) {
+    const n = bp.builderRaw?.match(/(\d+)/)?.[1];
+    if (!n || parseInt(n) !== builderNum) continue;
+    const bd = parseBoostDate(bp.date);
+    if (bd && bd >= startD && bd <= endD) out.push({ date:bd, newFinish:bp.newFinish, mode:bp.mode });
+  }
+  return out;
+}
+
+/* ── HEX→RGBA ── */
+function hexAlpha(hex, a) {
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+/* ════════════════════════════════════════════
    DESKTOP RENDER
-=================================================== */
+════════════════════════════════════════════ */
 function renderDesktop() {
   const container = document.getElementById('ganttDesktop');
   container.innerHTML = '';
 
-  const totalDays  = Math.ceil(daysBetween(todayStart, rangeEnd)) + 1;
-  const pxPerDay   = 60; // pixels per day column
-  const labelWidth = 110;
+  const PX  = 72;   // px per day
+  const LW  = 120;  // label width
+  const RH  = 64;   // row height
+  const BT  = 11;   // bar top offset
+  const BH  = 40;   // bar height
 
-  // Build day columns array
-  const days = [];
-  for (let i = 0; i < totalDays; i++) {
-    const d = new Date(todayStart);
-    d.setDate(d.getDate() + i);
-    days.push(d);
-  }
+  const totalDays = Math.ceil(daysBetween(todayStart, rangeEnd)) + 2;
+  const days = Array.from({length:totalDays}, (_,i) => { const d=new Date(todayStart); d.setDate(d.getDate()+i); return d; });
+  const totalW = LW + totalDays * PX;
 
-  const totalWidth = labelWidth + totalDays * pxPerDay;
-
-  // Outer SVG-style canvas div
   const canvas = document.createElement('div');
-  canvas.style.cssText = `position:relative; min-width:${totalWidth}px;`;
+  canvas.style.cssText = `position:relative; min-width:${totalW}px;`;
 
-  // Date header
+  /* Date header row */
   const header = document.createElement('div');
-  header.style.cssText = `display:flex; position:sticky; top:0; background:var(--bg); z-index:10; border-bottom:1px solid var(--border);`;
+  header.style.cssText = `display:flex; position:sticky; top:0; background:var(--bg); z-index:12; border-bottom:2px solid var(--border);`;
 
-  const labelHeader = document.createElement('div');
-  labelHeader.style.cssText = `width:${labelWidth}px; flex-shrink:0; position:sticky; left:0; background:var(--bg); z-index:11; padding:10px 14px; font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.8px; border-bottom:1px solid var(--border); border-right:1px solid var(--border);`;
-  labelHeader.textContent = 'Builder';
-  header.appendChild(labelHeader);
+  const corner = document.createElement('div');
+  corner.style.cssText = `width:${LW}px; flex-shrink:0; position:sticky; left:0; background:var(--bg); z-index:13; padding:10px 14px; font-size:10px; font-weight:700; color:var(--text-dim); text-transform:uppercase; border-right:1px solid var(--border);`;
+  corner.textContent = 'Builder';
+  header.appendChild(corner);
 
-  days.forEach((d, i) => {
-    const cell = document.createElement('div');
-    const isToday = i === 0;
-    cell.style.cssText = `width:${pxPerDay}px; flex-shrink:0; padding:10px 4px; font-size:10px; font-weight:${isToday?800:600}; color:${isToday?'var(--gold)':'var(--text-dim)'}; text-align:center; white-space:nowrap; border-left:1px solid var(--border); border-bottom:1px solid var(--border);`;
-    cell.textContent = isToday ? 'TODAY' : fmtDay(d);
-    header.appendChild(cell);
+  days.forEach((d,i) => {
+    const c = document.createElement('div');
+    c.style.cssText = `width:${PX}px; flex-shrink:0; padding:9px 2px; font-size:${i===0?11:9}px; font-weight:${i===0?800:600}; color:${i===0?'var(--gold)':'var(--text-dim)'}; text-align:center; white-space:nowrap; border-left:1px solid var(--border);`;
+    c.textContent = i===0 ? 'TODAY' : fmtDay(d);
+    header.appendChild(c);
   });
   canvas.appendChild(header);
 
-  // Builder rows
-  const visibleBuilders = ganttData.filter(b => activeBuilders.has(b.builderNum));
+  /* Builder rows */
+  const visible = ganttData.filter(b => activeBuilders.has(b.builderNum));
 
-  if (visibleBuilders.length === 0) {
-    canvas.innerHTML += '<div style="padding:40px; color:var(--text-dim); text-align:center">No builders selected</div>';
-  }
-
-  for (const b of visibleBuilders) {
+  visible.forEach((b, bi) => {
     const row = document.createElement('div');
-    row.style.cssText = `display:flex; position:relative; min-height:64px;`;
+    row.style.cssText = `display:flex; position:relative; height:${RH}px;`;
     row.dataset.builder = b.builderNum;
 
-    // Label
+    /* Label */
     const label = document.createElement('div');
-    label.style.cssText = `width:${labelWidth}px; flex-shrink:0; position:sticky; left:0; background:var(--bg); z-index:9; display:flex; align-items:center; gap:8px; padding:0 14px; border-bottom:1px solid var(--border); border-right:1px solid var(--border);`;
-    label.innerHTML = `
-      <img src="Images/Builders/Builder ${b.builderNum}.png" style="width:24px;height:24px;object-fit:contain" onerror="this.style.display='none'" alt="">
-      <span style="font-size:12px;font-weight:700;color:${BUILDER_COLORS[b.builderNum]}">Builder ${b.builderNum}</span>`;
+    label.style.cssText = `width:${LW}px; flex-shrink:0; position:sticky; left:0; background:var(--bg); z-index:9; display:flex; align-items:center; gap:8px; padding:0 14px; border-bottom:1px solid var(--border); border-right:1px solid var(--border);`;
+    label.innerHTML = `<img src="Images/Builders/Builder ${b.builderNum}.png" style="width:26px;height:26px;object-fit:contain" onerror="this.style.display='none'" alt=""><span style="font-size:12px;font-weight:700;color:${BUILDER_COLORS[b.builderNum]}">Builder ${b.builderNum}</span>`;
     row.appendChild(label);
 
-    // Cell grid for this row
-    const cellArea = document.createElement('div');
-    cellArea.style.cssText = `position:relative; flex:1; border-bottom:1px solid var(--border); height:64px;`;
+    /* Cell area */
+    const cell = document.createElement('div');
+    cell.style.cssText = `position:relative; flex:1; border-bottom:1px solid var(--border); height:${RH}px; overflow:visible;`;
 
-    // Background day lines
-    days.forEach((d, i) => {
-      const isToday = i === 0;
-      const tick = document.createElement('div');
-      tick.style.cssText = `position:absolute; top:0; bottom:0; left:${i * pxPerDay}px; width:1px; background:${isToday ? 'rgba(245,208,76,0.4)' : 'var(--border)'};`;
-      cellArea.appendChild(tick);
+    /* Day tick lines */
+    days.forEach((_,i) => {
+      const t = document.createElement('div');
+      t.style.cssText = `position:absolute; top:0; bottom:0; left:${i*PX}px; width:1px; background:${i===0?'rgba(245,208,76,0.3)':'var(--border)'};`;
+      cell.appendChild(t);
     });
 
-    // Today line label (only on first builder row)
-    if (visibleBuilders.indexOf(b) === 0) {
-      const todayLbl = document.createElement('div');
-      todayLbl.style.cssText = `position:absolute; top:0; left:0; transform:translateX(-50%); background:var(--gold); color:#000; font-size:9px; font-weight:800; padding:2px 6px; border-radius:0 0 4px 4px; white-space:nowrap; z-index:20;`;
-      todayLbl.textContent = 'TODAY';
-      cellArea.appendChild(todayLbl);
+    /* NOW label on first row */
+    if (bi===0) {
+      const lbl = document.createElement('div');
+      lbl.style.cssText = `position:absolute; top:0; left:0; transform:translateX(-50%); background:var(--gold); color:#000; font-size:8px; font-weight:800; padding:2px 6px; border-radius:0 0 4px 4px; white-space:nowrap; z-index:20;`;
+      lbl.textContent = 'NOW';
+      cell.appendChild(lbl);
     }
 
-    // Upgrade bars
-    for (const upg of b.upgrades) {
-      const startD = parseDate(upg.start);
-      const endD   = parseDate(upg.end);
-      if (!startD || !endD) continue;
+    /* Bars */
+    b.upgrades.forEach((upg, idx) => {
+      const startD = upg._startDate, endD = upg._endDate;
+      if (!startD || !endD) return;
 
-      // Clamp to visible range
-      const clampStart = Math.max(startD.getTime(), todayStart.getTime());
-      const clampEnd   = Math.min(endD.getTime(), rangeEnd.getTime());
-      if (clampStart >= clampEnd) continue;
+      const clampS = Math.max(startD.getTime(), todayStart.getTime());
+      const clampE = Math.min(endD.getTime(),   rangeEnd.getTime());
+      if (clampS >= clampE) return;
 
-      const leftPx  = daysBetween(todayStart, new Date(clampStart)) * pxPerDay;
-      const widthPx = Math.max(daysBetween(new Date(clampStart), new Date(clampEnd)) * pxPerDay, 4);
+      const leftPx  = daysBetween(todayStart, new Date(clampS)) * PX;
+      const widthPx = Math.max(daysBetween(new Date(clampS), new Date(clampE)) * PX, 4);
+
+      // Alternate brightness for adjacent bars — makes boundaries visible
+      const alpha = idx % 2 === 0 ? 1 : 0.7;
+      const color = hexAlpha(BUILDER_COLORS[b.builderNum], alpha);
 
       const bar = document.createElement('div');
       bar.className = 'gantt-bar';
-      bar.style.cssText = `
-        left:${leftPx}px;
-        width:${widthPx}px;
-        background:${BUILDER_COLORS[b.builderNum]};
-        opacity:${startD < todayStart ? 0.65 : 1};
-        top: 12px;
-        height: 40px;
-      `;
+      bar.style.cssText = `left:${leftPx}px; width:${widthPx}px; top:${BT}px; height:${BH}px; background:${color};`;
+      if (upg._isCurrent) bar.style.borderColor = 'rgba(255,255,255,0.5)';
 
-      const barLabel = document.createElement('div');
-      barLabel.className = 'gantt-bar-label';
-      barLabel.textContent = upg.upgrade || upg.name || '';
-      bar.appendChild(barLabel);
-
-      // Boost markers
-      const boosts = getBoostDatesForUpgrade(b.builderNum, upg.upgrade, upg.start, upg.end);
-      for (const boost of boosts) {
-        const boostPx = daysBetween(todayStart, boost.date) * pxPerDay;
-        const relPx   = boostPx - leftPx;
-        if (relPx < 0 || relPx > widthPx) continue;
-        const dot = document.createElement('div');
-        dot.className = 'gantt-boost-marker';
-        dot.style.cssText = `left:${Math.max(relPx - 7, 0)}px; top:4px;`;
-        dot.textContent = '⚡';
-        bar.appendChild(dot);
+      /* ACTIVE badge */
+      if (upg._isCurrent) {
+        const badge = document.createElement('div');
+        badge.className = 'bar-active-badge';
+        badge.textContent = '▶ ACTIVE';
+        bar.appendChild(badge);
       }
 
-      // Tooltip
-      bar.addEventListener('mouseenter', (e) => showTooltip(e, upg, b.builderNum, boosts));
-      bar.addEventListener('mousemove',  (e) => moveTooltip(e));
+      /* Icon + name */
+      const inner = document.createElement('div');
+      inner.className = 'bar-inner';
+      inner.innerHTML = `<img class="bar-icon" src="${getUpgradeImage(upg.upgrade)}" onerror="this.src='Images/Upgrades/PH.png'" alt=""><span class="bar-text">${upg.upgrade||''}</span>`;
+      bar.appendChild(inner);
+
+      /* Boost markers */
+      const boosts = getBoosts(b.builderNum, startD, endD);
+      boosts.forEach(boost => {
+        const bPx = daysBetween(todayStart, boost.date) * PX - leftPx;
+        if (bPx < 0 || bPx > widthPx) return;
+        const dot = document.createElement('div');
+        dot.className = 'gantt-boost-marker';
+        dot.style.left = Math.max(bPx-7, 0) + 'px';
+        dot.textContent = '⚡';
+        bar.appendChild(dot);
+      });
+
+      bar.addEventListener('mouseenter', e => showTooltip(e, upg, b.builderNum, boosts, startD, endD));
+      bar.addEventListener('mousemove',  e => moveTooltip(e));
       bar.addEventListener('mouseleave', hideTooltip);
-      bar.addEventListener('click',      (e) => showTooltip(e, upg, b.builderNum, boosts));
 
-      cellArea.appendChild(bar);
-    }
+      cell.appendChild(bar);
+    });
 
-    row.appendChild(cellArea);
+    row.appendChild(cell);
     canvas.appendChild(row);
-  }
+  });
 
   container.appendChild(canvas);
-  document.getElementById('stateMsg').style.display = 'none';
-  container.style.display = 'block';
 }
 
-/* ===================================================
+/* ════════════════════════════════════════════
    MOBILE RENDER
-=================================================== */
+════════════════════════════════════════════ */
 function renderMobile() {
   const wrapper = document.getElementById('mobileColumns');
   wrapper.innerHTML = '';
 
-  const PX_PER_DAY = 80;
-  document.documentElement.style.setProperty('--px-per-day', PX_PER_DAY + 'px');
+  const PX = 90; // px per day
+  // Sticky top for labels = gantt-header(~51px) + toggle bar(~49px) = ~100px
+  const STICKY_TOP = 100;
 
-  const totalDays = Math.ceil(daysBetween(todayStart, rangeEnd)) + 1;
+  const totalDays = Math.ceil(daysBetween(todayStart, rangeEnd)) + 2;
+  const days = Array.from({length:totalDays}, (_,i) => { const d=new Date(todayStart); d.setDate(d.getDate()+i); return d; });
+  const bodyH = totalDays * PX;
 
-  // Build days array
-  const days = [];
-  for (let i = 0; i < totalDays; i++) {
-    const d = new Date(todayStart);
-    d.setDate(d.getDate() + i);
-    days.push(d);
-  }
-
-  // Time axis column
-  const timeAxis = document.createElement('div');
-  timeAxis.className = 'mobile-time-axis';
-  timeAxis.style.position = 'sticky';
-  timeAxis.style.left = '0';
-
-  const timeHeader = document.createElement('div');
-  timeHeader.className = 'mobile-time-header';
-  timeHeader.textContent = 'Date';
-  timeAxis.appendChild(timeHeader);
-
-  days.forEach((d, i) => {
-    const tick = document.createElement('div');
-    tick.className = 'mobile-time-tick' + (i === 0 ? ' today-row' : '');
-    tick.style.height = PX_PER_DAY + 'px';
-    tick.textContent = i === 0 ? '▶ Today' : fmtDay(d);
-    timeAxis.appendChild(tick);
+  /* Time axis */
+  const axis = document.createElement('div');
+  axis.className = 'mobile-time-axis';
+  const axisHead = document.createElement('div');
+  axisHead.className = 'mobile-time-header';
+  axisHead.textContent = 'Date';
+  axis.appendChild(axisHead);
+  days.forEach((d,i) => {
+    const t = document.createElement('div');
+    t.className = 'mobile-time-tick' + (i===0?' today-row':'');
+    t.style.height = PX + 'px';
+    t.textContent = i===0 ? '▶ Now' : fmtDay(d);
+    axis.appendChild(t);
   });
-  wrapper.appendChild(timeAxis);
+  wrapper.appendChild(axis);
 
-  // Builder columns
-  for (let n = 1; n <= 6; n++) {
-    const builderData = ganttData.find(b => b.builderNum === n);
+  /* Builder columns */
+  for (let n=1; n<=6; n++) {
+    const bd = ganttData.find(b => b.builderNum===n);
     const col = document.createElement('div');
     col.className = 'mobile-builder-col';
     col.dataset.builder = n;
     if (!activeBuilders.has(n)) col.classList.add('hidden-col');
 
-    // Column header
-    const colHeader = document.createElement('div');
-    colHeader.className = 'mobile-col-header';
-    colHeader.style.borderBottom = `2px solid ${BUILDER_COLORS[n]}`;
-    colHeader.innerHTML = `
-      <img src="Images/Builders/Builder ${n}.png" onerror="this.style.display='none'" alt="">
-      <span style="color:${BUILDER_COLORS[n]}">B${n}</span>`;
-    col.appendChild(colHeader);
+    const colHead = document.createElement('div');
+    colHead.className = 'mobile-col-header';
+    colHead.style.borderBottomColor = BUILDER_COLORS[n];
+    colHead.innerHTML = `<img src="Images/Builders/Builder ${n}.png" onerror="this.style.display='none'" alt=""><span style="color:${BUILDER_COLORS[n]}">B${n}</span>`;
+    col.appendChild(colHead);
 
-    // Column body
     const colBody = document.createElement('div');
     colBody.className = 'mobile-col-body';
-    colBody.style.position = 'relative';
-    colBody.style.height = (totalDays * PX_PER_DAY) + 'px';
+    colBody.style.height = bodyH + 'px';
 
-    // Day row backgrounds
-    days.forEach((d, i) => {
-      const dayRow = document.createElement('div');
-      dayRow.style.cssText = `position:absolute; left:0; right:0; top:${i * PX_PER_DAY}px; height:${PX_PER_DAY}px; border-bottom:1px solid ${i===0?'rgba(245,208,76,0.3)':'var(--border)'};`;
-      colBody.appendChild(dayRow);
+    /* Background day rows */
+    days.forEach((_,i) => {
+      const dr = document.createElement('div');
+      dr.style.cssText = `position:absolute; left:0; right:0; top:${i*PX}px; height:${PX}px; border-bottom:1px solid ${i===0?'rgba(245,208,76,0.35)':'var(--border)'};`;
+      colBody.appendChild(dr);
     });
 
-    // Upgrade bars
-    if (builderData) {
-      for (const upg of builderData.upgrades) {
-        const startD = parseDate(upg.start);
-        const endD   = parseDate(upg.end);
-        if (!startD || !endD) continue;
+    /* Bars */
+    if (bd) {
+      bd.upgrades.forEach((upg, idx) => {
+        const startD = upg._startDate, endD = upg._endDate;
+        if (!startD || !endD) return;
 
-        const clampStart = Math.max(startD.getTime(), todayStart.getTime());
-        const clampEnd   = Math.min(endD.getTime(), rangeEnd.getTime());
-        if (clampStart >= clampEnd) continue;
+        const clampS = Math.max(startD.getTime(), todayStart.getTime());
+        const clampE = Math.min(endD.getTime(),   rangeEnd.getTime());
+        if (clampS >= clampE) return;
 
-        const topPx    = daysBetween(todayStart, new Date(clampStart)) * PX_PER_DAY;
-        const heightPx = Math.max(daysBetween(new Date(clampStart), new Date(clampEnd)) * PX_PER_DAY, 6);
+        const topPx = daysBetween(todayStart, new Date(clampS)) * PX;
+        const hPx   = Math.max(daysBetween(new Date(clampS), new Date(clampE)) * PX, 6);
+        const alpha  = idx % 2 === 0 ? 1 : 0.7;
+        const color  = hexAlpha(BUILDER_COLORS[n], alpha);
 
         const bar = document.createElement('div');
         bar.className = 'mobile-bar';
-        bar.style.cssText = `
-          top:${topPx}px;
-          height:${heightPx}px;
-          background:${BUILDER_COLORS[n]};
-          opacity:${startD < todayStart ? 0.65 : 1};
-        `;
+        bar.style.cssText = `top:${topPx}px; height:${hPx}px; background:${color};`;
+        if (upg._isCurrent) bar.style.borderColor = 'rgba(255,255,255,0.5)';
 
-        const barLabel = document.createElement('div');
-        barLabel.className = 'mobile-bar-label';
-        barLabel.textContent = upg.upgrade || upg.name || '';
-        bar.appendChild(barLabel);
+        /* Sticky name label — top sticks so text is always visible while scrolling */
+        const sticky = document.createElement('div');
+        sticky.className = 'mobile-bar-sticky';
+        sticky.style.top = STICKY_TOP + 'px'; // stays visible as user scrolls down
+        sticky.innerHTML = `
+          <img class="mobile-bar-icon" src="${getUpgradeImage(upg.upgrade)}" onerror="this.src='Images/Upgrades/PH.png'" alt="">
+          <span class="mobile-bar-name">${upg.upgrade||''}</span>`;
+        bar.appendChild(sticky);
 
-        // Boost dots
-        const boosts = getBoostDatesForUpgrade(n, upg.upgrade, upg.start, upg.end);
-        boosts.forEach((boost, bi) => {
-          const boostTopRel = daysBetween(new Date(clampStart), boost.date) * PX_PER_DAY;
-          if (boostTopRel < 0 || boostTopRel > heightPx) return;
+        /* End time always visible at the bottom of the bar */
+        const endLbl = document.createElement('div');
+        endLbl.className = 'mobile-bar-end';
+        endLbl.textContent = '⏱ ' + fmtShort(endD);
+        bar.appendChild(endLbl);
+
+        /* Boost dots */
+        const boosts = getBoosts(n, startD, endD);
+        boosts.forEach(boost => {
+          const bTop = daysBetween(new Date(clampS), boost.date) * PX;
+          if (bTop < 0 || bTop > hPx) return;
           const dot = document.createElement('div');
           dot.className = 'mobile-boost-dot';
-          dot.style.top = (boostTopRel + 2) + 'px';
+          dot.style.top = (bTop+2) + 'px';
           dot.textContent = '⚡';
           bar.appendChild(dot);
         });
 
-        // Touch tooltip
-        bar.addEventListener('click', (e) => {
-          e.stopPropagation();
-          showMobileTooltip(upg, n, boosts);
-        });
+        /* Tap → bottom sheet */
+        bar.addEventListener('click', e => { e.stopPropagation(); showSheet(upg, n, boosts, startD, endD); });
 
         colBody.appendChild(bar);
-      }
+      });
     }
 
     col.appendChild(colBody);
     wrapper.appendChild(col);
   }
-
-  document.getElementById('stateMsgMobile').style.display = 'none';
-  wrapper.style.display = 'flex';
 }
 
-/* ===================================================
-   TOOLTIP
-=================================================== */
+/* ── TOOLTIP (desktop) ── */
 const tooltip = document.getElementById('ganttTooltip');
-
-function showTooltip(e, upg, builderNum, boosts) {
-  const startD = parseDate(upg.start);
-  const endD   = parseDate(upg.end);
-  let html = `<div class="tt-name">${upg.upgrade || upg.name || ''}</div>`;
+function showTooltip(e, upg, bNum, boosts, startD, endD) {
+  let html = `<div class="tt-name">${upg._isCurrent?'▶ ACTIVE &nbsp;':''}${upg.upgrade||''}</div>`;
   html += `<div class="tt-row"><span class="tt-label">Start</span><span class="tt-value">${fmtDate(startD)}</span></div>`;
   html += `<div class="tt-row"><span class="tt-label">End</span><span class="tt-value">${fmtDate(endD)}</span></div>`;
-  html += `<div class="tt-row"><span class="tt-label">Duration</span><span class="tt-value">${upg.duration || '—'}</span></div>`;
-  if (boosts.length > 0) {
-    html += `<div class="tt-boost-row">⚡ ${boosts.length} boost${boosts.length>1?'s':''} applied</div>`;
-    boosts.forEach(b => {
-      html += `<div style="font-size:11px;color:#ccc;margin-top:3px">• ${fmtDate(b.date)} → new end: ${b.newFinish}</div>`;
-    });
+  html += `<div class="tt-row"><span class="tt-label">Duration</span><span class="tt-value">${upg.duration||'—'}</span></div>`;
+  if (boosts.length) {
+    html += `<div class="tt-boost">⚡ ${boosts.length} boost${boosts.length>1?'s':''}</div>`;
+    boosts.forEach(b => { html += `<div class="tt-boost-row">• ${fmtDate(b.date)} → ${b.newFinish}</div>`; });
   }
   tooltip.innerHTML = html;
   tooltip.classList.add('visible');
   moveTooltip(e);
 }
-
 function moveTooltip(e) {
-  const vw = window.innerWidth, vh = window.innerHeight;
-  const tw = 280, th = 160;
-  let x = e.clientX + 16, y = e.clientY + 16;
-  if (x + tw > vw) x = e.clientX - tw - 8;
-  if (y + th > vh) y = e.clientY - th - 8;
-  tooltip.style.left = x + 'px';
-  tooltip.style.top  = y + 'px';
+  const vw=window.innerWidth, vh=window.innerHeight, tw=295, th=190;
+  let x=e.clientX+16, y=e.clientY+16;
+  if (x+tw>vw) x=e.clientX-tw-8;
+  if (y+th>vh) y=e.clientY-th-8;
+  tooltip.style.left=x+'px'; tooltip.style.top=y+'px';
 }
-
 function hideTooltip() { tooltip.classList.remove('visible'); }
+document.addEventListener('click', e => { if (!e.target.closest('.gantt-bar')) hideTooltip(); });
 
-/* Mobile tooltip (bottom sheet style) */
-function showMobileTooltip(upg, builderNum, boosts) {
-  // Remove any existing
-  document.getElementById('mobileSheet')?.remove();
-
-  const startD = parseDate(upg.start);
-  const endD   = parseDate(upg.end);
-  const sheet  = document.createElement('div');
-  sheet.id = 'mobileSheet';
-  sheet.style.cssText = `
-    position:fixed; bottom:0; left:0; right:0; z-index:9999;
-    background:linear-gradient(160deg,#2a2a2f,#1e1e24);
-    border:1.5px solid rgba(245,208,76,0.3);
-    border-bottom:none;
-    border-radius:20px 20px 0 0;
-    padding:20px 20px 32px;
-    box-shadow:0 -8px 40px rgba(0,0,0,0.7);
-    animation: slideUp 0.2s ease;
-  `;
-
-  let boostHtml = '';
-  if (boosts.length > 0) {
-    boostHtml = `<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);font-size:12px;color:var(--gold);font-weight:700">⚡ ${boosts.length} boost${boosts.length>1?'s':''} scheduled</div>`;
-    boosts.forEach(b => {
-      boostHtml += `<div style="font-size:11px;color:#ccc;margin-top:4px">• ${fmtDate(b.date)} → new end: ${b.newFinish}</div>`;
-    });
+/* ── BOTTOM SHEET (mobile) ── */
+function showSheet(upg, bNum, boosts, startD, endD) {
+  document.querySelector('.mobile-sheet')?.remove();
+  const s = document.createElement('div');
+  s.className = 'mobile-sheet';
+  let bHtml = '';
+  if (boosts.length) {
+    bHtml = `<div class="sheet-boost">⚡ ${boosts.length} boost${boosts.length>1?'s':''}</div>`;
+    boosts.forEach(b => { bHtml += `<div style="font-size:10px;color:#ccc;margin-top:4px">• ${fmtDate(b.date)} → ${b.newFinish}</div>`; });
   }
-
-  sheet.innerHTML = `
-    <style>@keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }</style>
-    <div style="width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:0 auto 16px"></div>
-    <div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:12px">${upg.upgrade||upg.name||''}</div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-      <span style="font-size:11px;color:var(--text-dim);font-weight:700;text-transform:uppercase">Start</span>
-      <span style="font-size:12px;color:#fff;font-weight:600">${fmtDate(startD)}</span>
-    </div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-      <span style="font-size:11px;color:var(--text-dim);font-weight:700;text-transform:uppercase">End</span>
-      <span style="font-size:12px;color:#fff;font-weight:600">${fmtDate(endD)}</span>
-    </div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-      <span style="font-size:11px;color:var(--text-dim);font-weight:700;text-transform:uppercase">Duration</span>
-      <span style="font-size:12px;color:#fff;font-weight:600">${upg.duration||'—'}</span>
-    </div>
-    ${boostHtml}
-  `;
-
-  document.body.appendChild(sheet);
-  document.addEventListener('click', dismissSheet, { once: true });
+  s.innerHTML = `
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">${upg._isCurrent?'▶ ':''}${upg.upgrade||''}</div>
+    <div class="sheet-row"><span class="sheet-label">Start</span><span class="sheet-value">${fmtDate(startD)}</span></div>
+    <div class="sheet-row"><span class="sheet-label">End</span><span class="sheet-value">${fmtDate(endD)}</span></div>
+    <div class="sheet-row"><span class="sheet-label">Duration</span><span class="sheet-value">${upg.duration||'—'}</span></div>
+    ${bHtml}`;
+  document.body.appendChild(s);
+  setTimeout(() => document.addEventListener('click', () => document.querySelector('.mobile-sheet')?.remove(), { once:true }), 100);
 }
 
-function dismissSheet() { document.getElementById('mobileSheet')?.remove(); }
-
-/* ===================================================
-   TOGGLE BUILDERS
-=================================================== */
+/* ── TOGGLE BUILDERS ── */
 function toggleBuilder(n) {
   const btn = document.querySelector(`.toggle-btn[data-b="${n}"]`);
-  if (activeBuilders.has(n)) {
-    activeBuilders.delete(n);
-    btn.classList.remove('active');
-  } else {
-    activeBuilders.add(n);
-    btn.classList.add('active');
-  }
-  // Re-render efficiently: just show/hide rows
-  document.querySelectorAll(`.gantt-wrap [data-builder="${n}"]`).forEach(el => {
-    el.style.display = activeBuilders.has(n) ? 'flex' : 'none';
-  });
-  document.querySelectorAll(`.mobile-builder-col[data-builder="${n}"]`).forEach(el => {
-    el.classList.toggle('hidden-col', !activeBuilders.has(n));
+  if (activeBuilders.has(n)) { activeBuilders.delete(n); btn.classList.remove('active'); }
+  else                        { activeBuilders.add(n);    btn.classList.add('active'); }
+  document.querySelectorAll(`[data-builder="${n}"]`).forEach(el => {
+    if (el.classList.contains('mobile-builder-col')) el.classList.toggle('hidden-col', !activeBuilders.has(n));
+    else el.style.display = activeBuilders.has(n) ? 'flex' : 'none';
   });
 }
-
-/* Click outside tooltip to close on desktop */
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.gantt-bar') && !e.target.closest('.gantt-tooltip')) hideTooltip();
-});
 </script>
 </body>
 </html>
