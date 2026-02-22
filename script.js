@@ -1,22 +1,25 @@
-console.log("Loaded script.js – v1");
+console.log("Loaded script.js – v6-all-fixes");
 
 /* =========================
    CONFIG
    ========================= */
-const API_BASE = 
-    "https://script.google.com/macros/s/AKfycbxvPjXAx0ZNHYUu_P4GR1FDc0VgQlMwZ7HRCmUS1n7Rk76WnNORgvOXm4kllUp1HDaVCA/exec"
-const TABLE_ENDPOINT = API_BASE + "?action=current_work_table";
-const REFRESH_ENDPOINT = API_BASE + "?action=refresh_sheet";
-const TODAYS_BOOST_ENDPOINT = API_BASE + "?action=todays_boost";
-const BOOST_PLAN_ENDPOINT = API_BASE + "?action=boost_plan";
-const APPLY_TODAYS_BOOST = API_BASE + "?action=apply_todays_boost";
-const SET_TODAYS_BOOST_BUILDER = API_BASE + "?action=set_todays_boost_builder&builder=";
-const REORDER_BUILDER_UPGRADES = API_BASE + "?action=reorder_builder_upgrades";
-const RUN_BOOST_SIM = API_BASE + "?action=run_boost_simulation";
-const BUILDER_SNACK = API_BASE + "?action=apply_one_hour_boost";
-const BATTLE_PASS = API_BASE + "?action=apply_battle_pass";
-const BUILDER_DETAILS_ENDPOINT = API_BASE + "?action=builder_details&builder=";
-const PAUSED_BUILDERS_ENDPOINT = API_BASE + "?action=get_paused_builders"; // NEW
+const API_BASE =
+  "https://script.google.com/macros/s/AKfycbzaxmuwpTD9cUzrz4e4k75caCpQrTjEDefs-B5nuEaqlFoMrBHjrhDun3Iy7kPkc9j2/exec";
+
+function endpoint(action) {
+  return `${API_BASE}?action=${action}&username=${window.COC_USERNAME}`;
+}
+
+const REFRESH_ENDPOINT      = API_BASE + "?action=refresh_sheet";
+function TODAYS_BOOST_URL()       { return endpoint("todays_boost"); }
+function BOOST_PLAN_URL()         { return endpoint("boost_plan"); }
+function APPLY_TODAYS_BOOST_URL() { return endpoint("apply_todays_boost"); }
+function SET_BOOST_BUILDER_URL(b) { return endpoint("set_todays_boost_builder") + "&builder=" + b; }
+
+function BUILDER_SNACK_URL()  { return endpoint("apply_one_hour_boost"); }
+function BATTLE_PASS_URL()    { return endpoint("apply_battle_pass"); }
+function BUILDER_DETAILS_URL(builderName) { return endpoint("builder_details") + "&builder=" + builderName; }
+function PAUSED_BUILDERS_URL() { return endpoint("get_paused_builders"); }
 
 /* =========================
    IMAGE MATCHING
@@ -113,6 +116,24 @@ function updateLastRefreshed() {
   });
 }
 
+/**
+ * FIX #2: Robust date parsing for scheduledStart strings like "Feb 19 3:00 PM"
+ * Apps Script Utilities.formatDate produces "MMM dd h:mm a" format.
+ * We parse it properly with current year, falling back gracefully.
+ */
+function parseScheduledStart(scheduledStart) {
+  if (!scheduledStart) return null;
+  // Try appending current year first, then next year
+  const currentYear = new Date().getFullYear();
+  for (const year of [currentYear, currentYear + 1]) {
+    const d = new Date(`${scheduledStart} ${year}`);
+    if (!isNaN(d.getTime())) return d;
+  }
+  // Last resort: direct parse
+  const d = new Date(scheduledStart);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 /* =========================
    SMART ACTIVE STATUS UPDATE
    ========================= */
@@ -120,7 +141,7 @@ async function updateActiveStatusSmart() {
   const now = Date.now();
   if (now - lastActiveStatusUpdate < 5 * 60 * 1000) return;
   try {
-    await fetch(API_BASE + "?action=update_active_status");
+    await fetch(endpoint("update_active_status"));
     lastActiveStatusUpdate = now;
   } catch (e) { console.error("Failed to update Active? status:", e); }
 }
@@ -129,13 +150,21 @@ async function updateActiveStatusSmart() {
    SOFT REFRESH
    ========================= */
 async function softRefreshBuilderCards() {
-  if (openBuilders.length > 0) return;
+  if (openBuilders.length > 0) {
+    console.log("[Soft Refresh] Skipped - builder details open");
+    return;
+  }
+  console.log("[Soft Refresh] Starting...");
   try {
     await loadCurrentWork();
     await loadTodaysBoost();
     await loadPausedBuilders();
     const container = document.getElementById("builders-container");
-    if (container) { container.innerHTML = ""; renderBuilderCards(); }
+    if (container) {
+      console.log("[Soft Refresh] Clearing and re-rendering cards");
+      container.innerHTML = "";
+      renderBuilderCards();
+    }
   } catch (e) { console.error("Soft refresh failed:", e); }
 }
 
@@ -143,24 +172,26 @@ async function softRefreshBuilderCards() {
    DATA LOADERS
    ========================= */
 async function loadCurrentWork() {
-  const res = await fetch(TABLE_ENDPOINT);
+  const res = await fetch(endpoint("current_work_table"));
   currentWorkData = await res.json();
 }
 
 async function loadTodaysBoost() {
-  const res = await fetch(TODAYS_BOOST_ENDPOINT);
+  const res = await fetch(TODAYS_BOOST_URL());
   const data = await res.json();
   if (data?.builder && data?.status) {
     todaysBoostInfo = {
       builder: data.builder.toString().match(/(\d+)/)?.[1] || null,
       status: data.status
     };
-  } else { todaysBoostInfo = null; }
+  } else {
+    todaysBoostInfo = null;
+  }
 }
 
 async function loadPausedBuilders() {
   try {
-    const res = await fetch(PAUSED_BUILDERS_ENDPOINT);
+    const res = await fetch(PAUSED_BUILDERS_URL());
     window._pausedBuilders = await res.json();
   } catch (e) {
     console.error("Failed to load paused builders:", e);
@@ -170,7 +201,7 @@ async function loadPausedBuilders() {
 
 async function loadBoostPlan() {
   try {
-    const res = await fetch(BOOST_PLAN_ENDPOINT);
+    const res = await fetch(BOOST_PLAN_URL());
     const data = await res.json();
     if (!data?.table || data.table.length <= 1) { boostPlanData = []; return; }
     boostPlanData = data.table.slice(1).map((row, i) => ({
@@ -191,12 +222,25 @@ async function refreshDashboard() {
   try {
     updateActiveStatusSmart();
     await fetch(REFRESH_ENDPOINT);
-    await Promise.all([loadCurrentWork(), loadTodaysBoost(), loadPausedBuilders()]);
-    if (openBuilders.length === 0) renderBuilderCards();
-    await loadBoostPlan();
+    // Load ALL data in parallel — including boost plan — before rendering cards
+    await Promise.all([
+      loadCurrentWork(),
+      loadTodaysBoost(),
+      loadPausedBuilders(),
+      loadBoostPlan()          // ← now runs in parallel, cards render after
+    ]);
+    if (openBuilders.length === 0) {
+      const container = document.getElementById("builders-container");
+      if (container) container.innerHTML = "";
+      renderBuilderCards();
+    }
     updateLastRefreshed();
-  } catch (e) { console.error("Refresh failed", e);
-  } finally { isRefreshing = false; }
+    checkForFinishedUpgrades();
+  } catch (e) {
+    console.error("Refresh failed", e);
+  } finally {
+    isRefreshing = false;
+  }
 }
 
 /* =========================
@@ -204,16 +248,17 @@ async function refreshDashboard() {
    ========================= */
 function renderBoostFocusCard() {
   if (!boostPlanData.length) return;
-  const day      = boostPlanData[currentBoostIndex];
-  const dayEl    = document.querySelector(".boost-day");
-  const statusEl = document.querySelector(".boost-status");
+  const day       = boostPlanData[currentBoostIndex];
+  const dayEl     = document.querySelector(".boost-day");
+  const statusEl  = document.querySelector(".boost-status");
   const builderEl = document.querySelector(".boost-builder");
-  const extraEl  = document.querySelector(".boost-extra");
-  const finishEl = document.getElementById("boostFinishTime");
-  const modeEl   = document.getElementById("boostMode");
-  const menuBtn  = document.getElementById("boostMenuBtn");
-  const dropdown = document.getElementById("boostBuilderDropdown");
+  const extraEl   = document.querySelector(".boost-extra");
+  const finishEl  = document.getElementById("boostFinishTime");
+  const modeEl    = document.getElementById("boostMode");
+  const menuBtn   = document.getElementById("boostMenuBtn");
+  const dropdown  = document.getElementById("boostBuilderDropdown");
   if (!dayEl) return;
+
   dayEl.textContent = day.day;
   if (day.hasBoost) {
     statusEl.textContent = "Boost Planned For";
@@ -226,9 +271,13 @@ function renderBoostFocusCard() {
     modeEl.className = "boost-mode " + day.mode.toLowerCase();
     if (menuBtn && dropdown && day.day === "TODAY") {
       if (todaysBoostInfo?.status === "APPLIED") {
-        menuBtn.style.opacity = "0.3"; menuBtn.style.cursor = "not-allowed"; menuBtn.disabled = true;
+        menuBtn.style.opacity = "0.3";
+        menuBtn.style.cursor = "not-allowed";
+        menuBtn.disabled = true;
       } else {
-        menuBtn.style.opacity = "1"; menuBtn.style.cursor = "pointer"; menuBtn.disabled = false;
+        menuBtn.style.opacity = "1";
+        menuBtn.style.cursor = "pointer";
+        menuBtn.disabled = false;
         const currentBuilderNum = todaysBoostInfo?.builder;
         dropdown.querySelectorAll("[data-builder-select]").forEach(btn => {
           const n = btn.dataset.builderSelect.match(/(\d+)/)?.[1];
@@ -236,10 +285,14 @@ function renderBoostFocusCard() {
         });
       }
       menuBtn.style.display = "block";
-    } else if (menuBtn) { menuBtn.style.display = "none"; }
+    } else if (menuBtn) {
+      menuBtn.style.display = "none";
+    }
   } else {
-    statusEl.textContent = "No Boost"; statusEl.classList.remove("boost-active");
-    builderEl.style.display = "none"; extraEl.style.display = "none";
+    statusEl.textContent = "No Boost";
+    statusEl.classList.remove("boost-active");
+    builderEl.style.display = "none";
+    extraEl.style.display = "none";
     if (menuBtn) menuBtn.style.display = "none";
   }
   document.getElementById("boostPrev").disabled = currentBoostIndex === 0;
@@ -250,8 +303,11 @@ function renderBoostFocusCard() {
    BUILDER CARDS
    ========================= */
 async function fetchBuilderDetails(builderNumber) {
-  const res = await fetch(BUILDER_DETAILS_ENDPOINT + "Builder_" + builderNumber);
-  return await res.json();
+  const res  = await fetch(endpoint("builder_details") + "&builder=Builder_" + builderNumber);
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  if (!data.builder) throw new Error("Unexpected response: " + JSON.stringify(data));
+  return data;
 }
 
 function renderBuilderDetails(details) {
@@ -271,8 +327,7 @@ function renderBuilderDetails(details) {
     <div class="upgrade-list" data-original-order="${originalOrder.join(',')}">
       ${details.upgrades.map((upg, idx) => {
         const imgSrc = getUpgradeImage(upg.upgrade);
-        const dm = upg.duration.match(/(\d+)\s*d\s*(\d+)\s*hr\s*(\d+)\s*min/);
-        const totalMinutes = dm ? parseInt(dm[1])*24*60+parseInt(dm[2])*60+parseInt(dm[3]) : 0;
+        const totalMinutes = upg.durationMinutes || 0;
         return `
           <div class="upgrade-item"
                data-builder="${upg.builder}" data-row="${upg.row}"
@@ -288,11 +343,6 @@ function renderBuilderDetails(details) {
             <div class="upgrade-time">
               <span>${upg.start}</span><span>→</span><span>${upg.end}</span>
             </div>
-            <button class="transfer-builder-btn"
-                    data-upgrade-name="${upg.upgrade}"
-                    data-current-builder="${upg.builder}"
-                    data-row="${upg.row}"
-                    title="Move to another builder">👤</button>
             <div class="upgrade-controls">
               <button class="transfer-builder-btn"
                       data-upgrade-name="${upg.upgrade}"
@@ -309,16 +359,71 @@ function renderBuilderDetails(details) {
       <button class="cancel-order-btn">Cancel</button>
     </div>`;
   setTimeout(() => {
-    setupDragAndDrop(wrapper); setupDurationEditor(wrapper);
-    setupBuilderTransfer(wrapper); setupBuilderRefresh(wrapper);
+    setupDragAndDrop(wrapper);
+    setupDurationEditor(wrapper);
+    setupBuilderTransfer(wrapper);
+    setupBuilderRefresh(wrapper);
   }, 0);
   return wrapper;
 }
 
-function renderBuilderCards() {
-  if (!currentWorkData) return;
+function formatBoostTime(timeStr) {
+  try {
+    const d = new Date(timeStr + " 2026");
+    if (isNaN(d)) return "";
+    const month = d.getMonth() + 1;
+    const day   = d.getDate();
+    let hours   = d.getHours();
+    const mins  = String(d.getMinutes()).padStart(2, '0');
+    const ampm  = hours >= 12 ? 'pm' : 'am';
+    hours = hours % 12 || 12;
+    return `${month}/${day} ${hours}:${mins}${ampm}`;
+  } catch (e) { return ""; }
+}
+
+function getBoostFinishTimeForBuilder(builderNumber) {
+  if (!boostPlanData || boostPlanData.length === 0) return null;
+
+  // Collect ALL boost entries for this builder
+  const matches = boostPlanData.filter(day => {
+    if (!day.hasBoost) return false;
+    const boostBuilderNum = day.builder.match(/(\d+)/)?.[1];
+    return boostBuilderNum === builderNumber;
+  });
+
+  if (!matches.length) return null;
+
+  // Return the newFinishTime of the very LAST boost (furthest in the plan)
+  return matches[matches.length - 1].newFinishTime;
+}
+
+function renderSkeletonCards(count = 6) {
   const container = document.getElementById("builders-container");
-  if (!container || container.children.length > 0) return;
+  if (!container) return;
+  container.innerHTML = "";
+  for (let i = 0; i < count; i++) {
+    const card = document.createElement("div");
+    card.className = "builder-card skeleton";
+    card.innerHTML = `
+      <div class="skeleton-character"></div>
+      <div class="skeleton-icon"></div>
+      <div class="skeleton-builder-text">
+        <div class="skeleton-block" style="width:70%;height:14px;"></div>
+        <div class="skeleton-block" style="width:90%;height:13px;"></div>
+        <div class="skeleton-block" style="width:60%;height:22px;margin-top:4px;"></div>
+        <div class="skeleton-block" style="width:80%;height:11px;"></div>
+        <div class="skeleton-block" style="width:75%;height:11px;"></div>
+      </div>`;
+    container.appendChild(card);
+  }
+}
+
+function renderBuilderCards() {
+  console.log("[Render] renderBuilderCards called");
+  if (!currentWorkData) { console.log("[Render] No currentWorkData"); return; }
+  const container = document.getElementById("builders-container");
+  if (!container) { console.log("[Render] No container found"); return; }
+  console.log("[Render] Proceeding to render cards");
 
   let earliestFinish = Infinity;
   for (let i = 1; i < currentWorkData.length; i++) {
@@ -327,12 +432,12 @@ function renderBuilderCards() {
   }
 
   for (let i = 1; i < currentWorkData.length; i++) {
-    const row = currentWorkData[i];
+    const row               = currentWorkData[i];
     const builderNumber     = row[0].toString().match(/(\d+)/)?.[1];
     const finishMs          = new Date(row[2]).getTime();
     const currentUpgradeImg = getUpgradeImage(row[1]);
 
-    const builderKey = "Builder_" + builderNumber;
+    const builderKey = `${window.COC_USERNAME}_Builder_${builderNumber}`;
     const pauseInfo  = window._pausedBuilders?.[builderKey];
     const isPaused   = pauseInfo?.paused === true;
 
@@ -372,6 +477,11 @@ function renderBuilderCards() {
         }
         badgeHTML = `<img src="${img}" class="apprentice-badge" data-apply-boost="true" />`;
       }
+      const boostFinish = getBoostFinishTimeForBuilder(builderNumber, row[1]);
+      const boostHTML   = boostFinish
+        ? `<span class="boost-finish-indicator">${formatBoostTime(boostFinish)}</span>`
+        : '';
+
       card.innerHTML = `
         ${badgeHTML}
         <img src="Images/Builders/Builder ${builderNumber}.png"
@@ -379,7 +489,7 @@ function renderBuilderCards() {
         <img src="${currentUpgradeImg}" class="current-upgrade-icon"
              alt="${row[1]}" onerror="this.src='Images/Upgrades/PH.png'" />
         <div class="builder-text">
-          <div class="builder-name">BUILDER ${builderNumber}</div>
+          <div class="builder-name">BUILDER ${builderNumber}${boostHTML}</div>
           <div class="builder-upgrade">${row[1]}</div>
           <div class="builder-time-left editable-card-duration"
                data-builder="Builder_${builderNumber}" data-upgrade="${row[1]}"
@@ -431,10 +541,11 @@ async function updateCardDuration(builderName, newMinutes, newDurationHr, durati
   const originalText = durationEl.textContent;
   durationEl.textContent = 'Saving...';
   try {
-    const res  = await fetch(`${API_BASE}?action=update_active_upgrade_time&builder=${builderName}&remaining_minutes=${newMinutes}`);
+    const res  = await fetch(`${API_BASE}?action=update_active_upgrade_time&username=${window.COC_USERNAME}&builder=${builderName}&remaining_minutes=${newMinutes}`);
     const data = await res.json();
     if (data.error) { alert('Failed to update: ' + data.error); durationEl.textContent = originalText; return; }
     durationEl.textContent = '✓ Saved!';
+    suppressFinishedCheckFor(60 * 1000);
     setTimeout(async () => {
       const container = document.getElementById("builders-container");
       container.innerHTML = "";
@@ -533,13 +644,14 @@ async function updateUpgradeDuration(builderName, row, newMinutes, newDurationHr
   const originalText = durationEl.textContent;
   durationEl.textContent = 'Saving...';
   try {
-    const res  = await fetch(`${API_BASE}?action=update_upgrade_duration&builder=${builderName}&row=${row}&minutes=${newMinutes}&duration_hr=${encodeURIComponent(newDurationHr)}`);
+    const res  = await fetch(`${API_BASE}?action=update_upgrade_duration&username=${window.COC_USERNAME}&builder=${builderName}&row=${row}&minutes=${newMinutes}&duration_hr=${encodeURIComponent(newDurationHr)}`);
     const data = await res.json();
     if (data.error) { alert('Failed to update: ' + data.error); durationEl.textContent = originalText; return; }
     durationEl.textContent = '✓ Saved!';
     setTimeout(() => {
       fetchBuilderDetails(detailsWrapper.dataset.builder).then(bd => {
-        detailsWrapper.replaceWith(renderBuilderDetails(bd));
+        if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
+        else { console.error('Bad response from fetchBuilderDetails:', bd); alert('Failed to reload builder details.'); }
       });
     }, 800);
   } catch (err) {
@@ -560,7 +672,13 @@ function setupBuilderRefresh(detailsWrapper) {
     const orig = refreshBtn.textContent;
     refreshBtn.textContent = '⟳'; refreshBtn.disabled = true; refreshBtn.classList.add('spinning');
     try {
-      detailsWrapper.replaceWith(renderBuilderDetails(await fetchBuilderDetails(detailsWrapper.dataset.builder)));
+      (async () => {
+        try {
+          const bd = await fetchBuilderDetails(detailsWrapper.dataset.builder);
+          if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
+          else { console.error('Bad response from fetchBuilderDetails:', bd); alert('Failed to reload builder details.'); }
+        } catch (e) { console.error('Refresh failed:', e); alert('Failed to reload builder: ' + e.message); }
+      })();
     } catch (err) {
       refreshBtn.textContent = orig; refreshBtn.disabled = false; refreshBtn.classList.remove('spinning');
     }
@@ -610,11 +728,17 @@ function showBuilderPicker(currentBuilder, callback) {
 
 async function transferUpgradeToBuilder(upgradeName, fromBuilder, row, toBuilder, detailsWrapper) {
   try {
-    const res  = await fetch(`${API_BASE}?action=transfer_upgrade&upgrade=${encodeURIComponent(upgradeName)}&from_builder=${fromBuilder}&row=${row}&to_builder=${toBuilder}`);
+    const res  = await fetch(`${API_BASE}?action=transfer_upgrade&username=${window.COC_USERNAME}&upgrade=${encodeURIComponent(upgradeName)}&from_builder=${fromBuilder}&row=${row}&to_builder=${toBuilder}`);
     const data = await res.json();
     if (data.error) { alert('Failed to transfer: ' + data.error); return; }
     alert(`✓ Moved "${upgradeName}" to ${toBuilder}`);
-    detailsWrapper.replaceWith(renderBuilderDetails(await fetchBuilderDetails(detailsWrapper.dataset.builder)));
+    (async () => {
+      try {
+        const bd = await fetchBuilderDetails(detailsWrapper.dataset.builder);
+        if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
+        else { console.error('Bad response from fetchBuilderDetails:', bd); alert('Failed to reload builder details.'); }
+      } catch (e) { console.error('Refresh failed:', e); alert('Failed to reload builder: ' + e.message); }
+    })();
   } catch (err) { console.error('Transfer failed:', err); alert('Failed to transfer upgrade'); }
 }
 
@@ -627,16 +751,53 @@ function setupDragAndDrop(detailsWrapper) {
   const saveBtn       = detailsWrapper.querySelector('.save-order-btn');
   const cancelBtn     = detailsWrapper.querySelector('.cancel-order-btn');
   const saveContainer = detailsWrapper.querySelector('.save-order-container');
-  let draggedItem = null, originalOrder = upgradeList.dataset.originalOrder, isDragging = false;
+  let draggedItem = null;
+  let isDragging = false;
+
+  const getOriginalOrder = () => Array.from(upgradeList.querySelectorAll('.upgrade-item'))
+    .map(el => el.dataset.index)
+    .sort((a, b) => parseInt(a) - parseInt(b))
+    .join(',');
+
+  const originalOrder = getOriginalOrder();
 
   items.forEach(item => {
-    item.addEventListener('dragstart', e => { draggedItem = item; item.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
-    item.addEventListener('dragend',   () => { item.classList.remove('dragging'); draggedItem = null; checkIfOrderChanged(); });
-    item.addEventListener('dragover',  e => { e.preventDefault(); const after = getDragAfterElement(upgradeList, e.clientY); after ? upgradeList.insertBefore(draggedItem, after) : upgradeList.appendChild(draggedItem); });
+    item.addEventListener('dragstart', e => {
+      draggedItem = item;
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      draggedItem = null;
+      checkIfOrderChanged();
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault();
+      const after = getDragAfterElement(upgradeList, e.clientY);
+      after ? upgradeList.insertBefore(draggedItem, after) : upgradeList.appendChild(draggedItem);
+    });
+
     item.querySelectorAll('.drag-handle').forEach(h => {
-      h?.addEventListener('touchstart', e => { e.preventDefault(); isDragging = true; draggedItem = item; item.classList.add('dragging'); }, { passive: false });
-      h?.addEventListener('touchmove',  e => { if (!isDragging) return; e.preventDefault(); const after = getDragAfterElement(upgradeList, e.touches[0].clientY); after ? upgradeList.insertBefore(draggedItem, after) : upgradeList.appendChild(draggedItem); }, { passive: false });
-      h?.addEventListener('touchend',   () => { if (!isDragging) return; isDragging = false; item.classList.remove('dragging'); draggedItem = null; checkIfOrderChanged(); });
+      h?.addEventListener('touchstart', e => {
+        e.preventDefault();
+        isDragging = true;
+        draggedItem = item;
+        item.classList.add('dragging');
+      }, { passive: false });
+      h?.addEventListener('touchmove', e => {
+        if (!isDragging) return;
+        e.preventDefault();
+        const after = getDragAfterElement(upgradeList, e.touches[0].clientY);
+        after ? upgradeList.insertBefore(draggedItem, after) : upgradeList.appendChild(draggedItem);
+      }, { passive: false });
+      h?.addEventListener('touchend', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        item.classList.remove('dragging');
+        draggedItem = null;
+        checkIfOrderChanged();
+      });
     });
   });
 
@@ -650,29 +811,66 @@ function setupDragAndDrop(detailsWrapper) {
   function checkIfOrderChanged() {
     const currentItems = upgradeList.querySelectorAll('.upgrade-item');
     const currentOrder = Array.from(currentItems).map(i => i.dataset.index).join(',');
-    if (currentOrder !== originalOrder) { saveContainer.classList.remove('hidden'); currentItems.forEach(i => i.classList.add('unsaved')); }
-    else                                { saveContainer.classList.add('hidden');    currentItems.forEach(i => i.classList.remove('unsaved')); }
+    if (currentOrder !== originalOrder) {
+      saveContainer.classList.remove('hidden');
+      currentItems.forEach(i => i.classList.add('unsaved'));
+    } else {
+      saveContainer.classList.add('hidden');
+      currentItems.forEach(i => i.classList.remove('unsaved'));
+    }
   }
 
   saveBtn?.addEventListener('click', async () => {
-    const num = detailsWrapper.dataset.builder;
+    const builderNum = detailsWrapper.dataset.builder;
     const currentItems = upgradeList.querySelectorAll('.upgrade-item');
     const newOrder = Array.from(currentItems).map(i => i.dataset.index).join(',');
-    saveBtn.disabled = true; saveBtn.textContent = 'Saving...';
+
+    console.log("[SaveOrder] builder:", builderNum, "order:", newOrder, "username:", window.COC_USERNAME);
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+
     try {
-      const res  = await fetch(`${API_BASE}?action=reorder_builder_upgrades&builder=Builder_${num}&order=${newOrder}`);
+      const url = `${API_BASE}?action=reorder_builder_upgrades&username=${encodeURIComponent(window.COC_USERNAME)}&builder=Builder_${builderNum}&order=${encodeURIComponent(newOrder)}`;
+      console.log("[SaveOrder] Fetching:", url);
+      const res  = await fetch(url, { redirect: 'follow' });
       const data = await res.json();
-      if (data.error) { alert('Failed to save: ' + data.error); return; }
-      originalOrder = newOrder; upgradeList.dataset.originalOrder = newOrder;
-      currentItems.forEach(i => i.classList.remove('unsaved')); saveContainer.classList.add('hidden');
+      console.log("[SaveOrder] Response:", data);
+
+      if (data.error) {
+        alert('Failed to save: ' + data.error);
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Order';
+        return;
+      }
+
       saveBtn.textContent = '✓ Saved!';
-      setTimeout(() => { saveBtn.textContent = 'Save Order'; saveBtn.disabled = false; }, 1500);
-      detailsWrapper.replaceWith(renderBuilderDetails(await fetchBuilderDetails(num)));
-    } catch (err) { console.error('Save failed:', err); alert('Failed to save order'); saveBtn.textContent = 'Save Order'; saveBtn.disabled = false; }
+      currentItems.forEach(i => i.classList.remove('unsaved'));
+      saveContainer.classList.add('hidden');
+
+      setTimeout(async () => {
+        try {
+          const bd = await fetchBuilderDetails(builderNum);
+          if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
+          else { console.error('Bad response after reorder:', bd); }
+        } catch(e) { console.error('Reload after reorder failed:', e); }
+        saveBtn.textContent = 'Save Order';
+        saveBtn.disabled = false;
+      }, 1000);
+
+    } catch (err) {
+      console.error('Save order failed:', err);
+      alert('Failed to save order: ' + err.message);
+      saveBtn.textContent = 'Save Order';
+      saveBtn.disabled = false;
+    }
   });
 
   cancelBtn?.addEventListener('click', () => {
-    fetchBuilderDetails(detailsWrapper.dataset.builder).then(bd => detailsWrapper.replaceWith(renderBuilderDetails(bd)));
+    fetchBuilderDetails(detailsWrapper.dataset.builder).then(bd => {
+      if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
+      else { console.error('Cancel-reload: bad response', bd); }
+    }).catch(e => console.error('Cancel-reload failed:', e));
   });
 }
 
@@ -688,25 +886,35 @@ function wireApprenticeBoost() {
     if (!confirm("Apply today's boost?")) return;
     const card = badge.closest(".builder-card");
     const builderNumber = card?.dataset.builder;
-    
-    // Show loading spinner
-    const originalSrc = badge.src;
+
     badge.style.opacity = "0.5";
-    badge.style.filter = "blur(1px)";
+    badge.style.filter  = "blur(1px)";
     const spinner = document.createElement("div");
     spinner.className = "boost-loading-spinner";
     spinner.innerHTML = "⟳";
     badge.parentElement.style.position = "relative";
     badge.parentElement.appendChild(spinner);
-    
+
     try {
-      await fetch(APPLY_TODAYS_BOOST);
+      const res  = await fetch(APPLY_TODAYS_BOOST_URL());
+      const data = await res.json();
+
       spinner.remove();
       badge.style.opacity = "1";
-      badge.style.filter = "none";
-      badge.src = "Images/Badge/Builder Apprentice applied.png";
+      badge.style.filter  = "none";
+
+      if (data.error) { alert("Boost failed: " + data.error); return; }
+
+      // Lock status BEFORE any reloads — loadTodaysBoost reads from sheet which
+      // may still show old status due to GAS execution lag (A11 not yet written)
       if (todaysBoostInfo) todaysBoostInfo.status = "APPLIED";
+      else todaysBoostInfo = { status: "APPLIED", builder: builderNumber };
+
+      badge.src = "Images/Badge/Builder Apprentice applied.png";
+
+      // Reload work data for updated durations, but NOT loadTodaysBoost
       await loadCurrentWork();
+
       if (card && currentWorkData && builderNumber) {
         const bd = currentWorkData.find(r => r[0]?.toString().includes(builderNumber));
         if (bd) {
@@ -716,18 +924,22 @@ function wireApprenticeBoost() {
           if (ft) ft.textContent = "Finishes: " + formatFinishTime(bd[2]);
         }
       }
-      await Promise.all([loadTodaysBoost(), loadBoostPlan()]);
+
+      await loadBoostPlan(); // OK — only reads plan rows, not status
       updateLastRefreshed();
       const container = document.getElementById("builders-container");
       container.innerHTML = "";
       renderBuilderCards();
-    } catch (err) { console.error("Failed to apply today's boost", err); alert("Failed to apply today's boost."); }
+    } catch (err) {
+      console.error("Failed to apply today's boost", err);
+      alert("Failed to apply today's boost.");
+    }
   });
 }
 
 function wireImageButtons() {
-  document.getElementById("oneHourBoostBtn")?.addEventListener("click", async () => { await fetch(BUILDER_SNACK); refreshDashboard(); });
-  document.getElementById("battlePassBtn")?.addEventListener("click",  async () => { await fetch(BATTLE_PASS); refreshDashboard(); });
+  document.getElementById("oneHourBoostBtn")?.addEventListener("click", async () => { await fetch(BUILDER_SNACK_URL()); refreshDashboard(); });
+  document.getElementById("battlePassBtn")?.addEventListener("click",  async () => { await fetch(BATTLE_PASS_URL());  refreshDashboard(); });
 }
 
 function wireBoostSimulation() {
@@ -735,7 +947,10 @@ function wireBoostSimulation() {
   if (!btn) return;
   btn.addEventListener("click", async () => {
     btn.disabled = true; btn.textContent = "Running…";
-    await fetch(RUN_BOOST_SIM); await refreshDashboard();
+    try {
+      await fetch(endpoint("run_boost_simulation"), { redirect: 'follow' });
+      await refreshDashboard();
+    } catch (e) { console.error("Boost sim failed:", e); }
     btn.textContent = "Run Boost Simulation"; btn.disabled = false;
   });
 }
@@ -743,7 +958,8 @@ function wireBoostSimulation() {
 function wireBoostFocusNavigation() {
   document.getElementById("boostPrev")?.addEventListener("click", () => { if (currentBoostIndex > 0) { currentBoostIndex--; renderBoostFocusCard(); } });
   document.getElementById("boostNext")?.addEventListener("click", () => { if (currentBoostIndex < boostPlanData.length-1) { currentBoostIndex++; renderBoostFocusCard(); } });
-  const menuBtn = document.getElementById("boostMenuBtn");
+
+  const menuBtn  = document.getElementById("boostMenuBtn");
   const dropdown = document.getElementById("boostBuilderDropdown");
   if (menuBtn && dropdown) {
     menuBtn.addEventListener("click", e => { e.stopPropagation(); dropdown.classList.toggle("hidden"); });
@@ -752,16 +968,17 @@ function wireBoostFocusNavigation() {
       const builderBtn = e.target.closest("[data-builder-select]");
       if (!builderBtn) return;
       const sel = builderBtn.dataset.builderSelect, num = sel.match(/(\d+)/)?.[1];
-      const statusEl = document.querySelector(".boost-status"), builderEl = document.querySelector(".boost-builder");
-      const origStatus = statusEl.textContent, origBuilder = builderEl.textContent;
+      const statusEl  = document.querySelector(".boost-status");
+      const builderEl = document.querySelector(".boost-builder");
+      const origStatus  = statusEl.textContent, origBuilder = builderEl.textContent;
       statusEl.textContent = "Updating..."; builderEl.textContent = `Changing to Builder ${num}`;
       dropdown.classList.add("hidden"); menuBtn.disabled = true;
       try {
-        const res  = await fetch(SET_TODAYS_BOOST_BUILDER + sel);
+        const res  = await fetch(SET_BOOST_BUILDER_URL(sel));
         const data = await res.json();
         if (data.error) { alert(data.error); statusEl.textContent = origStatus; builderEl.textContent = origBuilder; menuBtn.disabled = false; return; }
         statusEl.textContent = "Recalculating...";
-        await fetch(RUN_BOOST_SIM);
+        await fetch(endpoint("run_boost_simulation"), { redirect: 'follow' });
         if (todaysBoostInfo) todaysBoostInfo.builder = num;
         const container = document.getElementById("builders-container");
         container.innerHTML = "";
@@ -769,7 +986,9 @@ function wireBoostFocusNavigation() {
         renderBuilderCards(); updateLastRefreshed();
         statusEl.textContent = "✓ Updated!";
         setTimeout(() => renderBoostFocusCard(), 1500);
-      } catch (err) { console.error("Failed to change builder:", err); alert("Failed: " + err.message); statusEl.textContent = origStatus; builderEl.textContent = origBuilder;
+      } catch (err) {
+        console.error("Failed to change builder:", err); alert("Failed: " + err.message);
+        statusEl.textContent = origStatus; builderEl.textContent = origBuilder;
       } finally { menuBtn.disabled = false; }
     });
   }
@@ -778,7 +997,7 @@ function wireBoostFocusNavigation() {
 function wireBuilderCardClicks() {
   document.addEventListener("click", async e => {
     if (e.target.closest("[data-apply-boost]")) { e.stopPropagation(); e.preventDefault(); return; }
-    if (e.target.closest(".start-builder-btn")) return; // handled by wirePausedBuilderButtons
+    if (e.target.closest(".start-builder-btn")) return;
     const card = e.target.closest(".builder-card");
     if (!card) return;
     const builder = card.dataset.builder;
@@ -805,6 +1024,11 @@ function wireBuilderCardClicks() {
       console.error("Failed to load builder details:", err);
       openBuilders = openBuilders.filter(b => b !== builder);
       card.classList.remove("expanded");
+      const errDiv = document.createElement("div");
+      errDiv.className = "builder-details-error";
+      errDiv.dataset.builder = builder;
+      errDiv.textContent = "⚠️ Could not load builder details: " + err.message;
+      card.after(errDiv);
     } finally { loadingBuilders.delete(builder); card.classList.remove("loading"); }
   });
 }
@@ -815,11 +1039,58 @@ function startAutoRefresh() {
 }
 
 /* =========================
+   LIVE COUNTDOWN
+   Decrements displayed durations every 60s without hitting the API.
+   Reads the finish time from currentWorkData and recalculates time left.
+   ========================= */
+function startLiveCountdown() {
+  setInterval(() => {
+    if (!currentWorkData) return;
+    const now = Date.now();
+    document.querySelectorAll(".builder-time-left[data-builder]").forEach(el => {
+      const builderName = el.dataset.builder; // e.g. "Builder_1"
+      const builderNum  = builderName.match(/(\d+)/)?.[1];
+      if (!builderNum) return;
+
+      // Find the matching row in currentWorkData (column 0 has builder name, col 2 has finish time)
+      const row = currentWorkData.find(r => r[0]?.toString().includes(`_${builderNum}`) || r[0]?.toString().endsWith(builderNum));
+      if (!row) return;
+
+      const finishMs = new Date(row[2]).getTime();
+      if (isNaN(finishMs)) return;
+
+      const remainingMs = finishMs - now;
+      if (remainingMs <= 0) {
+        el.textContent = "0 d 0 hr 0 min";
+        return;
+      }
+
+      const totalMins  = Math.floor(remainingMs / 60000);
+      const days  = Math.floor(totalMins / (24 * 60));
+      const hours = Math.floor((totalMins % (24 * 60)) / 60);
+      const mins  = totalMins % 60;
+      el.textContent = `${days} d ${hours} hr ${mins} min`;
+    });
+  }, 60 * 1000); // every 60 seconds
+}
+
+/* =========================
    UPGRADE CONFIRMATION MODAL
    ========================= */
-async function checkForFinishedUpgrades() {
+let lastFinishedCheck = 0;
+let suppressFinishedCheck = false;
+
+async function checkForFinishedUpgrades(force = false) {
+  // Suppress for 30s after a duration edit to avoid re-showing the modal
+  // for upgrades that were just confirmed or whose timing just changed
+  if (suppressFinishedCheck && !force) return;
+  // Cooldown: don't re-check more than once every 2 minutes unless forced
+  const now = Date.now();
+  if (!force && now - lastFinishedCheck < 2 * 60 * 1000) return;
+  lastFinishedCheck = now;
+
   try {
-    const res  = await fetch(API_BASE + "?action=check_finished_upgrades");
+    const res  = await fetch(endpoint("check_finished_upgrades"));
     const data = await res.json();
     if (data.finishedUpgrades?.length > 0) {
       finishedUpgradesData = data.finishedUpgrades;
@@ -828,50 +1099,25 @@ async function checkForFinishedUpgrades() {
   } catch (e) { console.error("Failed to check finished upgrades:", e); }
 }
 
-async function autoConfirmSingleBuilder(builder, builderData) {
-  try {
-    const params = new URLSearchParams({
-      action: 'confirm_upgrade_start',
-      builder: builder,
-      upgradeName: builderData.nowActive.upgradeName,
-      startTime: new Date(builderData.nowActive.scheduledStart + " 2026").toISOString(),
-      confirmAction: 'confirm',
-      differentUpgrade: ''
-    });
-    
-    await fetch(API_BASE + '?' + params.toString());
-    
-    // Refresh the dashboard after auto-confirming
-    const container = document.getElementById("builders-container");
-    if (container) container.innerHTML = "";
-    await new Promise(resolve => setTimeout(resolve, 500));
-    refreshDashboard();
-  } catch (err) {
-    console.error('Auto-confirm failed:', err);
-    // Fall back to showing the modal the normal way
-    finishedUpgradesData = [builderData];
-    showUpgradeConfirmationModal([builderData]);
-  }
+function suppressFinishedCheckFor(ms) {
+  suppressFinishedCheck = true;
+  setTimeout(() => { suppressFinishedCheck = false; }, ms);
 }
+
+// autoConfirmSingleBuilder is intentionally removed.
+// All confirmations now go through the modal regardless of builder count.
 
 function showUpgradeConfirmationModal(upgrades) {
   reviewedTabs = new Set();
   document.querySelector('.upgrade-confirmation-modal-overlay')?.remove();
-  
-  // If only ONE builder with finished upgrades, auto-confirm it
-  if (upgrades.length === 1) {
-    const builder = upgrades[0].builder;
-    const builderData = upgrades[0];
-    // Auto-confirm the single upgrade with default values (as planned, scheduled time)
-    autoConfirmSingleBuilder(builder, builderData);
-    return;
-  }
+  // Always show the modal — never auto-confirm, even for a single builder.
+  // The user must explicitly confirm start time or pause.
   const modal = document.createElement('div');
   modal.className = 'upgrade-confirmation-modal-overlay';
   modal.innerHTML = `
     <div class="upgrade-confirmation-modal">
       <div class="ucm-header">
-        <h3>⚠️ New Upgrades Started</h3>
+        <h3>⚠️ ${upgrades.length === 1 ? 'Upgrade Finished' : 'New Upgrades Started'}</h3>
         <span class="ucm-review-status">0 / ${upgrades.length} reviewed</span>
       </div>
       <div class="ucm-tabs">
@@ -885,7 +1131,7 @@ function showUpgradeConfirmationModal(upgrades) {
         ${upgrades.map((b,i) => buildTabContent(b, i===0)).join('')}
       </div>
       <div class="ucm-footer">
-        <button class="ucm-confirm-all" disabled>Confirm All &nbsp;·&nbsp; Review all tabs first</button>
+        <button class="ucm-confirm-all" disabled>${upgrades.length === 1 ? 'Done — review above first' : 'Confirm All &nbsp;·&nbsp; Review all tabs first'}</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
@@ -988,7 +1234,7 @@ function wireConfirmationModal(modal, upgrades) {
   modal.querySelectorAll('input[name^="time-method-"]').forEach(radio => {
     radio.addEventListener('change', () => {
       const b = radio.name.replace('time-method-','');
-      const tab = modal.querySelector(`.ucm-tab-content[data-builder="${b}"]`);
+      const tab      = modal.querySelector(`.ucm-tab-content[data-builder="${b}"]`);
       const exactDiv = tab.querySelector(`.ucm-exact-inputs[data-for="${b}"]`);
       const remDiv   = tab.querySelector(`.ucm-remaining-inputs[data-for="${b}"]`);
       const isExact  = radio.value === 'exact';
@@ -1000,8 +1246,7 @@ function wireConfirmationModal(modal, upgrades) {
   modal.querySelectorAll('.ucm-exact-dt').forEach(i => i.addEventListener('input', () => updateAllPreviews(modal, upgrades)));
   modal.querySelectorAll('.ucm-spin').forEach(btn => {
     btn.addEventListener('click', () => {
-      const input = document.getElementById(btn.dataset.field);
-      if (!input) return;
+      const input = document.getElementById(btn.dataset.field); if (!input) return;
       const isUp = btn.classList.contains('ucm-spin-up'), cur = parseInt(input.value)||0;
       if (isUp  && cur < parseInt(input.max)) input.value = cur+1;
       if (!isUp && cur > parseInt(input.min)) input.value = cur-1;
@@ -1011,7 +1256,7 @@ function wireConfirmationModal(modal, upgrades) {
   modal.querySelectorAll('.ucm-spin-input').forEach(i => i.addEventListener('input', () => updateAllPreviews(modal, upgrades)));
   modal.querySelectorAll('input[name^="upgrade-choice-"]').forEach(radio => {
     radio.addEventListener('change', () => {
-      const b = radio.name.replace('upgrade-choice-','');
+      const b   = radio.name.replace('upgrade-choice-','');
       const tab = modal.querySelector(`.ucm-tab-content[data-builder="${b}"]`);
       tab.querySelector('.ucm-show-queue').style.display = radio.value==='different'?'inline-block':'none';
       if (radio.value !== 'different') tab.querySelector('.ucm-diff-selected').style.display = 'none';
@@ -1024,7 +1269,6 @@ function wireConfirmationModal(modal, upgrades) {
     modal.remove();
     const container = document.getElementById("builders-container");
     if (container) container.innerHTML = "";
-    // Wait for Google Sheets formulas to recalculate
     await new Promise(resolve => setTimeout(resolve, 500));
     refreshDashboard();
   });
@@ -1033,7 +1277,7 @@ function wireConfirmationModal(modal, upgrades) {
 function updateAllPreviews(modal, upgrades) {
   const activeTab = modal.querySelector('.ucm-tab-content.active');
   if (!activeTab) return;
-  const b = activeTab.dataset.builder;
+  const b  = activeTab.dataset.builder;
   const bd = upgrades.find(u => u.builder === b);
   if (!bd) return;
   const m = bd.nowActive.totalDuration.match(/(\d+)\s*d\s*(\d+)\s*hr\s*(\d+)\s*min/);
@@ -1058,7 +1302,7 @@ function updateAllPreviews(modal, upgrades) {
 }
 
 function getStartTimeFromTab(tab, totalMinutes) {
-  const b = tab.dataset.builder;
+  const b      = tab.dataset.builder;
   const method = tab.querySelector(`input[name="time-method-${b}"]:checked`)?.value;
   if (method === 'exact') {
     const val = tab.querySelector('.ucm-exact-dt')?.value;
@@ -1071,7 +1315,7 @@ function getStartTimeFromTab(tab, totalMinutes) {
 }
 
 async function handleBuilderConfirmation(btn, modal, upgrades) {
-  const b = btn.dataset.builder;
+  const b   = btn.dataset.builder;
   const tab = modal.querySelector(`.ucm-tab-content[data-builder="${b}"]`);
   const bd  = upgrades.find(u => u.builder === b);
   if (!bd) return;
@@ -1087,7 +1331,7 @@ async function handleBuilderConfirmation(btn, modal, upgrades) {
   if (!startTime || isNaN(startTime)) { alert('Please enter a valid start time'); return; }
   btn.disabled = true; btn.textContent = 'Confirming…';
   try {
-    const params = new URLSearchParams({ action:'confirm_upgrade_start', builder:b, upgradeName, startTime:startTime.toISOString(), confirmAction:choice==='different'?'different':'confirm', differentUpgrade:differentUpgrade||'' });
+    const params = new URLSearchParams({ action:'confirm_upgrade_start', username:window.COC_USERNAME, builder:b, upgradeName, startTime:startTime.toISOString(), confirmAction:choice==='different'?'different':'confirm', differentUpgrade:differentUpgrade||'' });
     const res  = await fetch(API_BASE + '?' + params.toString());
     const data = await res.json();
     if (data.error) { alert('Error: '+data.error); btn.disabled=false; btn.textContent=`Confirm ${b.replace('_',' ')}`; return; }
@@ -1104,7 +1348,7 @@ async function handleBuilderPause(btn, modal, upgrades) {
   if (!confirm(`Pause ${bLabel}? This means the upgrade has not started yet.`)) return;
   btn.disabled = true; btn.textContent = 'Pausing…';
   try {
-    const params = new URLSearchParams({ action:'confirm_upgrade_start', builder:b, upgradeName:'', startTime:'', confirmAction:'pause', differentUpgrade:'' });
+    const params = new URLSearchParams({ action:'confirm_upgrade_start', username:window.COC_USERNAME, builder:b, upgradeName:'', startTime:'', confirmAction:'pause', differentUpgrade:'' });
     const res  = await fetch(API_BASE + '?' + params.toString());
     const data = await res.json();
     if (data.error) { alert('Error: '+data.error); btn.disabled=false; btn.textContent=`⏸️ Not Started — Pause ${bLabel}`; return; }
@@ -1123,13 +1367,14 @@ function markTabReviewed(builder, modal, upgrades) {
   if (s) s.textContent = `${reviewedTabs.size} / ${upgrades.length} reviewed`;
   if (reviewedTabs.size === upgrades.length) {
     const ca = modal.querySelector('.ucm-confirm-all');
-    ca.disabled = false; ca.textContent = 'Confirm All ✓';
+    ca.disabled = false;
+    ca.textContent = upgrades.length === 1 ? 'Done ✓' : 'Confirm All ✓';
   }
 }
 
 async function showUpgradeQueueModal(builder, parentModal) {
   try {
-    const res  = await fetch(API_BASE + `?action=get_builder_queue&builder=${builder}`);
+    const res  = await fetch(endpoint("get_builder_queue") + `&builder=${builder}`);
     const data = await res.json();
     if (data.error) { alert('Error: '+data.error); return; }
     const qModal = document.createElement('div');
@@ -1231,10 +1476,10 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
   modal.querySelectorAll('input[name="sp-time-method"]').forEach(r => {
     r.addEventListener('change', () => {
       const isExact = r.value==='exact';
-      modal.querySelector('.sp-exact-wrap').style.opacity = isExact?'1':'0.4';
+      modal.querySelector('.sp-exact-wrap').style.opacity       = isExact?'1':'0.4';
       modal.querySelector('.sp-exact-wrap').style.pointerEvents = isExact?'auto':'none';
-      modal.querySelector('.sp-rem-wrap').style.opacity = isExact?'0.4':'1';
-      modal.querySelector('.sp-rem-wrap').style.pointerEvents = isExact?'none':'auto';
+      modal.querySelector('.sp-rem-wrap').style.opacity         = isExact?'0.4':'1';
+      modal.querySelector('.sp-rem-wrap').style.pointerEvents   = isExact?'none':'auto';
     });
   });
   modal.querySelectorAll('.ucm-spin').forEach(btn => {
@@ -1248,7 +1493,7 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
   modal.querySelector('.ucm-queue-cancel').addEventListener('click', () => modal.remove());
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
   modal.querySelector('.sp-start-btn').addEventListener('click', async () => {
-    const method = modal.querySelector('input[name="sp-time-method"]:checked')?.value;
+    const method   = modal.querySelector('input[name="sp-time-method"]:checked')?.value;
     const startBtn = modal.querySelector('.sp-start-btn');
     startBtn.disabled = true; startBtn.textContent = 'Starting…';
     try {
@@ -1256,13 +1501,12 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
       if (method === 'exact') {
         const exactTime = new Date(modal.querySelector('.sp-exact-dt').value);
         if (!exactTime || isNaN(exactTime)) { alert('Please enter a valid start time'); startBtn.disabled=false; startBtn.textContent='▶️ Start Now'; return; }
-        params = new URLSearchParams({ action:'start_paused_builder', builder:b, method:'exact', startTime:exactTime.toISOString() });
+        params = new URLSearchParams({ action:'start_paused_builder', username:window.COC_USERNAME, builder:b, method:'exact', startTime:exactTime.toISOString() });
       } else {
-        const d=parseInt(document.getElementById('sp-rd').value)||0;
-        const h=parseInt(document.getElementById('sp-rh').value)||0;
-        const m=parseInt(document.getElementById('sp-rm').value)||0;
-        const remainingMinutes = d*24*60 + h*60 + m;
-        params = new URLSearchParams({ action:'start_paused_builder', builder:b, method:'remaining', remainingMinutes:remainingMinutes.toString() });
+        const d = parseInt(document.getElementById('sp-rd').value)||0;
+        const h = parseInt(document.getElementById('sp-rh').value)||0;
+        const m = parseInt(document.getElementById('sp-rm').value)||0;
+        params = new URLSearchParams({ action:'start_paused_builder', username:window.COC_USERNAME, builder:b, method:'remaining', remainingMinutes:String(d*24*60+h*60+m) });
       }
       const res  = await fetch(API_BASE + '?' + params.toString());
       const data = await res.json();
@@ -1270,7 +1514,6 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
       modal.remove();
       const container = document.getElementById("builders-container");
       if (container) container.innerHTML = "";
-      // Wait 500ms for Google Sheets formulas to recalculate
       await new Promise(resolve => setTimeout(resolve, 500));
       await Promise.all([loadCurrentWork(), loadTodaysBoost(), loadPausedBuilders()]);
       renderBuilderCards();
@@ -1290,9 +1533,12 @@ function wirePausedBuilderButtons() {
   });
 }
 
+/**
+ * FIX #2b: scheduledToDatetimeLocal now uses parseScheduledStart for robustness
+ */
 function scheduledToDatetimeLocal(s) {
-  const d = new Date(s + " 2026");
-  return isNaN(d) ? toDatetimeLocal(new Date()) : toDatetimeLocal(d);
+  const d = parseScheduledStart(s);
+  return d ? toDatetimeLocal(d) : toDatetimeLocal(new Date());
 }
 
 function toDatetimeLocal(d) {
@@ -1304,12 +1550,107 @@ function toDatetimeLocal(d) {
    INIT
    ========================= */
 document.addEventListener("DOMContentLoaded", async () => {
+  let username = localStorage.getItem("coc_username");
+  if (username && username.endsWith("_CURRENT_WORK")) {
+    username = username.replace("_CURRENT_WORK", "");
+    localStorage.setItem("coc_username", username);
+  }
+  if (!username || username === "null" || username === "undefined" || username.trim() === "") {
+    showLoginScreen(async (confirmedUsername) => {
+      window.COC_USERNAME = confirmedUsername;
+      console.log("[Init] Username set to:", confirmedUsername);
+      await bootApp();
+    });
+    return;
+  }
+  window.COC_USERNAME = username;
+  console.log("[Init] Username:", username);
+  await bootApp();
+});
+
+async function bootApp() {
+  renderSkeletonCards(6);
   await refreshDashboard();
   startAutoRefresh();
+  startLiveCountdown();
   wireApprenticeBoost();
   wireBoostSimulation();
   wireBoostFocusNavigation();
   wireBuilderCardClicks();
   wireImageButtons();
   await checkForFinishedUpgrades();
-});
+}
+
+function switchUser() {
+  localStorage.removeItem("coc_username");
+  window.COC_USERNAME = null;
+  location.reload();
+}
+
+function showLoginScreen(onConfirm) {
+  const overlay = document.createElement("div");
+  overlay.id = "login-overlay";
+  overlay.style.cssText = [
+    "position:fixed", "inset:0", "z-index:99999",
+    "background:rgba(0,0,0,0.85)",
+    "display:flex", "align-items:center", "justify-content:center",
+    "padding:24px", "box-sizing:border-box"
+  ].join(";");
+
+  overlay.innerHTML = `
+    <div style="
+      background:#1e1e2e; border-radius:16px; padding:32px 28px;
+      width:100%; max-width:360px; box-shadow:0 8px 32px rgba(0,0,0,0.6);
+      font-family:sans-serif; color:#fff; text-align:center;
+    ">
+      <div style="font-size:48px; margin-bottom:8px">⚒️</div>
+      <h2 style="margin:0 0 6px; font-size:1.3rem">Builder Tracker</h2>
+      <p style="margin:0 0 24px; color:#aaa; font-size:0.9rem">Enter your username to continue</p>
+      <input
+        id="login-username-input"
+        type="text"
+        placeholder="e.g. Daniel"
+        autocomplete="username"
+        autocapitalize="off"
+        style="
+          width:100%; box-sizing:border-box;
+          padding:14px 16px; border-radius:10px;
+          border:2px solid #444; background:#2a2a3e;
+          color:#fff; font-size:1rem; outline:none;
+          margin-bottom:16px;
+        "
+      />
+      <button id="login-confirm-btn" style="
+        width:100%; padding:14px; border-radius:10px;
+        border:none; background:#5865f2; color:#fff;
+        font-size:1rem; font-weight:600; cursor:pointer;
+        transition:background 0.2s;
+      ">Continue →</button>
+      <p id="login-error" style="color:#f87171; font-size:0.85rem; margin:12px 0 0; display:none">
+        Please enter a username.
+      </p>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const input = overlay.querySelector("#login-username-input");
+  const btn   = overlay.querySelector("#login-confirm-btn");
+  const err   = overlay.querySelector("#login-error");
+
+  setTimeout(() => input.focus(), 100);
+
+  function confirm() {
+    const val = input.value.replace(/[^a-zA-Z0-9_]/g, "").trim();
+    if (!val) { err.style.display = "block"; return; }
+    err.style.display = "none";
+    localStorage.setItem("coc_username", val);
+    overlay.remove();
+    onConfirm(val);
+  }
+
+  btn.addEventListener("click", confirm);
+  input.addEventListener("keydown", e => { if (e.key === "Enter") confirm(); });
+  btn.addEventListener("mouseenter", () => btn.style.background = "#4752c4");
+  btn.addEventListener("mouseleave", () => btn.style.background = "#5865f2");
+}
