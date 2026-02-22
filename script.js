@@ -222,16 +222,19 @@ async function refreshDashboard() {
   try {
     updateActiveStatusSmart();
     await fetch(REFRESH_ENDPOINT);
-    await Promise.all([loadCurrentWork(), loadTodaysBoost(), loadPausedBuilders()]);
-    // FIX #1: Always clear container before rendering to avoid stale state
+    // Load ALL data in parallel — including boost plan — before rendering cards
+    await Promise.all([
+      loadCurrentWork(),
+      loadTodaysBoost(),
+      loadPausedBuilders(),
+      loadBoostPlan()          // ← now runs in parallel, cards render after
+    ]);
     if (openBuilders.length === 0) {
       const container = document.getElementById("builders-container");
       if (container) container.innerHTML = "";
       renderBuilderCards();
     }
-    await loadBoostPlan();
     updateLastRefreshed();
-    // Check for finished upgrades on each refresh (has 2-min cooldown built in)
     checkForFinishedUpgrades();
   } catch (e) {
     console.error("Refresh failed", e);
@@ -380,14 +383,18 @@ function formatBoostTime(timeStr) {
 
 function getBoostFinishTimeForBuilder(builderNumber) {
   if (!boostPlanData || boostPlanData.length === 0) return null;
-  // Return the FIRST (soonest/today's) boost for this builder, not the last
-  for (const day of boostPlanData) {
-    if (!day.hasBoost) continue;
+
+  // Collect ALL boost entries for this builder
+  const matches = boostPlanData.filter(day => {
+    if (!day.hasBoost) return false;
     const boostBuilderNum = day.builder.match(/(\d+)/)?.[1];
-    if (boostBuilderNum !== builderNumber) continue;
-    return day.newFinishTime; // stop at first match
-  }
-  return null;
+    return boostBuilderNum === builderNumber;
+  });
+
+  if (!matches.length) return null;
+
+  // Return the newFinishTime of the very LAST boost (furthest in the plan)
+  return matches[matches.length - 1].newFinishTime;
 }
 
 function renderSkeletonCards(count = 6) {
