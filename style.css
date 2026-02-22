@@ -1103,6 +1103,8 @@ button:disabled {
     left: 42%;
     width: 54%;
   }
+  .boost-finish-indicator {
+  font-size: 8px;
 }
 
 /* ==================================================
