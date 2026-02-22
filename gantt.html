@@ -700,8 +700,16 @@ function computeRange() {
 
 function parseDate(raw) {
   if (!raw) return null;
-  const d = new Date(raw);
-  return isNaN(d) ? null : d;
+  // Handle already-ISO strings
+  const direct = new Date(raw);
+  if (!isNaN(direct.getTime()) && raw.includes('-')) return direct;
+  // Handle "Feb 27 9:20 AM" format (no year) — same fix as script.js parseScheduledStart
+  const currentYear = new Date().getFullYear();
+  for (const year of [currentYear, currentYear + 1]) {
+    const d = new Date(`${raw} ${year}`);
+    if (!isNaN(d.getTime())) return d;
+  }
+  return null;
 }
 
 function daysBetween(a, b) {
