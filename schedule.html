@@ -122,14 +122,21 @@
       overflow:visible; pointer-events:none;
       position:sticky;
     }
-    .bar-icon { object-fit:contain; border-radius:5px; flex-shrink:0; background:rgba(0,0,0,.25); padding:3px; }
+    .bar-icon { object-fit:contain; border-radius:5px; flex-shrink:0; background:transparent; padding:2px; overflow:hidden; }
 
-    .bar-text-col { display:flex; flex-direction:column; gap:1px; overflow:hidden; padding:0 7px; }
+    .bar-text-col { display:flex; flex-direction:column; gap:1px; overflow:hidden; padding:0 5px; flex:1; min-width:0; }
     .bar-name     { font-size:11px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.8); line-height:1.25; }
     .bar-dur      { font-size:9px;  font-weight:600; color:rgba(255,255,255,0.75); text-shadow:0 1px 2px rgba(0,0,0,0.7); white-space:nowrap; line-height:1.25; }
-    .bar-finish-lbl { font-size:8.5px; font-weight:700; color:rgba(255,255,255,0.6); text-shadow:0 1px 2px rgba(0,0,0,0.7); white-space:nowrap; line-height:1.25; }
+    .bar-finish-lbl { font-size:8.5px; font-weight:700; color:rgba(255,255,255,0.82); text-shadow:0 1px 2px rgba(0,0,0,0.9); white-space:nowrap; line-height:1.25; }
 
-    .gantt-boost-marker {
+    /* End-time badge pinned to the right end of the bar */
+    .bar-end-badge {
+  position:absolute; right:4px; top:50%; transform:translateY(-50%);
+  font-size:8px; font-weight:800; color:#fff;
+  background:rgba(0,0,0,0.45); border-radius:4px;
+  padding:1px 4px; white-space:nowrap; pointer-events:none;
+  max-width:80px; overflow:hidden; text-overflow:ellipsis;
+   }
       position:absolute; top:2px; width:14px; height:14px; background:#fff;
       border-radius:50%; display:flex; align-items:center; justify-content:center;
       font-size:8px; z-index:3; pointer-events:none; box-shadow:0 1px 4px rgba(0,0,0,.4);
@@ -163,8 +170,19 @@
       .gantt-title  { font-size:15px; }
       .back-btn, .refresh-btn { padding:7px 11px; font-size:12px; }
       .builder-toggles { padding:8px 14px; top:51px; justify-content:flex-start; }
-      .toggle-btn { padding:6px 10px; font-size:11px; }
-    }
+.toggle-btn { padding:6px 10px; font-size:11px; }
+  }
+
+  /* Mobile zoom bar */
+  .mobile-zoom-bar {
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:8px 16px; background:var(--surface);
+    border-bottom:1px solid var(--border);
+    position:sticky; top:101px; z-index:185;
+  }
+  .mobile-zoom-bar .zoom-btn { width:34px; height:34px; font-size:18px; }
+  .mobile-zoom-bar .zoom-label { font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; }
+  .mobile-zoom-bar .zoom-level { font-size:12px; font-weight:800; color:var(--gold); min-width:40px; text-align:center; }
     @media (min-width:769px) { .gantt-mobile { display:none; } }
 
     /* ── MOBILE GANTT ── */
@@ -213,9 +231,9 @@
       pointer-events:none; z-index:3;
     }
     .mobile-bar-icon {
-      width:44px; height:44px; object-fit:contain; border-radius:7px;
-      background:rgba(0,0,0,.3); padding:3px; flex-shrink:0;
-      box-shadow:0 2px 8px rgba(0,0,0,.55);
+  width:44px; height:44px; object-fit:contain; border-radius:7px;
+  background:transparent; padding:3px; flex-shrink:0;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,.7));
     }
     .mobile-bar-text-block {
       display:flex; flex-direction:column; align-items:center; gap:2px; width:100%;
@@ -298,10 +316,22 @@
   <button class="zoom-btn" id="zoomOut">−</button>
   <span class="zoom-level" id="zoomLevel">100%</span>
   <button class="zoom-btn" id="zoomIn">+</button>
+  <div style="width:1px;height:24px;background:rgba(255,255,255,0.12);margin:0 6px;"></div>
+  <span class="zoom-label">Jump</span>
+  <button class="zoom-btn" id="jump1W" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;">1W</button>
+  <button class="zoom-btn" id="jump1M" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;">1M</button>
+  <button class="zoom-btn" id="jump3M" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;">3M</button>
 </div>
 
 <!-- MOBILE -->
+<!-- MOBILE -->
 <div class="gantt-mobile" id="ganttMobile">
+  <div class="mobile-zoom-bar">
+    <span class="zoom-label">Zoom</span>
+    <button class="zoom-btn" id="mobileZoomOut">−</button>
+    <span class="zoom-level" id="mobileZoomLevel">100%</span>
+    <button class="zoom-btn" id="mobileZoomIn">+</button>
+  </div>
   <div class="state-msg" id="stateMsgMobile"><div class="spinner"></div><span>Loading schedule…</span></div>
   <div class="mobile-columns-wrapper" id="mobileColumns" style="display:none"></div>
 </div>
@@ -366,9 +396,22 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!u || u === 'null' || u.trim() === '') { window.location.href = 'index.html'; return; }
   window.COC_USERNAME = u;
 
-  document.getElementById('zoomIn').addEventListener('click',  () => { ganttZoom = Math.min(ganttZoom + 0.25, 4);    applyZoom(); });
+document.getElementById('zoomIn').addEventListener('click',  () => { ganttZoom = Math.min(ganttZoom + 0.25, 4);    applyZoom(); });
   document.getElementById('zoomOut').addEventListener('click', () => { ganttZoom = Math.max(ganttZoom - 0.25, 0.25); applyZoom(); });
-
+  document.getElementById('mobileZoomIn')?.addEventListener('click',  () => { ganttZoom = Math.min(ganttZoom + 0.25, 4);    applyMobileZoom(); });
+  document.getElementById('mobileZoomOut')?.addEventListener('click', () => { ganttZoom = Math.max(ganttZoom - 0.25, 0.25); applyMobileZoom(); });
+  
+  // Jump buttons — scroll gantt to that offset from today
+  function jumpToDay(days) {
+    const wrap = document.getElementById('ganttWrap');
+    if (!wrap || !todayStart) return;
+    const PX = Math.max(Math.round(140 * ganttZoom), 20);
+    const LW = 130;
+    wrap.scrollLeft = LW + days * PX;
+  }
+  document.getElementById('jump1W')?.addEventListener('click', () => jumpToDay(7));
+  document.getElementById('jump1M')?.addEventListener('click', () => jumpToDay(30));
+  document.getElementById('jump3M')?.addEventListener('click', () => jumpToDay(90));
   loadGantt();
 });
 
@@ -377,6 +420,14 @@ function applyZoom() {
   renderDesktop();
 }
 
+function applyMobileZoom() {
+  const lvl = Math.round(ganttZoom * 100) + '%';
+  const el = document.getElementById('mobileZoomLevel');
+  if (el) el.textContent = lvl;
+  document.getElementById('mobileColumns').innerHTML = '';
+  renderMobile();
+}
+  
 /* ── LOAD ── */
 async function loadGantt() {
   const btn = document.getElementById('refreshBtn');
@@ -583,11 +634,14 @@ function renderDesktop() {
   const container = document.getElementById('ganttDesktop');
   container.innerHTML = '';
 
-  const PX  = Math.max(Math.round(140 * ganttZoom), 20);  /* px per day */
+const PX  = Math.max(Math.round(140 * ganttZoom), 20);  /* px per day */
   const LW  = 130;              /* label-col width */
-  const RH  = 90;               /* row height */
-  const BT  = 8;                /* bar top offset */
+  /* Distribute height: 6 builders = 90px each. Fewer builders = proportionally taller rows */
+  const visibleCount = activeBuilders.size || 1;
+  const RH  = Math.min(Math.round(90 * (6 / visibleCount)), 200); /* row height, max 200px */
+  const BT  = Math.round(RH * 0.09);  /* ~9% top padding */
   const BH  = RH - BT * 2;     /* bar height */
+  
   /* Hour sub-tick interval: denser when zoomed in */
   const hourStep = ganttZoom >= 2 ? 2 : ganttZoom >= 1 ? 6 : 12;
 
@@ -611,12 +665,21 @@ function renderDesktop() {
     const isMonth = i > 0 && d.getDate() === 1;
     const cell = document.createElement('div');
     cell.style.cssText = `width:${PX}px; flex-shrink:0; display:flex; flex-direction:column; border-left:${isMonth?'2px solid rgba(255,255,255,0.2)':'1px solid var(--border)'};`;
-
-    const dayLbl = document.createElement('div');
-    dayLbl.style.cssText = `padding:5px 0 2px; font-size:${i===0?11:9}px; font-weight:${i===0||isMonth?800:600}; color:${i===0?'var(--gold)':isMonth?'rgba(255,255,255,0.55)':'var(--text-dim)'}; text-align:center; white-space:nowrap;`;
-    dayLbl.textContent = i===0 ? 'TODAY' : fmtDay(d);
+const dayLbl = document.createElement('div');
+    // When zoomed out (PX < 40), only show month name at month boundary
+    const showMonthOnly = PX < 40;
+    let labelText;
+    if (i === 0) {
+      labelText = showMonthOnly ? '▶' : 'TODAY';
+    } else if (showMonthOnly) {
+      labelText = isMonth ? d.toLocaleDateString('en-US',{month:'short'}).toUpperCase() : '';
+    } else {
+      labelText = fmtDay(d);
+    }
+    dayLbl.style.cssText = `padding:5px 0 2px; font-size:${i===0?11:9}px; font-weight:${i===0||isMonth?800:600}; color:${i===0?'var(--gold)':isMonth?'rgba(255,255,255,0.55)':'var(--text-dim)'}; text-align:center; white-space:nowrap; overflow:hidden;`;
+    dayLbl.textContent = labelText;
     cell.appendChild(dayLbl);
-
+    
     /* Hour sub-label row (FIX #3) */
     const hourRow = document.createElement('div');
     hourRow.style.cssText = `flex:1; display:flex; border-top:1px solid var(--border);`;
@@ -712,24 +775,33 @@ function renderDesktop() {
       inner.className = 'bar-inner';
       inner.style.left = LW + 'px'; /* pin label to right edge of label column */
 
-      /* Image = full bar height (FIX #6) */
+     /* Image — transparent background, clipped to bar height */
       const imgEl = document.createElement('img');
       imgEl.className = 'bar-icon';
-      imgEl.style.cssText = `width:${BH}px; height:${BH}px;`;
+      imgEl.style.cssText = `width:${Math.min(BH, widthPx - 4)}px; height:${BH}px; max-width:${BH}px;`;
       imgEl.src = getUpgradeImage(upg.upgrade);
       imgEl.onerror = () => imgEl.src = 'Images/Upgrades/PH.png';
       imgEl.alt = upg.upgrade || '';
       inner.appendChild(imgEl);
 
-      /* Name + duration + finish time (FIX #4) */
-      const textCol = document.createElement('div');
-      textCol.className = 'bar-text-col';
-      textCol.innerHTML = `
-        <div class="bar-name">${upg.upgrade||''}</div>
-        ${upg.duration ? `<div class="bar-dur">${upg.duration}</div>` : ''}
-        <div class="bar-finish-lbl">→ ${fmtShort(endD)}</div>`;
-      inner.appendChild(textCol);
+      /* Name + duration — only shown when bar is wide enough */
+      if (widthPx > BH + 40) {
+        const textCol = document.createElement('div');
+        textCol.className = 'bar-text-col';
+        textCol.innerHTML = `
+          <div class="bar-name">${upg.upgrade||''}</div>
+          ${upg.duration && widthPx > BH + 90 ? `<div class="bar-dur">${upg.duration}</div>` : ''}`;
+        inner.appendChild(textCol);
+      }
       bar.appendChild(inner);
+
+      /* End-time badge pinned to right side of bar */
+      if (widthPx > 60) {
+        const endBadge = document.createElement('div');
+        endBadge.className = 'bar-end-badge';
+        endBadge.textContent = fmtShort(endD);
+        bar.appendChild(endBadge);
+      }
 
       /* Boost markers */
       const boosts = getBoosts(b.builderNum, startD, endD);
