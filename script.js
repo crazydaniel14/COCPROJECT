@@ -1561,9 +1561,14 @@ async function bootApp() {
 function switchUser() {
   localStorage.removeItem("coc_username");
   window.COC_USERNAME = null;
-  location.reload();
-}
-
+  // Clear the page then show login — avoids reload race condition
+  document.getElementById("builders-container").innerHTML = "";
+  document.querySelector('.upgrade-confirmation-modal-overlay')?.remove();
+  showLoginScreen(async (confirmedUsername) => {
+    window.COC_USERNAME = confirmedUsername;
+    location.reload(); // reload fresh with new username now stored
+  });
+} 
 /* =========================
    LOGIN SCREEN
    — Shows password field only for usernames that have
