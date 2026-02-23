@@ -1577,8 +1577,13 @@ function switchUser() {
 function showLoginScreen(onConfirm) {
   const overlay = document.createElement("div");
   overlay.id = "login-overlay";
-  modal.className = 'upgrade-confirmation-modal-overlay';
-
+  overlay.style.cssText = [
+    "position:fixed", "inset:0", "z-index:99999",
+    "background:rgba(0,0,0,0.85)",
+    "display:flex", "align-items:center", "justify-content:center",
+    "padding:24px", "box-sizing:border-box"
+  ].join(";");
+   
   const sharedInputStyle = `
     width:100%; box-sizing:border-box;
     padding:14px 16px; border-radius:10px;
