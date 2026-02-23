@@ -1609,7 +1609,7 @@ function showLoginScreen(onConfirm) {
         autocapitalize="off"
         style="${sharedInputStyle} margin-bottom:10px;"
       />
-      <div id="login-password-wrap" style="display:none; margin-bottom:10px;">
+      <div id="login-password-wrap" style="margin-bottom:10px;">
         <input
           id="login-password-input"
           type="password"
@@ -1639,16 +1639,7 @@ function showLoginScreen(onConfirm) {
   const btn           = overlay.querySelector("#login-confirm-btn");
   const err           = overlay.querySelector("#login-error");
 
-  // Show password field only when username matches a protected account
-  usernameInput.addEventListener("blur", () => {
-    const val = usernameInput.value.replace(/[^a-zA-Z0-9_]/g, "").trim();
-    if (val && USER_PASSWORDS[val] !== undefined) {
-      passwordWrap.style.display = "block";
-      setTimeout(() => passwordInput.focus(), 50);
-    } else {
-      passwordWrap.style.display = "none";
-    }
-  });
+  // Password field is always visible
 
   setTimeout(() => usernameInput.focus(), 100);
 
