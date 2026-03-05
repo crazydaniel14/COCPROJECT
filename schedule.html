@@ -105,16 +105,19 @@
     /* ── DESKTOP GANTT ── */
     .gantt-wrap { overflow-x:auto; overflow-y:visible; }
 
-    /* overflow:hidden clips sticky inner content to bar bounds — prevents text bleed */
+    /* clip-path clips content to bar bounds without creating a scroll container,
+       so position:sticky on .bar-inner still references .gantt-wrap correctly */
     .gantt-bar {
       position:absolute; border-radius:8px;
       display:flex; align-items:center; padding:0;
-      cursor:pointer; overflow:hidden;
+      cursor:pointer; overflow:visible;
+      clip-path: inset(0 round 8px);
       transition:filter .15s, box-shadow .15s;
       border:2.5px solid rgba(255,255,255,0.45);
       box-shadow:inset 0 -3px 0 rgba(0,0,0,0.3);
     }
-    .gantt-bar:hover { filter:brightness(1.15); box-shadow:0 0 0 2px rgba(255,255,255,0.7), inset 0 -3px 0 rgba(0,0,0,0.3); z-index:5; }
+    /* outline is not clipped by clip-path, so hover ring shows outside bar */
+    .gantt-bar:hover { filter:brightness(1.15); outline:2px solid rgba(255,255,255,0.7); outline-offset:1px; box-shadow:inset 0 -3px 0 rgba(0,0,0,0.3); z-index:5; }
 
     /* Sticky inner: left is set dynamically = label-col-width, so it hugs that edge */
     .bar-inner {
@@ -225,11 +228,11 @@
     .mobile-col-header span { font-size:11px; font-weight:700; white-space:nowrap; }
     .mobile-col-body { position:relative; }
 
-    /* Mobile bar — overflow:hidden clips sticky label to bar bounds */
+    /* clip-path clips content without creating scroll container — preserves sticky */
     .mobile-bar {
       position:absolute; left:4px; right:4px; border-radius:8px;
       border:2px solid rgba(255,255,255,0.3); cursor:pointer; min-height:8px;
-      overflow:hidden; transition:filter .12s;
+      overflow:visible; clip-path: inset(0 round 8px); transition:filter .12s;
     }
     .mobile-bar:active { filter:brightness(1.2); }
 
@@ -798,7 +801,9 @@ const dayLbl = document.createElement('div');
       if (upg._isCurrent) {
         const badge = document.createElement('div');
         badge.className = 'bar-active-badge';
-        badge.textContent = '▶ NOW';
+        badge.textContent = (upg._startDate && upg._startDate.getTime() < todayStart.getTime())
+          ? `▶ since ${fmtDay(upg._startDate)}`
+          : '▶ NOW';
         bar.appendChild(badge);
       }
 
@@ -1084,7 +1089,9 @@ function renderMobileHorizontal() {
       if (upg._isCurrent) {
         const badge = document.createElement('div');
         badge.className = 'bar-active-badge';
-        badge.textContent = '▶ NOW';
+        badge.textContent = (upg._startDate && upg._startDate.getTime() < todayStart.getTime())
+          ? `▶ since ${fmtDay(upg._startDate)}`
+          : '▶ NOW';
         bar.appendChild(badge);
       }
 
