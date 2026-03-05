@@ -1104,9 +1104,9 @@ button:disabled {
     width: 54%;
   }
   .boost-finish-indicator {
-  font-size: 8px;
+    font-size: 8px;
+  }
 }
-
 /* ==================================================
    UPGRADE CONFIRMATION MODAL SYSTEM
    ================================================== */
