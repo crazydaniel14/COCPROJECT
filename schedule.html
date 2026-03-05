@@ -278,6 +278,29 @@
       font-size:8px; box-shadow:0 1px 4px rgba(0,0,0,.5); pointer-events:none;
     }
 
+    /* ── DRAG & DROP ── */
+    .save-btn {
+      display:flex; align-items:center; gap:5px;
+      border-radius:8px; border:1.5px solid var(--border);
+      background:var(--surface2); color:var(--text-dim);
+      font-family:'Lexend',sans-serif; font-size:12px; font-weight:700;
+      padding:6px 14px; cursor:not-allowed; transition:all .18s; white-space:nowrap;
+      opacity:0.4;
+    }
+    .save-btn.has-changes {
+      background:rgba(245,160,40,.18); border-color:rgba(245,160,40,.7);
+      color:var(--gold); cursor:pointer; opacity:1;
+    }
+    .save-btn.has-changes:hover { background:rgba(245,160,40,.3); }
+    .drag-ghost {
+      position:fixed; z-index:9999; pointer-events:none;
+      border-radius:8px; opacity:0.85; font-family:'Lexend',sans-serif;
+      font-size:11px; font-weight:700; color:#000;
+      display:flex; align-items:center; padding:4px 10px;
+      box-shadow:0 4px 20px rgba(0,0,0,.55); user-select:none;
+    }
+    .row-drop-target { outline:2px solid var(--gold) !important; outline-offset:-2px; }
+
     /* Bottom sheet */
     .mobile-sheet {
       position:fixed; bottom:0; left:0; right:0; z-index:9999;
@@ -298,7 +321,7 @@
 <body>
 
 <header class="gantt-header">
-  <button class="back-btn" onclick="window.location.href='index.html'">← Back</button>
+  <button class="back-btn" onclick="goBack()">← Back</button>
   <div class="gantt-title">⚒️ Build Schedule</div>
   <button class="refresh-btn" id="refreshBtn" onclick="loadGantt()">↻ Refresh</button>
 </header>
@@ -335,6 +358,8 @@
   <button class="zoom-btn" id="jump1W" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;">1W</button>
   <button class="zoom-btn" id="jump1M" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;">1M</button>
   <button class="zoom-btn" id="jump3M" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;">3M</button>
+  <div style="width:1px;height:24px;background:rgba(255,255,255,0.12);margin:0 6px;"></div>
+  <button class="save-btn" id="saveBtnDesktop" disabled onclick="saveOrder()">💾 Save Order</button>
 </div>
 
 <!-- MOBILE -->
@@ -347,6 +372,8 @@
     <button class="zoom-btn" id="mobileZoomIn">+</button>
     <div style="width:1px;height:22px;background:rgba(255,255,255,0.12);margin:0 4px;"></div>
     <button class="orient-btn" id="mobileOrientBtn">⇄ Horizontal</button>
+    <div style="width:1px;height:22px;background:rgba(255,255,255,0.12);margin:0 2px;"></div>
+    <button class="save-btn" id="saveBtnMobile" disabled onclick="saveOrder()">💾 Save</button>
   </div>
   <div class="state-msg" id="stateMsgMobile"><div class="spinner"></div><span>Loading schedule…</span></div>
   <div class="mobile-columns-wrapper" id="mobileColumns" style="display:none"></div>
@@ -407,6 +434,9 @@ let todayStart        = null;
 let rangeEnd          = null;
 let ganttZoom         = 1.0;   /* 0.25 … 4.0 */
 let mobileOrientation = 'vertical'; /* 'vertical' | 'horizontal' */
+let originalGanttData = null;  /* snapshot on load for diff/save */
+let hasPendingChanges = false;
+let dragState         = null;  /* active drag context */
 
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded', () => {
@@ -461,6 +491,10 @@ function applyMobileZoom() {
   
 /* ── LOAD ── */
 async function loadGantt() {
+  if (hasPendingChanges) {
+    if (!confirm('You have unsaved reorder changes. Refresh and discard them?')) return;
+    setSaveState(false);
+  }
   const btn = document.getElementById('refreshBtn');
   btn.classList.add('loading'); btn.textContent = '↻ Loading…';
   setLoading(true);
@@ -474,6 +508,7 @@ async function loadGantt() {
     boostPlan   = boosts;
     currentWork = work;
     stitchTimelines();
+    annotateOriginalPositions();
     computeRange();
     renderDesktop();
     renderMobile();
@@ -855,6 +890,14 @@ const dayLbl = document.createElement('div');
         bar.appendChild(dot);
       });
 
+      /* Drag handling */
+      bar.dataset.upgUid    = upg._uid || '';
+      bar.dataset.draggable = (upg._isCurrent || upg._synthetic) ? '0' : '1';
+      if (!upg._isCurrent && !upg._synthetic && upg._uid) {
+        bar.style.cursor = 'grab';
+        bar.addEventListener('mousedown',  e => { if (e.button !== 0) return; e.stopPropagation(); startDrag(e, b.builderNum, upg, bar); });
+        bar.addEventListener('touchstart', e => { e.stopPropagation(); startDrag(e, b.builderNum, upg, bar); }, { passive: false });
+      }
       bar.addEventListener('mouseenter', e => showTooltip(e, upg, b.builderNum, boosts, startD, endD));
       bar.addEventListener('mousemove',  e => moveTooltip(e));
       bar.addEventListener('mouseleave', hideTooltip);
@@ -1018,6 +1061,14 @@ function renderMobileVertical() {
         });
 
         const boosts = getBoosts(n, startD, endD);
+        /* Drag handling */
+        bar.dataset.upgUid    = upg._uid || '';
+        bar.dataset.draggable = (upg._isCurrent || upg._synthetic) ? '0' : '1';
+        if (!upg._isCurrent && !upg._synthetic && upg._uid) {
+          bar.style.cursor = 'grab';
+          bar.addEventListener('mousedown',  e => { if (e.button !== 0) return; e.stopPropagation(); startDrag(e, n, upg, bar); });
+          bar.addEventListener('touchstart', e => { e.stopPropagation(); startDrag(e, n, upg, bar); }, { passive: false });
+        }
         bar.addEventListener('click', e => { e.stopPropagation(); showSheet(upg, n, boosts, startD, endD); });
         colBody.appendChild(bar);
       });
@@ -1148,6 +1199,14 @@ function renderMobileHorizontal() {
       }
 
       const boosts = getBoosts(b.builderNum, startD, endD);
+      /* Drag handling */
+      bar.dataset.upgUid    = upg._uid || '';
+      bar.dataset.draggable = (upg._isCurrent || upg._synthetic) ? '0' : '1';
+      if (!upg._isCurrent && !upg._synthetic && upg._uid) {
+        bar.style.cursor = 'grab';
+        bar.addEventListener('mousedown',  e => { if (e.button !== 0) return; e.stopPropagation(); startDrag(e, b.builderNum, upg, bar); });
+        bar.addEventListener('touchstart', e => { e.stopPropagation(); startDrag(e, b.builderNum, upg, bar); }, { passive: false });
+      }
       bar.addEventListener('click', e => { e.stopPropagation(); showSheet(upg, b.builderNum, boosts, startD, endD); });
       cell.appendChild(bar);
     });
@@ -1212,6 +1271,268 @@ function showSheet(upg, bNum, boosts, startD, endD) {
   document.body.appendChild(s);
   setTimeout(()=>document.addEventListener('click',()=>document.querySelector('.mobile-sheet')?.remove(),{once:true}),100);
 }
+
+/* ════════════════════════════════════════════
+   DRAG-AND-DROP REORDER / TRANSFER + SAVE
+════════════════════════════════════════════ */
+
+/* ── Annotate each upgrade with original position info ── */
+function annotateOriginalPositions() {
+  ganttData.forEach(b => {
+    const hasSynth = b.upgrades.length > 0 && b.upgrades[0]._synthetic;
+    b.upgrades.forEach((upg, idx) => {
+      if (upg._uid) return; // preserve existing annotation across re-renders
+      upg._origBuilderNum = b.builderNum;
+      upg._origIdx        = idx;
+      upg._uid            = `${b.builderNum}:${idx}:${(upg.upgrade||'').slice(0,14).replace(/\s/g,'_')}`;
+      // _sheetRow: 1-based sheet row. Synthetic unshift means real items start at row idx+1.
+      upg._sheetRow = hasSynth ? (idx >= 1 ? idx + 1 : null) : idx + 2;
+    });
+  });
+  originalGanttData = ganttData.map(b => ({ builderNum: b.builderNum, upgrades: b.upgrades.map(u => ({ ...u })) }));
+}
+
+/* ── Save button state ── */
+function setSaveState(dirty) {
+  hasPendingChanges = dirty;
+  document.querySelectorAll('.save-btn').forEach(btn => {
+    btn.disabled = !dirty;
+    btn.classList.toggle('has-changes', dirty);
+    if (!dirty) btn.textContent = btn.id === 'saveBtnMobile' ? '💾 Save' : '💾 Save Order';
+  });
+}
+
+/* ── Back / unsaved guard ── */
+function goBack() {
+  if (hasPendingChanges && !confirm('You have unsaved reorder changes. Leave and discard them?')) return;
+  window.location.href = 'index.html';
+}
+
+/* ── Create floating ghost ── */
+function createGhost(rect, builderNum, upg) {
+  const ghost = document.createElement('div');
+  ghost.className = 'drag-ghost';
+  const w = Math.min(Math.max(rect.width, 80), 220);
+  ghost.style.cssText = `width:${w}px; height:${Math.max(rect.height, 28)}px; left:${rect.left + (rect.width - w) / 2}px; top:${rect.top}px;`;
+  ghost.style.background = BUILDER_COLORS[builderNum];
+  ghost.textContent = (upg.upgrade || '?').slice(0, 24);
+  document.body.appendChild(ghost);
+  return ghost;
+}
+
+/* ── Start drag ── */
+function startDrag(e, builderNum, upg, barEl) {
+  if (!upg || upg._isCurrent || upg._synthetic || dragState) return;
+  const touch   = e.touches?.[0];
+  const clientX = touch ? touch.clientX : e.clientX;
+  const clientY = touch ? touch.clientY : e.clientY;
+  dragState = { upg, fromBuilderNum: builderNum, ghost: null, origBarEl: barEl,
+    lastX: clientX, lastY: clientY, startX: clientX, startY: clientY,
+    committed: false, hoverBuilderNum: null };
+  if (!touch) {
+    dragState.committed = true;
+    dragState.ghost     = createGhost(barEl.getBoundingClientRect(), builderNum, upg);
+    barEl.style.opacity = '0.3';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  }
+}
+
+/* ── Find builder number at screen coords ── */
+function builderRowAt(x, y) {
+  const g = dragState?.ghost;
+  if (g) g.style.display = 'none';
+  const el = document.elementFromPoint(x, y);
+  if (g) g.style.display = '';
+  if (!el) return null;
+  const row = el.closest('[data-builder]');
+  return row ? parseInt(row.dataset.builder) : null;
+}
+
+/* ── Find uid of upgrade to insert BEFORE (null = end) ── */
+function insertBeforeUid(builderNum, clientX, clientY) {
+  const isMobileVert = !!document.querySelector(`.mobile-builder-col[data-builder="${builderNum}"]`);
+  const sel = isMobileVert
+    ? `.mobile-builder-col[data-builder="${builderNum}"] .mobile-bar[data-draggable="1"]`
+    : `[data-builder="${builderNum}"] .gantt-bar[data-draggable="1"]`;
+  const bars = [...document.querySelectorAll(sel)].sort((a, b) => {
+    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+    return isMobileVert ? ra.top - rb.top : ra.left - rb.left;
+  });
+  for (const bar of bars) {
+    const rect  = bar.getBoundingClientRect();
+    const mid   = isMobileVert ? rect.top + rect.height / 2 : rect.left + rect.width / 2;
+    const coord = isMobileVert ? clientY : clientX;
+    if (coord < mid) return bar.dataset.upgUid;
+  }
+  return null; // insert at end
+}
+
+/* ── Drag move ── */
+function onDragMove(clientX, clientY) {
+  if (!dragState) return;
+  if (!dragState.committed) {
+    if (Math.hypot(clientX - dragState.startX, clientY - dragState.startY) < 8) {
+      dragState.lastX = clientX; dragState.lastY = clientY; return;
+    }
+    dragState.committed = true;
+    dragState.ghost     = createGhost(dragState.origBarEl.getBoundingClientRect(), dragState.fromBuilderNum, dragState.upg);
+    dragState.origBarEl.style.opacity = '0.3';
+    document.body.style.userSelect    = 'none';
+  }
+  const dx = clientX - dragState.lastX, dy = clientY - dragState.lastY;
+  dragState.ghost.style.left = (parseFloat(dragState.ghost.style.left) + dx) + 'px';
+  dragState.ghost.style.top  = (parseFloat(dragState.ghost.style.top)  + dy) + 'px';
+  dragState.lastX = clientX; dragState.lastY = clientY;
+  const target = builderRowAt(clientX, clientY);
+  document.querySelectorAll('.row-drop-target').forEach(el => el.classList.remove('row-drop-target'));
+  if (target !== null) {
+    document.querySelectorAll(`[data-builder="${target}"]`).forEach(el => el.classList.add('row-drop-target'));
+    dragState.hoverBuilderNum = target;
+  }
+}
+
+/* ── Drag end / drop ── */
+function onDragEnd(clientX, clientY) {
+  if (!dragState) return;
+  const { upg, fromBuilderNum, ghost, origBarEl, committed, hoverBuilderNum } = dragState;
+  if (ghost) ghost.remove();
+  document.body.style.userSelect = '';
+  document.querySelectorAll('.row-drop-target').forEach(el => el.classList.remove('row-drop-target'));
+  if (origBarEl) origBarEl.style.opacity = '';
+  dragState = null;
+  if (!committed) return; // was a tap
+
+  const targetBuilder = builderRowAt(clientX, clientY) ?? hoverBuilderNum;
+  if (targetBuilder === null) return;
+  const srcB = ganttData.find(b => b.builderNum === fromBuilderNum);
+  const tgtB = ganttData.find(b => b.builderNum === targetBuilder);
+  if (!srcB || !tgtB) return;
+
+  // Remove from source
+  const srcIdx = srcB.upgrades.indexOf(upg);
+  if (srcIdx === -1) return;
+  srcB.upgrades.splice(srcIdx, 1);
+
+  // Find insertion point in target (never before the active/synthetic item)
+  const tgtActiveIdx = tgtB.upgrades.findIndex(u => u._isCurrent || u._synthetic);
+  const minInsert    = tgtActiveIdx === -1 ? 0 : tgtActiveIdx + 1;
+  const beforeUid    = insertBeforeUid(targetBuilder, clientX, clientY);
+  let insertAt       = beforeUid ? tgtB.upgrades.findIndex(u => u._uid === beforeUid) : -1;
+  if (insertAt !== -1 && insertAt <= tgtActiveIdx) insertAt = minInsert;
+
+  if (insertAt === -1 || insertAt >= tgtB.upgrades.length) {
+    tgtB.upgrades.push(upg);
+  } else {
+    tgtB.upgrades.splice(Math.max(insertAt, minInsert), 0, upg);
+  }
+
+  restitchBuilder(srcB);
+  if (targetBuilder !== fromBuilderNum) restitchBuilder(tgtB);
+  computeRange();
+  setSaveState(true);
+  renderDesktop();
+  renderMobile();
+}
+
+/* ── Re-stitch a single builder after drag ── */
+function restitchBuilder(b) {
+  const activeIdx = b.upgrades.findIndex(u => u._isCurrent);
+  const anchor    = activeIdx !== -1 ? b.upgrades[activeIdx]._endDate : new Date();
+  let cursor = (anchor instanceof Date && !isNaN(anchor)) ? anchor : new Date();
+  const start = activeIdx !== -1 ? activeIdx + 1 : 0;
+  for (let i = start; i < b.upgrades.length; i++) {
+    const upg = b.upgrades[i];
+    const mins = upg.durationMinutes || 0;
+    upg._startDate = new Date(cursor);
+    upg._endDate   = new Date(cursor.getTime() + mins * 60000);
+    upg._isCurrent = false;
+    cursor = upg._endDate;
+  }
+}
+
+/* ── Save order to server ── */
+async function saveOrder() {
+  if (!hasPendingChanges) return;
+  document.querySelectorAll('.save-btn').forEach(b => { b.disabled = true; b.textContent = 'Saving…'; });
+  try {
+    // 1. Collect upgrades that changed builder
+    const transfers = [];
+    ganttData.forEach(b => {
+      b.upgrades.forEach(upg => {
+        if (!upg._uid || upg._isCurrent || upg._synthetic) return;
+        if (upg._origBuilderNum !== undefined && upg._origBuilderNum !== b.builderNum) {
+          transfers.push({ upgrade: upg.upgrade, fromBuilder: `Builder_${upg._origBuilderNum}`,
+            row: upg._sheetRow, toBuilder: `Builder_${b.builderNum}`, upg });
+        }
+      });
+    });
+
+    // 2. Sort transfers: within same source, highest sheet row first (avoids row-shift)
+    transfers.sort((a, b) => a.fromBuilder !== b.fromBuilder ? 0 : (b.row || 0) - (a.row || 0));
+
+    // 3. Execute transfers sequentially
+    for (const t of transfers) {
+      const url = `${API_BASE}?action=transfer_upgrade&username=${encodeURIComponent(window.COC_USERNAME)}&upgrade=${encodeURIComponent(t.upgrade)}&from_builder=${encodeURIComponent(t.fromBuilder)}&row=${t.row}&to_builder=${encodeURIComponent(t.toBuilder)}`;
+      const res = await fetch(url).then(r => r.json());
+      if (res.status !== 'success') throw new Error(res.error || `Transfer failed: ${t.upgrade}`);
+    }
+
+    // 4. Reorder changed builders
+    const buildersToCheck = new Set([
+      ...ganttData.map(b => b.builderNum),
+      ...transfers.map(t => parseInt(t.fromBuilder.match(/\d+/)?.[0]))
+    ]);
+    for (const builderNum of buildersToCheck) {
+      const b     = ganttData.find(b => b.builderNum === builderNum);
+      const origB = originalGanttData?.find(ob => ob.builderNum === builderNum);
+      if (!b || !origB) continue;
+      const curQueue  = b.upgrades.filter(u => !u._isCurrent && !u._synthetic);
+      const origQueue = origB.upgrades.filter(u => !u._isCurrent && !u._synthetic);
+      const changed   = curQueue.length !== origQueue.length || curQueue.some((u, i) => u._uid !== origQueue[i]?._uid);
+      if (!changed) continue;
+
+      // Post-transfer queue = stayed items (in original order) + transferred-in items
+      const origStayed    = origQueue.filter(u => !transfers.some(t => t.upg._uid === u._uid && t.fromBuilder === `Builder_${builderNum}`));
+      const transferredIn = transfers.filter(t => t.toBuilder === `Builder_${builderNum}`).map(t => t.upg);
+      const postQueue     = [...origStayed, ...transferredIn];
+
+      const newOrder = curQueue.map(u => postQueue.findIndex(pt => pt._uid === u._uid));
+      if (newOrder.some(i => i === -1)) { console.warn('Unmapped upgrade for builder', builderNum, newOrder); continue; }
+      if (newOrder.every((v, i) => v === i) && newOrder.length === postQueue.length) continue;
+
+      const url = `${API_BASE}?action=reorder_builder_upgrades&username=${encodeURIComponent(window.COC_USERNAME)}&builder=Builder_${builderNum}&order=${newOrder.join(',')}`;
+      const res = await fetch(url).then(r => r.json());
+      if (res.status !== 'success') throw new Error(res.error || `Reorder failed for Builder ${builderNum}`);
+    }
+
+    // 5. Done — refresh with fresh data
+    setSaveState(false);
+    await loadGantt();
+  } catch (err) {
+    console.error('Save failed:', err);
+    alert('Save failed: ' + err.message);
+    document.querySelectorAll('.save-btn').forEach(b => {
+      b.disabled = false;
+      b.classList.add('has-changes');
+      b.textContent = b.id === 'saveBtnMobile' ? '💾 Save' : '💾 Save Order';
+    });
+  }
+}
+
+/* ── Global drag listeners (init once) ── */
+(function() {
+  document.addEventListener('mousemove', e => { if (dragState) onDragMove(e.clientX, e.clientY); });
+  document.addEventListener('mouseup',   e => { if (dragState) onDragEnd(e.clientX, e.clientY); });
+  document.addEventListener('touchmove', e => {
+    if (!dragState) return;
+    onDragMove(e.touches[0].clientX, e.touches[0].clientY);
+    if (dragState?.committed) e.preventDefault();
+  }, { passive: false });
+  document.addEventListener('touchend', e => {
+    if (dragState) onDragEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+  });
+})();
 
 /* ── TOGGLE BUILDERS ── */
 function toggleBuilder(n) {
