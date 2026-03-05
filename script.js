@@ -44,11 +44,13 @@ const HERO_NAMES = [
   "Barbarian King",
   "Grand Warden",
   "Minion Prince",
+  "Dragon Duke",
   "Royal Champion"
 ];
 
 const IMAGE_MAP = {
   "Air Bomb": ["Lvl 11"],
+  "Pet House": ["Lvl 12"],
   "Archer Tower": ["Lvl 21"],
   "Blacksmith": ["Lvl 9"],
   "Bomb": ["Lvl 11&12", "Lvl 13&14"],
@@ -68,7 +70,10 @@ const IMAGE_MAP = {
   "Spring Trap": ["Lvl 7&8", "Lvl 9&10"],
   "Town Hall": ["Lvl 18"],
   "Wizard Tower": ["Lvl 17"],
+  "Fire Spitter": ["Lvl 3"], 
   "Workshop": ["Lvl 8"],
+  "Spell Tower": ["Lvl 4"],
+  "Inferno Tower": ["Lvl 12"],
   "X-Bow": ["Lvl 12&13&14"]
 };
 
@@ -432,8 +437,10 @@ function renderBuilderCards() {
     if (!isNaN(t) && t < earliestFinish) earliestFinish = t;
   }
 
-  for (let i = 1; i < currentWorkData.length; i++) {
+  let cardCount = 0;
+  for (let i = 1; i < currentWorkData.length && cardCount < 6; i++) {
     const row               = currentWorkData[i];
+    cardCount++;
     const builderNumber     = row[0].toString().match(/(\d+)/)?.[1];
     const finishMs          = new Date(row[2]).getTime();
     const currentUpgradeImg = getUpgradeImage(row[1]);
