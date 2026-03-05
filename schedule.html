@@ -105,11 +105,11 @@
     /* ── DESKTOP GANTT ── */
     .gantt-wrap { overflow-x:auto; overflow-y:visible; }
 
-    /* Bar has overflow:visible so sticky .bar-inner works */
+    /* overflow:hidden clips sticky inner content to bar bounds — prevents text bleed */
     .gantt-bar {
       position:absolute; border-radius:8px;
       display:flex; align-items:center; padding:0;
-      cursor:pointer; overflow:visible;
+      cursor:pointer; overflow:hidden;
       transition:filter .15s, box-shadow .15s;
       border:2.5px solid rgba(255,255,255,0.45);
       box-shadow:inset 0 -3px 0 rgba(0,0,0,0.3);
@@ -187,6 +187,13 @@
   .mobile-zoom-bar .zoom-btn { width:34px; height:34px; font-size:18px; }
   .mobile-zoom-bar .zoom-label { font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; }
   .mobile-zoom-bar .zoom-level { font-size:12px; font-weight:800; color:var(--gold); min-width:40px; text-align:center; }
+  .orient-btn {
+    display:flex; align-items:center; gap:5px;
+    background:var(--surface2); border:1.5px solid var(--border); border-radius:8px;
+    padding:5px 10px; color:var(--text-dim); font-family:'Lexend',sans-serif;
+    font-size:10px; font-weight:700; cursor:pointer; transition:all .18s; white-space:nowrap;
+  }
+  .orient-btn.active { border-color:var(--gold); color:var(--gold); }
     @media (min-width:769px) { .gantt-mobile { display:none; } }
 
     /* ── MOBILE GANTT ── */
@@ -218,11 +225,11 @@
     .mobile-col-header span { font-size:11px; font-weight:700; white-space:nowrap; }
     .mobile-col-body { position:relative; }
 
-    /* Mobile bar — overflow:visible so sticky children work */
+    /* Mobile bar — overflow:hidden clips sticky label to bar bounds */
     .mobile-bar {
       position:absolute; left:4px; right:4px; border-radius:8px;
       border:2px solid rgba(255,255,255,0.3); cursor:pointer; min-height:8px;
-      transition:filter .12s;
+      overflow:hidden; transition:filter .12s;
     }
     .mobile-bar:active { filter:brightness(1.2); }
 
@@ -335,6 +342,8 @@
     <button class="zoom-btn" id="mobileZoomOut">−</button>
     <span class="zoom-level" id="mobileZoomLevel">100%</span>
     <button class="zoom-btn" id="mobileZoomIn">+</button>
+    <div style="width:1px;height:22px;background:rgba(255,255,255,0.12);margin:0 4px;"></div>
+    <button class="orient-btn" id="mobileOrientBtn">⇄ Horizontal</button>
   </div>
   <div class="state-msg" id="stateMsgMobile"><div class="spinner"></div><span>Loading schedule…</span></div>
   <div class="mobile-columns-wrapper" id="mobileColumns" style="display:none"></div>
@@ -385,13 +394,14 @@ function getUpgradeImage(name) {
 }
 
 /* ── STATE ── */
-let ganttData      = [];
-let boostPlan      = [];
-let currentWork    = {};
-let activeBuilders = new Set([1,2,3,4,5,6]);
-let todayStart     = null;
-let rangeEnd       = null;
-let ganttZoom      = 1.0;   /* 0.25 … 4.0 */
+let ganttData         = [];
+let boostPlan         = [];
+let currentWork       = {};
+let activeBuilders    = new Set([1,2,3,4,5,6]);
+let todayStart        = null;
+let rangeEnd          = null;
+let ganttZoom         = 1.0;   /* 0.25 … 4.0 */
+let mobileOrientation = 'vertical'; /* 'vertical' | 'horizontal' */
 
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded', () => {
@@ -404,17 +414,33 @@ document.getElementById('zoomIn').addEventListener('click',  () => { ganttZoom =
   document.getElementById('zoomOut').addEventListener('click', () => { ganttZoom = Math.max(ganttZoom - 0.25, 0.25); applyZoom(); });
   document.getElementById('mobileZoomIn')?.addEventListener('click',  () => { ganttZoom = Math.min(ganttZoom + 0.25, 4);    applyMobileZoom(); });
   document.getElementById('mobileZoomOut')?.addEventListener('click', () => { ganttZoom = Math.max(ganttZoom - 0.25, 0.25); applyMobileZoom(); });
-  
-  // Jump buttons — scroll gantt to that offset from today
-  function jumpToDay(days) {
+
+  // Jump buttons — zoom to show exactly N days in the viewport
+  function jumpToWindow(days) {
     const wrap = document.getElementById('ganttWrap');
     if (!wrap || !todayStart) return;
-    const PX = Math.max(Math.round(140 * ganttZoom), 20);
-    wrap.scrollLeft = days * PX;
+    const availPx = wrap.clientWidth - 130; /* subtract label column */
+    const PX = Math.max(Math.round(availPx / days), 1);
+    ganttZoom = Math.min(Math.max(PX / 140, 0.1), 4);
+    applyZoom();
+    wrap.scrollLeft = 0; /* reset scroll to today */
   }
-  document.getElementById('jump1W')?.addEventListener('click', () => jumpToDay(7));
-  document.getElementById('jump1M')?.addEventListener('click', () => jumpToDay(30));
-  document.getElementById('jump3M')?.addEventListener('click', () => jumpToDay(90));
+  document.getElementById('jump1W')?.addEventListener('click', () => jumpToWindow(7));
+  document.getElementById('jump1M')?.addEventListener('click', () => jumpToWindow(30));
+  document.getElementById('jump3M')?.addEventListener('click', () => jumpToWindow(90));
+
+  // Mobile orientation toggle
+  document.getElementById('mobileOrientBtn')?.addEventListener('click', () => {
+    mobileOrientation = mobileOrientation === 'vertical' ? 'horizontal' : 'vertical';
+    const btn = document.getElementById('mobileOrientBtn');
+    if (mobileOrientation === 'horizontal') {
+      btn.textContent = '↕ Vertical'; btn.classList.add('active');
+    } else {
+      btn.textContent = '⇄ Horizontal'; btn.classList.remove('active');
+    }
+    renderMobile();
+  });
+
   loadGantt();
 });
 
@@ -424,10 +450,7 @@ function applyZoom() {
 }
 
 function applyMobileZoom() {
-  const lvl = Math.round(ganttZoom * 100) + '%';
-  const el = document.getElementById('mobileZoomLevel');
-  if (el) el.textContent = lvl;
-  document.getElementById('mobileColumns').innerHTML = '';
+  document.getElementById('mobileZoomLevel').textContent = Math.round(ganttZoom * 100) + '%';
   renderMobile();
 }
   
@@ -793,8 +816,8 @@ const dayLbl = document.createElement('div');
       imgEl.alt = upg.upgrade || '';
       inner.appendChild(imgEl);
 
-      /* Name + duration — only shown when bar is wide enough */
-      if (widthPx > BH + 40) {
+      /* Name + duration — only shown at zoom > 50% and bar wide enough */
+      if (ganttZoom > 0.5 && widthPx > BH + 40) {
         const textCol = document.createElement('div');
         textCol.className = 'bar-text-col';
         textCol.innerHTML = `
@@ -838,19 +861,26 @@ const dayLbl = document.createElement('div');
 }
 
 /* ════════════════════════════════════════════
-   MOBILE RENDER
-   FIX #2: hidden-col hides column entirely (flex gap closes)
-   FIX #4: larger finish time label
-   FIX #6: 44px image, text below image
+   MOBILE RENDER — branches on mobileOrientation
 ════════════════════════════════════════════ */
 function renderMobile() {
+  if (mobileOrientation === 'horizontal') {
+    renderMobileHorizontal();
+  } else {
+    renderMobileVertical();
+  }
+}
+
+/* ── VERTICAL (columns, time flows down) ── */
+function renderMobileVertical() {
   const wrapper = document.getElementById('mobileColumns');
   wrapper.innerHTML = '';
+  wrapper.style.display = 'flex';
 
-  const PX = Math.max(Math.round(110 * ganttZoom), 20);  /* px per day, zoom-aware */
+  const PX = Math.max(Math.round(110 * ganttZoom), 20);
   const COL_HEAD_H = 84;
-  /* sticky top for label = top of page headers + col header */
   const STICKY_TOP = 51 + 50 + COL_HEAD_H - 8;
+  const showText = ganttZoom > 0.5;
 
   const totalDays = Math.ceil(daysBetween(todayStart, rangeEnd)) + 2;
   const days = Array.from({length:totalDays},(_,i)=>{ const d=new Date(todayStart); d.setDate(d.getDate()+i); return d; });
@@ -906,12 +936,11 @@ function renderMobile() {
         const startD = upg._startDate, endD = upg._endDate;
         if (!startD||!endD) return;
         const clampS = Math.max(startD.getTime(), todayStart.getTime());
-        const clampE = Math.min(endD.getTime(),   rangeEnd.getTime());
+        const clampE = Math.min(endD.getTime(), rangeEnd.getTime());
         if (clampS >= clampE) return;
 
         const topPx = daysBetween(todayStart, new Date(clampS)) * PX;
         const hPx   = Math.max(daysBetween(new Date(clampS), new Date(clampE)) * PX, 8);
-
         const isEven = idx % 2 === 0;
         const barCol  = isEven ? bColor : hexAlpha(bColor, 0.6);
         const bordCol = upg._isCurrent ? '#fff' : isEven ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)';
@@ -920,12 +949,10 @@ function renderMobile() {
         bar.className = 'mobile-bar';
         bar.style.cssText = `top:${topPx}px; height:${hPx}px; background:${barCol}; border-color:${bordCol};`;
 
-        /* Sticky label (FIX #5) */
         const lbl = document.createElement('div');
         lbl.className = 'mobile-bar-label';
         lbl.style.top = STICKY_TOP + 'px';
 
-        /* Large image — text below (FIX #6) */
         const imgEl = document.createElement('img');
         imgEl.className = 'mobile-bar-icon';
         imgEl.src = getUpgradeImage(upg.upgrade);
@@ -933,21 +960,24 @@ function renderMobile() {
         imgEl.alt = upg.upgrade || '';
         lbl.appendChild(imgEl);
 
-        const tb = document.createElement('div');
-        tb.className = 'mobile-bar-text-block';
-        tb.innerHTML = `
-          <div class="mobile-bar-name">${upg.upgrade||''}</div>
-          ${upg.duration ? `<div class="mobile-bar-dur">${upg.duration}</div>` : ''}`;
-        lbl.appendChild(tb);
+        /* Only show text at zoom > 50% */
+        if (showText) {
+          const tb = document.createElement('div');
+          tb.className = 'mobile-bar-text-block';
+          tb.innerHTML = `
+            <div class="mobile-bar-name">${upg.upgrade||''}</div>
+            ${upg.duration ? `<div class="mobile-bar-dur">${upg.duration}</div>` : ''}`;
+          lbl.appendChild(tb);
+        }
         bar.appendChild(lbl);
 
-        /* Large finish time (FIX #4) */
-        const endLbl = document.createElement('div');
-        endLbl.className = 'mobile-bar-end';
-        endLbl.innerHTML = fmtShortHTML(endD);
-        bar.appendChild(endLbl);
+        if (showText) {
+          const endLbl = document.createElement('div');
+          endLbl.className = 'mobile-bar-end';
+          endLbl.innerHTML = fmtShortHTML(endD);
+          bar.appendChild(endLbl);
+        }
 
-        /* Boost dots */
         getBoosts(n, startD, endD).forEach(boost => {
           const bTop = daysBetween(new Date(clampS), boost.date) * PX;
           if (bTop < 0 || bTop > hPx) return;
@@ -967,6 +997,134 @@ function renderMobile() {
     col.appendChild(colBody);
     wrapper.appendChild(col);
   }
+}
+
+/* ── HORIZONTAL (rows, time flows right — compact desktop style) ── */
+function renderMobileHorizontal() {
+  const wrapper = document.getElementById('mobileColumns');
+  wrapper.innerHTML = '';
+  wrapper.style.display = 'block';
+  wrapper.style.overflowX = 'auto';
+
+  const PX  = Math.max(Math.round(140 * ganttZoom), 20);
+  const LW  = 80;   /* compact label column */
+  const RH  = 62;
+  const BT  = 6;
+  const BH  = RH - BT * 2;
+
+  const totalDays = Math.ceil(daysBetween(todayStart, rangeEnd)) + 2;
+  const days = Array.from({length:totalDays},(_,i)=>{ const d=new Date(todayStart); d.setDate(d.getDate()+i); return d; });
+  const totalW = LW + totalDays * PX;
+
+  const canvas = document.createElement('div');
+  canvas.style.cssText = `position:relative; min-width:${totalW}px;`;
+
+  /* Date header */
+  const header = document.createElement('div');
+  header.style.cssText = `display:flex; border-bottom:2px solid var(--border); background:var(--bg); position:sticky; top:0; z-index:12;`;
+
+  const corner = document.createElement('div');
+  corner.style.cssText = `width:${LW}px; flex-shrink:0; position:sticky; left:0; z-index:13; background:var(--bg); border-right:1px solid var(--border); display:flex; align-items:center; padding:0 8px; font-size:9px; font-weight:700; color:var(--text-dim); text-transform:uppercase;`;
+  corner.textContent = 'Builder';
+  header.appendChild(corner);
+
+  days.forEach((d, i) => {
+    const isMonth = i > 0 && d.getDate() === 1;
+    const cell = document.createElement('div');
+    const labelText = i===0 ? 'NOW' : PX < 40 ? (isMonth ? d.toLocaleDateString('en-US',{month:'short'}).toUpperCase() : '') : fmtDay(d);
+    cell.style.cssText = `width:${PX}px; flex-shrink:0; display:flex; align-items:center; justify-content:center; border-left:${isMonth?'2px solid rgba(255,255,255,0.2)':'1px solid var(--border)'}; padding:4px 0; font-size:${i===0?9:8}px; font-weight:${i===0||isMonth?800:600}; color:${i===0?'var(--gold)':isMonth?'rgba(255,255,255,0.55)':'var(--text-dim)'}; white-space:nowrap; overflow:hidden;`;
+    cell.textContent = labelText;
+    header.appendChild(cell);
+  });
+  canvas.appendChild(header);
+
+  /* Builder rows */
+  const visible = ganttData.filter(b => activeBuilders.has(b.builderNum));
+  visible.forEach((b, bi) => {
+    const bColor = BUILDER_COLORS[b.builderNum];
+
+    const row = document.createElement('div');
+    row.style.cssText = `display:flex; position:relative; height:${RH}px; border-bottom:1px solid var(--border);`;
+    row.dataset.builder = b.builderNum;
+
+    const labelEl = document.createElement('div');
+    labelEl.style.cssText = `width:${LW}px; flex-shrink:0; position:sticky; left:0; z-index:9; background:var(--bg); display:flex; align-items:center; gap:5px; padding:0 6px; border-right:1px solid var(--border); border-left:3px solid ${bColor};`;
+    labelEl.innerHTML = `
+      <img src="Images/Builders/Builder ${b.builderNum}.png" style="width:22px;height:22px;object-fit:contain" onerror="this.style.display='none'" alt="">
+      <div style="font-size:10px;font-weight:800;color:${bColor};line-height:1.2">B${b.builderNum}</div>`;
+    row.appendChild(labelEl);
+
+    const cell = document.createElement('div');
+    cell.style.cssText = `position:relative; flex:1; height:${RH}px; overflow:hidden;`;
+
+    days.forEach((d, i) => {
+      const isMonth = i > 0 && d.getDate() === 1;
+      const dl = document.createElement('div');
+      dl.style.cssText = `position:absolute; top:0; bottom:0; left:${i*PX}px; width:${isMonth?2:1}px; background:${i===0?'rgba(245,208,76,0.18)':isMonth?'rgba(255,255,255,0.13)':'var(--border)'};`;
+      cell.appendChild(dl);
+    });
+
+    b.upgrades.forEach((upg, idx) => {
+      const startD = upg._startDate, endD = upg._endDate;
+      if (!startD||!endD) return;
+      const clampS = Math.max(startD.getTime(), todayStart.getTime());
+      const clampE = Math.min(endD.getTime(), rangeEnd.getTime());
+      if (clampS >= clampE) return;
+
+      const leftPx  = daysBetween(todayStart, new Date(clampS)) * PX;
+      const widthPx = Math.max(daysBetween(new Date(clampS), new Date(clampE)) * PX, 6);
+      const isEven  = idx % 2 === 0;
+      const barCol  = isEven ? bColor : hexAlpha(bColor, 0.58);
+      const bordCol = upg._isCurrent ? '#fff' : isEven ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.18)';
+
+      const bar = document.createElement('div');
+      bar.className = 'gantt-bar';
+      bar.style.cssText = `left:${leftPx}px; width:${widthPx}px; top:${BT}px; height:${BH}px; background:${barCol}; border-color:${bordCol};`;
+
+      if (upg._isCurrent) {
+        const badge = document.createElement('div');
+        badge.className = 'bar-active-badge';
+        badge.textContent = '▶ NOW';
+        bar.appendChild(badge);
+      }
+
+      const inner = document.createElement('div');
+      inner.className = 'bar-inner';
+      inner.style.left = LW + 'px';
+
+      const imgEl = document.createElement('img');
+      imgEl.className = 'bar-icon';
+      imgEl.style.cssText = `width:${Math.min(BH, widthPx - 4)}px; height:${BH}px; max-width:${BH}px;`;
+      imgEl.src = getUpgradeImage(upg.upgrade);
+      imgEl.onerror = () => imgEl.src = 'Images/Upgrades/PH.png';
+      inner.appendChild(imgEl);
+
+      if (ganttZoom > 0.5 && widthPx > BH + 40) {
+        const textCol = document.createElement('div');
+        textCol.className = 'bar-text-col';
+        textCol.innerHTML = `<div class="bar-name" style="font-size:10px">${upg.upgrade||''}</div>`;
+        inner.appendChild(textCol);
+      }
+      bar.appendChild(inner);
+
+      if (widthPx > 60) {
+        const endBadge = document.createElement('div');
+        endBadge.className = 'bar-end-badge';
+        endBadge.style.fontSize = '7px';
+        endBadge.innerHTML = fmtShortHTML(endD);
+        bar.appendChild(endBadge);
+      }
+
+      const boosts = getBoosts(b.builderNum, startD, endD);
+      bar.addEventListener('click', e => { e.stopPropagation(); showSheet(upg, b.builderNum, boosts, startD, endD); });
+      cell.appendChild(bar);
+    });
+
+    row.appendChild(cell);
+    canvas.appendChild(row);
+  });
+
+  wrapper.appendChild(canvas);
 }
 
 /* ── TOOLTIP (desktop) ── */
@@ -1015,14 +1173,18 @@ function showSheet(upg, bNum, boosts, startD, endD) {
   setTimeout(()=>document.addEventListener('click',()=>document.querySelector('.mobile-sheet')?.remove(),{once:true}),100);
 }
 
-/* ── TOGGLE BUILDERS (FIX #2: re-render desktop so no gap; hide mobile col) ── */
+/* ── TOGGLE BUILDERS ── */
 function toggleBuilder(n) {
   const btn = document.querySelector(`.toggle-btn[data-b="${n}"]`);
   if (activeBuilders.has(n)) { activeBuilders.delete(n); btn.classList.remove('active'); }
   else                        { activeBuilders.add(n);   btn.classList.add('active'); }
-  renderDesktop();   /* desktop: full re-render, only active rows appear */
-  const mc = document.querySelector(`.mobile-builder-col[data-builder="${n}"]`);
-  if (mc) mc.classList.toggle('hidden-col', !activeBuilders.has(n));
+  renderDesktop();
+  if (mobileOrientation === 'horizontal') {
+    renderMobileHorizontal(); /* full re-render to close row gaps */
+  } else {
+    const mc = document.querySelector(`.mobile-builder-col[data-builder="${n}"]`);
+    if (mc) mc.classList.toggle('hidden-col', !activeBuilders.has(n));
+  }
 }
 </script>
 </body>
