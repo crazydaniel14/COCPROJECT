@@ -62,7 +62,7 @@ const IMAGE_MAP = {
   "Giant Bomb": ["Lvl 6", "Lvl 7&8", "Lvl 9&10"],
   "Gold Mine": ["Lvl 17"],
   "Gold Storage": ["Lvl 18"],
-  "Hidden Tesla": ["Lvl 16"],
+  "Hidden Tesla": ["Lvl 16", "Lvl 17"],
   "Monolith": ["Lvl 2&3&4"],
   "Mortar": ["Lvl 17"],
   "Scattershot": ["Lvl 6&7&8"],

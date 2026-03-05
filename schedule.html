@@ -368,15 +368,17 @@ const BUILDER_COLORS = {
   6: '#20C997'    /* teal        */
 };
 
-const HERO_NAMES = ["Archer Queen","Barbarian King","Grand Warden","Minion Prince","Royal Champion"];
+const HERO_NAMES = ["Archer Queen","Barbarian King","Dragon Duke","Grand Warden","Minion Prince","Royal Champion"];
 const IMAGE_MAP = {
   "Air Bomb":["Lvl 11"],"Archer Tower":["Lvl 21"],"Blacksmith":["Lvl 9"],
   "Bomb":["Lvl 11&12","Lvl 13&14"],"Builder Hut":["Level 7&8&9"],
   "Dark Elixir Drill":["Lvl 10","Lvl 11"],"Dark Elixir Storage":["Lvl 12"],
   "Elixir Collector":["Lvl 17"],"Elixir Storage":["Lvl 18"],
+  "Fire Spitter":["Lvl 3"],
   "Giant Bomb":["Lvl 6","Lvl 7&8","Lvl 9&10"],"Gold Mine":["Lvl 17"],
-  "Gold Storage":["Lvl 18"],"Hidden Tesla":["Lvl 16"],"Monolith":["Lvl 2&3&4"],
-  "Mortar":["Lvl 17"],"Scattershot":["Lvl 6&7&8"],"Seeking Air Mine":["Lvl 5&6"],
+  "Gold Storage":["Lvl 18"],"Hidden Tesla":["Lvl 16","Lvl 17"],"Inferno Tower":["Lvl 12"],
+  "Monolith":["Lvl 2&3&4"],"Mortar":["Lvl 17"],"Pet House":["Lvl 12"],
+  "Scattershot":["Lvl 6&7&8"],"Seeking Air Mine":["Lvl 5&6"],"Spell Tower":["Lvl 4"],
   "Spring Trap":["Lvl 7&8","Lvl 9&10"],"Town Hall":["Lvl 18"],
   "Wizard Tower":["Lvl 17"],"Workshop":["Lvl 8"],"X-Bow":["Lvl 12&13&14"]
 };
@@ -671,6 +673,7 @@ function renderDesktop() {
 
 const PX  = Math.max(Math.round(140 * ganttZoom), 20);  /* px per day */
   const LW  = 130;              /* label-col width */
+  const nowOffsetPx = (Date.now() - todayStart.getTime()) / (24 * 60 * 60 * 1000) * PX; /* px from midnight to now */
   /* Distribute height: 6 builders = 90px each. Fewer builders = proportionally taller rows */
   const visibleCount = activeBuilders.size || 1;
   const RH  = Math.min(Math.round(90 * (6 / visibleCount)), 200); /* row height, max 200px */
@@ -774,7 +777,7 @@ const dayLbl = document.createElement('div');
 
     if (bi===0) {
       const nowPin = document.createElement('div');
-      nowPin.style.cssText = `position:absolute; top:0; left:0; transform:translateX(-50%); background:var(--gold); color:#000; font-size:8px; font-weight:800; padding:2px 6px; border-radius:0 0 4px 4px; white-space:nowrap; z-index:20;`;
+      nowPin.style.cssText = `position:absolute; top:0; left:${nowOffsetPx}px; transform:translateX(-50%); background:var(--gold); color:#000; font-size:8px; font-weight:800; padding:2px 6px; border-radius:0 0 4px 4px; white-space:nowrap; z-index:20;`;
       nowPin.textContent = 'NOW';
       cell.appendChild(nowPin);
     }
@@ -862,7 +865,17 @@ const dayLbl = document.createElement('div');
     canvas.appendChild(row);
   });
 
+  /* Vertical "now" line spanning all rows */
+  const nowLine = document.createElement('div');
+  nowLine.style.cssText = `position:absolute; top:0; bottom:0; left:${LW + nowOffsetPx}px; width:2px; background:var(--gold); opacity:0.55; z-index:11; pointer-events:none;`;
+  canvas.appendChild(nowLine);
+
   container.appendChild(canvas);
+
+  /* Scroll so "now" is at the left edge of the viewport */
+  requestAnimationFrame(() => {
+    document.getElementById('ganttWrap').scrollLeft = nowOffsetPx;
+  });
 }
 
 /* ════════════════════════════════════════════
@@ -886,6 +899,7 @@ function renderMobileVertical() {
   const COL_HEAD_H = 84;
   const STICKY_TOP = 51 + 50 + COL_HEAD_H - 8;
   const showText = ganttZoom > 0.5;
+  const nowOffsetPxV = (Date.now() - todayStart.getTime()) / (24 * 60 * 60 * 1000) * PX;
 
   const totalDays = Math.ceil(daysBetween(todayStart, rangeEnd)) + 2;
   const days = Array.from({length:totalDays},(_,i)=>{ const d=new Date(todayStart); d.setDate(d.getDate()+i); return d; });
@@ -902,9 +916,15 @@ function renderMobileVertical() {
     const t = document.createElement('div');
     t.className = 'mobile-time-tick' + (i===0?' today-row':'');
     t.style.height = PX + 'px';
+    t.style.position = 'relative';
     t.textContent = i===0 ? '▶ Now' : fmtDay(d);
     axis.appendChild(t);
   });
+  /* Horizontal "now" line in time axis */
+  const axisNowLine = document.createElement('div');
+  axisNowLine.style.cssText = `position:absolute; left:0; right:0; top:${COL_HEAD_H + nowOffsetPxV}px; height:2px; background:var(--gold); opacity:0.7; z-index:5; pointer-events:none;`;
+  axis.style.position = 'relative';
+  axis.appendChild(axisNowLine);
   wrapper.appendChild(axis);
 
   /* Builder columns */
@@ -935,6 +955,10 @@ function renderMobileVertical() {
       dr.style.cssText = `position:absolute; left:0; right:0; top:${i*PX}px; height:${PX}px; border-top:${isMonth?'2px':'1px'} solid ${i===0?'rgba(245,208,76,0.3)':isMonth?'rgba(255,255,255,0.16)':'var(--border)'};`;
       colBody.appendChild(dr);
     });
+    /* Horizontal "now" line in column body */
+    const colNowLine = document.createElement('div');
+    colNowLine.style.cssText = `position:absolute; left:0; right:0; top:${nowOffsetPxV}px; height:2px; background:var(--gold); opacity:0.55; z-index:5; pointer-events:none;`;
+    colBody.appendChild(colNowLine);
 
     if (bd) {
       bd.upgrades.forEach((upg, idx) => {
@@ -1013,6 +1037,7 @@ function renderMobileHorizontal() {
 
   const PX  = Math.max(Math.round(140 * ganttZoom), 20);
   const LW  = 80;   /* compact label column */
+  const nowOffsetPx = (Date.now() - todayStart.getTime()) / (24 * 60 * 60 * 1000) * PX;
   const RH  = 62;
   const BT  = 6;
   const BH  = RH - BT * 2;
@@ -1131,7 +1156,15 @@ function renderMobileHorizontal() {
     canvas.appendChild(row);
   });
 
+  /* Vertical "now" line */
+  const nowLineH = document.createElement('div');
+  nowLineH.style.cssText = `position:absolute; top:0; bottom:0; left:${LW + nowOffsetPx}px; width:2px; background:var(--gold); opacity:0.55; z-index:11; pointer-events:none;`;
+  canvas.appendChild(nowLineH);
+
   wrapper.appendChild(canvas);
+
+  /* Scroll so "now" is at the left edge */
+  requestAnimationFrame(() => { wrapper.scrollLeft = nowOffsetPx; });
 }
 
 /* ── TOOLTIP (desktop) ── */
