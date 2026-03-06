@@ -309,7 +309,10 @@
       position:absolute; border-radius:8px; pointer-events:none; z-index:10;
       animation:previewPulse 1s ease-in-out infinite alternate;
     }
-    @keyframes previewPulse { from { opacity:0.55; } to { opacity:0.9; } }
+    @keyframes previewPulse { from { opacity:0.5; } to { opacity:0.85; } }
+    /* Smooth bar-shift animation while dragging (applied via JS) */
+    .sim-active .gantt-bar { transition: left 0.14s ease, width 0.14s ease, filter .15s, box-shadow .15s !important; }
+    .sim-active .mobile-bar { transition: top 0.14s ease, height 0.14s ease, filter .12s !important; }
     .row-drop-target { outline:2px solid var(--gold) !important; outline-offset:-2px; }
     .drag-mode-btn {
       display:flex; align-items:center; gap:5px;
@@ -1415,37 +1418,51 @@ function createGhost(rect, builderNum, upg) {
   return ghost;
 }
 
-/* ── Drop preview state ── */
-let _dropPreviewEl  = null;
-let _lastPreviewKey = null;
+/* ── Drop preview + bar-shift simulation state ── */
+let _dropPreviewEl    = null;
+let _lastPreviewKey   = null;
+let _simOrigPositions = new Map(); /* uid → {left, top, width, height} */
 
 function clearDropPreview() {
   if (_dropPreviewEl) { _dropPreviewEl.remove(); _dropPreviewEl = null; }
   _lastPreviewKey = null;
+  restoreSimulatedBarPositions();
 }
 
-/* Simulate the drop and return the upgrade's projected _startDate/_endDate */
-function computeDropPreview(targetBuilder, clientX, clientY) {
-  if (!dragState) return null;
+/* Restore all bars that were shifted during simulation */
+function restoreSimulatedBarPositions() {
+  _simOrigPositions.forEach((orig, uid) => {
+    const bar = document.querySelector(`.gantt-bar[data-upg-uid="${uid}"], .mobile-bar[data-upg-uid="${uid}"]`);
+    if (!bar) return;
+    if (orig.left   !== null) bar.style.left   = orig.left;
+    if (orig.top    !== null) bar.style.top     = orig.top;
+    if (orig.width  !== null) bar.style.width   = orig.width;
+    if (orig.height !== null) bar.style.height  = orig.height;
+  });
+  _simOrigPositions.clear();
+}
+
+/* Simulate the drop for targetBuilder — returns ALL items with new _startDate/_endDate */
+function computeDropSimulation(targetBuilder, clientX, clientY) {
+  if (!dragState) return [];
   const { upg, fromBuilderNum } = dragState;
   const tgtB = ganttData.find(b => b.builderNum === targetBuilder);
-  if (!tgtB) return null;
+  if (!tgtB) return [];
 
   let cloned = tgtB.upgrades.map(u => ({ ...u }));
 
-  /* If same builder, remove dragged item first (mirrors onDragEnd logic) */
   if (targetBuilder === fromBuilderNum) {
     const si = cloned.findIndex(u => u._uid === upg._uid);
     if (si !== -1) cloned.splice(si, 1);
   }
 
-  /* Find insertion position */
   const beforeUid    = insertBeforeUid(targetBuilder, clientX, clientY);
   const tgtActiveIdx = cloned.findIndex(u => u._isCurrent || u._synthetic);
   const minInsert    = tgtActiveIdx === -1 ? 0 : tgtActiveIdx + 1;
   let insertAt       = beforeUid ? cloned.findIndex(u => u._uid === beforeUid) : -1;
   if (insertAt !== -1 && insertAt <= tgtActiveIdx) insertAt = minInsert;
 
+  /* simUpg is a copy that shares _uid with the real dragged item */
   const simUpg = { ...upg };
   if (insertAt === -1) cloned.push(simUpg);
   else cloned.splice(Math.max(insertAt, minInsert), 0, simUpg);
@@ -1461,7 +1478,53 @@ function computeDropPreview(targetBuilder, clientX, clientY) {
     u._endDate   = new Date(cursor.getTime() + (u.durationMinutes || 0) * 60000);
     cursor = u._endDate;
   }
-  return cloned.find(u => u === simUpg) || null;
+  return cloned;
+}
+
+/* Apply simulated positions to existing DOM bars (animate them to new spots) */
+function applySimulatedBarPositions(targetBuilder, simItems) {
+  const isMobile     = window.innerWidth <= 768;
+  const isMobileVert = isMobile && mobileOrientation === 'vertical';
+  const PXv = Math.max(Math.round(110 * ganttZoom), 20);
+  const PXh = Math.max(Math.round(140 * ganttZoom), 20);
+
+  simItems.forEach(simU => {
+    if (!simU._uid || !simU._startDate || !simU._endDate) return;
+    /* Skip the dragged item itself — its visual is the ghost + preview element */
+    if (dragState && simU._uid === dragState.upg._uid) return;
+
+    let bar;
+    if (isMobileVert) {
+      bar = document.querySelector(`#mobileColumns .mobile-builder-col[data-builder="${targetBuilder}"] .mobile-bar[data-upg-uid="${simU._uid}"]`);
+    } else {
+      const scope = isMobile ? '#mobileColumns' : '#ganttDesktop';
+      bar = document.querySelector(`${scope} [data-builder="${targetBuilder}"] .gantt-bar[data-upg-uid="${simU._uid}"]`);
+    }
+    if (!bar) return;
+
+    /* Save original position (only once per uid) */
+    if (!_simOrigPositions.has(simU._uid)) {
+      _simOrigPositions.set(simU._uid, {
+        left:   bar.style.left   || null,
+        top:    bar.style.top    || null,
+        width:  bar.style.width  || null,
+        height: bar.style.height || null
+      });
+    }
+
+    /* Move bar to simulated position */
+    if (isMobileVert) {
+      const topPx = daysBetween(todayStart, simU._startDate) * PXv;
+      const hPx   = Math.max(daysBetween(simU._startDate, simU._endDate) * PXv, 8);
+      bar.style.top    = topPx + 'px';
+      bar.style.height = hPx   + 'px';
+    } else {
+      const leftPx  = daysBetween(todayStart, simU._startDate) * PXh;
+      const widthPx = Math.max(daysBetween(simU._startDate, simU._endDate) * PXh, 6);
+      bar.style.left  = leftPx  + 'px';
+      bar.style.width = widthPx + 'px';
+    }
+  });
 }
 
 function updateDropPreview(targetBuilder, clientX, clientY) {
@@ -1469,19 +1532,27 @@ function updateDropPreview(targetBuilder, clientX, clientY) {
   const key = `${targetBuilder}:${beforeUid}`;
   if (key === _lastPreviewKey && _dropPreviewEl) return; /* no positional change */
   _lastPreviewKey = key;
-  clearDropPreview();
 
-  const simUpg = computeDropPreview(targetBuilder, clientX, clientY);
+  /* Remove old preview element (but DON'T restore bar positions yet —
+     restoreSimulatedBarPositions is called before re-applying to avoid flicker) */
+  if (_dropPreviewEl) { _dropPreviewEl.remove(); _dropPreviewEl = null; }
+  restoreSimulatedBarPositions();
+
+  /* Compute new simulation */
+  const simItems = computeDropSimulation(targetBuilder, clientX, clientY);
+  const simUpg   = simItems.find(u => u._uid === dragState?.upg?._uid);
   if (!simUpg || !simUpg._startDate || !simUpg._endDate) return;
 
+  /* Shift all OTHER bars to their new simulated positions */
+  applySimulatedBarPositions(targetBuilder, simItems);
+
+  /* Create preview element for the DRAGGED item's new position */
   const isMobile     = window.innerWidth <= 768;
   const isMobileVert = isMobile && mobileOrientation === 'vertical';
   const bColor       = BUILDER_COLORS[targetBuilder];
+  const preview      = document.createElement('div');
+  preview.className  = 'drop-preview';
 
-  const preview = document.createElement('div');
-  preview.className = 'drop-preview';
-
-  /* Image inside preview */
   const pImg = document.createElement('img');
   pImg.src = getUpgradeImage(dragState.upg.upgrade);
   pImg.onerror = () => { pImg.src = 'Images/Upgrades/PH.png'; };
@@ -1494,13 +1565,12 @@ function updateDropPreview(targetBuilder, clientX, clientY) {
     const topPx = daysBetween(todayStart, simUpg._startDate) * PXv;
     const hPx   = Math.max(daysBetween(simUpg._startDate, simUpg._endDate) * PXv, 8);
     preview.style.cssText = `left:4px; right:4px; top:${topPx}px; height:${hPx}px; border:2px dashed ${bColor}; background:${hexAlpha(bColor, 0.28)};`;
-    pImg.style.cssText += ` width:${Math.min(hPx - 8, 36)}px; height:${Math.min(hPx - 8, 36)}px; padding-top:${Math.max((hPx - 44) / 2, 2)}px;`;
+    pImg.style.cssText += ` width:${Math.min(hPx-8,36)}px; height:${Math.min(hPx-8,36)}px; padding-top:${Math.max((hPx-44)/2,2)}px;`;
     preview.appendChild(pImg);
     colBody.appendChild(preview);
   } else {
-    const PXh = Math.max(Math.round(140 * ganttZoom), 20);
-    const LW  = isMobile ? 80 : 130;
-    const rowEl = isMobile
+    const PXh    = Math.max(Math.round(140 * ganttZoom), 20);
+    const rowEl  = isMobile
       ? document.querySelector(`#mobileColumns [data-builder="${targetBuilder}"]`)
       : document.querySelector(`#ganttDesktop [data-builder="${targetBuilder}"]`);
     if (!rowEl) return;
@@ -1512,7 +1582,7 @@ function updateDropPreview(targetBuilder, clientX, clientY) {
     const leftPx = daysBetween(todayStart, simUpg._startDate) * PXh;
     const wPx    = Math.max(daysBetween(simUpg._startDate, simUpg._endDate) * PXh, 20);
     preview.style.cssText = `left:${leftPx}px; width:${wPx}px; top:${BT}px; height:${BH}px; border:2px dashed ${bColor}; background:${hexAlpha(bColor, 0.28)}; display:flex; align-items:center; justify-content:center;`;
-    pImg.style.cssText += ` width:${Math.min(BH - 6, wPx - 6)}px; height:${BH - 6}px;`;
+    pImg.style.cssText += ` width:${Math.min(BH-6,wPx-6)}px; height:${BH-6}px;`;
     preview.appendChild(pImg);
     cellEl.appendChild(preview);
   }
@@ -1533,6 +1603,7 @@ function startDrag(e, builderNum, upg, barEl) {
     dragState.ghost     = createGhost(barEl.getBoundingClientRect(), builderNum, upg);
     barEl.style.opacity = '0.3';
     document.body.style.userSelect = 'none';
+    document.body.classList.add('sim-active');
     e.preventDefault();
   }
 }
@@ -1585,6 +1656,7 @@ function onDragMove(clientX, clientY) {
     dragState.ghost     = createGhost(dragState.origBarEl.getBoundingClientRect(), dragState.fromBuilderNum, dragState.upg);
     dragState.origBarEl.style.opacity = '0.3';
     document.body.style.userSelect    = 'none';
+    document.body.classList.add('sim-active');
   }
   const dx = clientX - dragState.lastX, dy = clientY - dragState.lastY;
   dragState.ghost.style.left = (parseFloat(dragState.ghost.style.left) + dx) + 'px';
@@ -1608,6 +1680,7 @@ function onDragEnd(clientX, clientY) {
   if (ghost) ghost.remove();
   clearDropPreview();
   document.body.style.userSelect = '';
+  document.body.classList.remove('sim-active');
   document.querySelectorAll('.row-drop-target').forEach(el => el.classList.remove('row-drop-target'));
   if (origBarEl) origBarEl.style.opacity = '';
   dragState = null;
@@ -1693,9 +1766,13 @@ async function saveOrder() {
 
     // 3. Execute transfers sequentially
     for (const t of transfers) {
+      console.log('Transferring:', t.upgrade, 'from', t.fromBuilder, 'row', t.row, '→', t.toBuilder);
       const url = `${API_BASE}?action=transfer_upgrade&username=${encodeURIComponent(window.COC_USERNAME)}&upgrade=${encodeURIComponent(t.upgrade)}&from_builder=${encodeURIComponent(t.fromBuilder)}&row=${t.row}&to_builder=${encodeURIComponent(t.toBuilder)}`;
       const res = await fetch(url).then(r => r.json());
-      if (res.status !== 'success') throw new Error(res.error || `Transfer failed: ${t.upgrade}`);
+      if (res.status !== 'success') {
+        console.error('transfer_upgrade failed:', res, t);
+        throw new Error(res.error || `Transfer failed: ${t.upgrade}`);
+      }
     }
 
     // 4. Reorder changed builders
@@ -1718,12 +1795,30 @@ async function saveOrder() {
       const postQueue     = [...origStayed, ...transferredIn];
 
       const newOrder = curQueue.map(u => postQueue.findIndex(pt => pt._uid === u._uid));
-      if (newOrder.some(i => i === -1)) { console.warn('Unmapped upgrade for builder', builderNum, newOrder); continue; }
-      if (newOrder.every((v, i) => v === i) && newOrder.length === postQueue.length) continue;
 
+      /* Validate: must be a complete permutation of [0 … postQueue.length-1] */
+      const hasMinus1   = newOrder.some(i => i === -1);
+      const lenMismatch = newOrder.length !== postQueue.length;
+      const hasDupe     = new Set(newOrder).size !== newOrder.length;
+      if (hasMinus1 || lenMismatch || hasDupe) {
+        console.error(`Builder ${builderNum} reorder skipped — invalid order array.`, {
+          newOrder,
+          curQueueNames:  curQueue.map(u => u.upgrade),
+          postQueueNames: postQueue.map(u => u.upgrade),
+          curLen: curQueue.length, postLen: postQueue.length,
+          hasMinus1, lenMismatch, hasDupe
+        });
+        continue;
+      }
+      if (newOrder.every((v, i) => v === i)) continue; /* already in correct order */
+
+      console.log(`Reordering Builder ${builderNum}:`, newOrder, '→', postQueue.map(u=>u.upgrade));
       const url = `${API_BASE}?action=reorder_builder_upgrades&username=${encodeURIComponent(window.COC_USERNAME)}&builder=Builder_${builderNum}&order=${newOrder.join(',')}`;
       const res = await fetch(url).then(r => r.json());
-      if (res.status !== 'success') throw new Error(res.error || `Reorder failed for Builder ${builderNum}`);
+      if (res.status !== 'success') {
+        console.error('reorder_builder_upgrades failed:', res, { builderNum, newOrder, curQueueNames: curQueue.map(u=>u.upgrade), postQueueNames: postQueue.map(u=>u.upgrade) });
+        throw new Error(res.error || `Reorder failed for Builder ${builderNum}`);
+      }
     }
 
     // 5. Done — refresh with fresh data
@@ -1772,6 +1867,7 @@ function toggleDragMode() {
     document.querySelectorAll('.row-drop-target').forEach(el => el.classList.remove('row-drop-target'));
     document.body.style.userSelect = '';
     clearDropPreview();
+    document.body.classList.remove('sim-active');
     dragState = null;
   }
 }
