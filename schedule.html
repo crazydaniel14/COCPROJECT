@@ -1377,8 +1377,9 @@ function annotateOriginalPositions() {
       upg._origBuilderNum = b.builderNum;
       upg._origIdx        = idx;
       upg._uid            = `${b.builderNum}:${idx}:${(upg.upgrade||'').slice(0,14).replace(/\s/g,'_')}`;
-      // _sheetRow: 1-based sheet row. Synthetic unshift means real items start at row idx+1.
-      upg._sheetRow = hasSynth ? (idx >= 1 ? idx + 1 : null) : idx + 2;
+      // _sheetRow: 1-based sheet row. Sheet row 2 = active, rows 3+ = queue items.
+      // Synthetic prepend shifts indices but NOT sheet rows — queue items always at idx+2.
+      upg._sheetRow = upg._synthetic ? null : idx + 2;
     });
   });
   originalGanttData = ganttData.map(b => ({ builderNum: b.builderNum, upgrades: b.upgrades.map(u => ({ ...u })) }));
