@@ -346,7 +346,7 @@
       animation:violPulse 0.8s ease-in-out infinite alternate;
     }
     .gantt-bar.blocker-bar, .mobile-bar.blocker-bar {
-      outline:3px solid #ff4444 !important; outline-offset:2px;
+      border:3px solid #ff4444 !important;
     }
     .save-btn.has-violations {
       background:rgba(255,70,70,0.18) !important; border-color:rgba(255,70,70,0.7) !important;
@@ -519,8 +519,10 @@ let dragState         = null;  /* active drag context */
 let dragModeEnabled   = false; /* must be ON to drag; prevents pinch-scroll conflicts */
 let _violations       = { violatingUids: new Set(), blockerUids: new Set() };
 let _hasViolations    = false;
-let _minScrollDesktop = 0;   /* px: leftmost allowed scrollLeft on ganttWrap */
-let _minScrollMobileH = 0;   /* px: leftmost allowed scrollLeft on mobileColumns (horiz) */
+let _minScrollDesktop      = 0;    /* px: leftmost allowed scrollLeft on ganttWrap */
+let _minScrollMobileH      = 0;    /* px: leftmost allowed scrollLeft on mobileColumns (horiz) */
+let _preserveScrollDesktop = null; /* set in onDragEnd so RAF restores instead of jumping to NOW */
+let _preserveScrollMobile  = null;
 
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded', () => {
@@ -1095,10 +1097,14 @@ const dayLbl = document.createElement('div');
   container.appendChild(canvas);
   updateSaveBtnViolation();
 
-  /* Scroll so "now" is at the left edge (clamped minimum for future scroll events) */
   requestAnimationFrame(() => {
     _minScrollDesktop = nowOffsetPx;
-    wrap.scrollLeft   = nowOffsetPx;  /* overridden by onDragEnd double-RAF when preserving */
+    if (_preserveScrollDesktop !== null) {
+      wrap.scrollLeft = Math.max(_preserveScrollDesktop, _minScrollDesktop);
+      _preserveScrollDesktop = null;
+    } else {
+      wrap.scrollLeft = _minScrollDesktop;
+    }
   });
 }
 
@@ -1418,8 +1424,13 @@ function renderMobileHorizontal() {
   updateSaveBtnViolation();
 
   requestAnimationFrame(() => {
-    _minScrollMobileH    = nowOffsetPx;
-    wrapper.scrollLeft   = nowOffsetPx; /* overridden by onDragEnd double-RAF when preserving */
+    _minScrollMobileH = nowOffsetPx;
+    if (_preserveScrollMobile !== null) {
+      wrapper.scrollLeft = Math.max(_preserveScrollMobile, _minScrollMobileH);
+      _preserveScrollMobile = null;
+    } else {
+      wrapper.scrollLeft = _minScrollMobileH;
+    }
   });
 }
 
@@ -1843,20 +1854,14 @@ function onDragEnd(clientX, clientY) {
   computeRange();
   setSaveState(true);
 
-  /* Save scroll position before renders so drag doesn't snap back to NOW */
-  const _wrapEl  = document.getElementById('ganttWrap');
-  const _colEl   = document.getElementById('mobileColumns');
-  const _savedSD = _wrapEl ? _wrapEl.scrollLeft : 0;
-  const _savedSM = _colEl  ? _colEl.scrollLeft  : 0;
+  /* Tell each render's RAF to restore scroll instead of jumping to NOW */
+  const _wrapEl = document.getElementById('ganttWrap');
+  const _colEl  = document.getElementById('mobileColumns');
+  _preserveScrollDesktop = _wrapEl ? _wrapEl.scrollLeft : 0;
+  _preserveScrollMobile  = _colEl  ? _colEl.scrollLeft  : 0;
 
   renderDesktop();
   renderMobile();
-
-  /* Double-RAF: runs after each render's own RAF, restoring the user's scroll position */
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    if (_wrapEl) _wrapEl.scrollLeft = Math.max(_savedSD, _minScrollDesktop);
-    if (_colEl && mobileOrientation === 'horizontal') _colEl.scrollLeft = Math.max(_savedSM, _minScrollMobileH);
-  }));
 }
 
 /* ── Re-stitch a single builder after drag ── */
