@@ -180,20 +180,23 @@
 .toggle-btn { padding:6px 10px; font-size:11px; }
   }
 
-  /* Mobile zoom bar */
+  /* Mobile zoom bar — 2-row layout */
   .mobile-zoom-bar {
-    display:flex; align-items:center; justify-content:center; gap:8px;
-    padding:8px 16px; background:var(--surface);
+    display:flex; flex-direction:column; gap:5px;
+    padding:7px 12px; background:var(--surface);
     border-bottom:1px solid var(--border);
     position:sticky; top:101px; z-index:185;
   }
-  .mobile-zoom-bar .zoom-btn { width:34px; height:34px; font-size:18px; }
-  .mobile-zoom-bar .zoom-label { font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; }
-  .mobile-zoom-bar .zoom-level { font-size:12px; font-weight:800; color:var(--gold); min-width:40px; text-align:center; }
+  .mzb-row { display:flex; align-items:center; gap:5px; width:100%; }
+  .mzb-sep { width:1px; height:22px; background:rgba(255,255,255,0.12); flex-shrink:0; }
+  .mobile-zoom-bar .zoom-btn { width:30px; height:30px; font-size:16px; }
+  .zoom-btn.mzb-jump { width:auto !important; padding:0 7px !important; font-size:10px !important; font-weight:700 !important; }
+  .mobile-zoom-bar .zoom-label { font-size:10px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.4px; }
+  .mobile-zoom-bar .zoom-level { font-size:12px; font-weight:800; color:var(--gold); min-width:36px; text-align:center; }
   .orient-btn {
-    display:flex; align-items:center; gap:5px;
+    display:flex; align-items:center; gap:4px;
     background:var(--surface2); border:1.5px solid var(--border); border-radius:8px;
-    padding:5px 10px; color:var(--text-dim); font-family:'Lexend',sans-serif;
+    padding:5px 8px; color:var(--text-dim); font-family:'Lexend',sans-serif;
     font-size:10px; font-weight:700; cursor:pointer; transition:all .18s; white-space:nowrap;
   }
   .orient-btn.active { border-color:var(--gold); color:var(--gold); }
@@ -294,11 +297,19 @@
     .save-btn.has-changes:hover { background:rgba(245,160,40,.3); }
     .drag-ghost {
       position:fixed; z-index:9999; pointer-events:none;
-      border-radius:8px; opacity:0.85; font-family:'Lexend',sans-serif;
+      border-radius:8px; opacity:0.88; font-family:'Lexend',sans-serif;
       font-size:11px; font-weight:700; color:#000;
-      display:flex; align-items:center; padding:4px 10px;
-      box-shadow:0 4px 20px rgba(0,0,0,.55); user-select:none;
+      display:flex; align-items:center; gap:7px; padding:4px 10px;
+      box-shadow:0 6px 28px rgba(0,0,0,.7); user-select:none;
     }
+    .drag-ghost img { object-fit:contain; flex-shrink:0; border-radius:4px; }
+    .drag-ghost span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    /* Drop preview bar — shown in target row during drag */
+    .drop-preview {
+      position:absolute; border-radius:8px; pointer-events:none; z-index:10;
+      animation:previewPulse 1s ease-in-out infinite alternate;
+    }
+    @keyframes previewPulse { from { opacity:0.55; } to { opacity:0.9; } }
     .row-drop-target { outline:2px solid var(--gold) !important; outline-offset:-2px; }
     .drag-mode-btn {
       display:flex; align-items:center; gap:5px;
@@ -310,12 +321,11 @@
     .drag-mode-btn.active { background:rgba(204,93,232,.2); border-color:rgba(204,93,232,.6); color:#CC5DE8; }
     .drag-mode-btn:hover  { border-color:var(--gold); }
     .scroll-arrow-btn {
-      display:none; width:30px; height:30px; border-radius:8px;
+      display:flex; width:30px; height:30px; border-radius:8px;
       border:1.5px solid var(--border); background:var(--surface2);
       color:var(--text); font-size:16px; cursor:pointer;
       align-items:center; justify-content:center; transition:all .15s; user-select:none;
     }
-    .drag-mode-active .scroll-arrow-btn { display:flex; }
     .scroll-arrow-btn:hover { border-color:var(--gold); color:var(--gold); }
     .cancel-btn {
       width:30px; height:30px; border-radius:8px;
@@ -397,26 +407,34 @@
 </div>
 
 <!-- MOBILE -->
-<!-- MOBILE -->
 <div class="gantt-mobile" id="ganttMobile">
   <div class="mobile-zoom-bar">
-    <span class="zoom-label">Zoom</span>
-    <button class="zoom-btn" id="mobileZoomOut">−</button>
-    <span class="zoom-level" id="mobileZoomLevel">100%</span>
-    <button class="zoom-btn" id="mobileZoomIn">+</button>
-    <div style="width:1px;height:22px;background:rgba(255,255,255,0.12);margin:0 4px;"></div>
-    <button class="orient-btn" id="mobileOrientBtn">⇄ Horizontal</button>
-    <div style="width:1px;height:22px;background:rgba(255,255,255,0.12);margin:0 2px;"></div>
-    <button class="drag-mode-btn" id="dragToggleMobile" onclick="toggleDragMode()">✥ Drag</button>
-    <button class="scroll-arrow-btn" id="mScrollL"
-      onmousedown="startScroll('mobileColumns',-1)" onmouseup="stopScroll()" onmouseleave="stopScroll()"
-      ontouchstart="startScroll('mobileColumns',-1)" ontouchend="stopScroll()">‹</button>
-    <button class="scroll-arrow-btn" id="mScrollR"
-      onmousedown="startScroll('mobileColumns',1)" onmouseup="stopScroll()" onmouseleave="stopScroll()"
-      ontouchstart="startScroll('mobileColumns',1)" ontouchend="stopScroll()">›</button>
-    <div style="width:1px;height:22px;background:rgba(255,255,255,0.12);margin:0 2px;"></div>
-    <button class="save-btn" id="saveBtnMobile" disabled onclick="saveOrder()">💾 Save</button>
-    <button class="cancel-btn" id="cancelBtnMobile" onclick="cancelChanges()" title="Discard changes">✕</button>
+    <!-- Row 1: Zoom + Jump + Orientation -->
+    <div class="mzb-row">
+      <span class="zoom-label">Zoom</span>
+      <button class="zoom-btn" id="mobileZoomOut">−</button>
+      <span class="zoom-level" id="mobileZoomLevel">100%</span>
+      <button class="zoom-btn" id="mobileZoomIn">+</button>
+      <div class="mzb-sep"></div>
+      <button class="zoom-btn mzb-jump" id="mJump1W">1W</button>
+      <button class="zoom-btn mzb-jump" id="mJump1M">1M</button>
+      <button class="zoom-btn mzb-jump" id="mJump3M">3M</button>
+      <div class="mzb-sep"></div>
+      <button class="orient-btn" id="mobileOrientBtn">⇄ Horiz</button>
+    </div>
+    <!-- Row 2: Drag mode + Scroll arrows + Save/Cancel -->
+    <div class="mzb-row">
+      <button class="drag-mode-btn" id="dragToggleMobile" onclick="toggleDragMode()">✥ Drag Mode</button>
+      <button class="scroll-arrow-btn" id="mScrollL"
+        onmousedown="startScroll('mobileColumns',-1)" onmouseup="stopScroll()" onmouseleave="stopScroll()"
+        ontouchstart="startScroll('mobileColumns',-1)" ontouchend="stopScroll()">‹</button>
+      <button class="scroll-arrow-btn" id="mScrollR"
+        onmousedown="startScroll('mobileColumns',1)" onmouseup="stopScroll()" onmouseleave="stopScroll()"
+        ontouchstart="startScroll('mobileColumns',1)" ontouchend="stopScroll()">›</button>
+      <div style="flex:1"></div>
+      <button class="save-btn" id="saveBtnMobile" disabled onclick="saveOrder()">💾 Save</button>
+      <button class="cancel-btn" id="cancelBtnMobile" onclick="cancelChanges()" title="Discard changes">✕</button>
+    </div>
   </div>
   <div class="state-msg" id="stateMsgMobile"><div class="spinner"></div><span>Loading schedule…</span></div>
   <div class="mobile-columns-wrapper" id="mobileColumns" style="display:none"></div>
@@ -496,17 +514,32 @@ document.getElementById('zoomIn').addEventListener('click',  () => { ganttZoom =
 
   // Jump buttons — zoom to show exactly N days in the viewport
   function jumpToWindow(days) {
-    const wrap = document.getElementById('ganttWrap');
-    if (!wrap || !todayStart) return;
-    const availPx = wrap.clientWidth - 130; /* subtract label column */
-    const PX = Math.max(Math.round(availPx / days), 1);
-    ganttZoom = Math.min(Math.max(PX / 140, 0.1), 4);
-    applyZoom();
-    wrap.scrollLeft = 0; /* reset scroll to today */
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      const wrapper = document.getElementById('mobileColumns');
+      if (!wrapper || !todayStart) return;
+      const isVert = mobileOrientation === 'vertical';
+      const LW     = isVert ? 58 : 80;
+      const basePX = isVert ? 110 : 140;
+      const avail  = wrapper.clientWidth - LW;
+      ganttZoom    = Math.min(Math.max(Math.round(avail / days) / basePX, 0.1), 4);
+      applyMobileZoom();
+      wrapper.scrollLeft = 0;
+    } else {
+      const wrap = document.getElementById('ganttWrap');
+      if (!wrap || !todayStart) return;
+      const availPx = wrap.clientWidth - 130;
+      ganttZoom = Math.min(Math.max(Math.round(availPx / days) / 140, 0.1), 4);
+      applyZoom();
+      wrap.scrollLeft = 0;
+    }
   }
   document.getElementById('jump1W')?.addEventListener('click', () => jumpToWindow(7));
   document.getElementById('jump1M')?.addEventListener('click', () => jumpToWindow(30));
   document.getElementById('jump3M')?.addEventListener('click', () => jumpToWindow(90));
+  document.getElementById('mJump1W')?.addEventListener('click', () => jumpToWindow(7));
+  document.getElementById('mJump1M')?.addEventListener('click', () => jumpToWindow(30));
+  document.getElementById('mJump3M')?.addEventListener('click', () => jumpToWindow(90));
 
   // Mobile orientation toggle
   document.getElementById('mobileOrientBtn')?.addEventListener('click', () => {
@@ -984,7 +1017,11 @@ function renderMobileVertical() {
 
   const PX = Math.max(Math.round(110 * ganttZoom), 20);
   const COL_HEAD_H = 84;
-  const STICKY_TOP = 51 + 50 + COL_HEAD_H - 8;
+  /* Dynamic: sum of all sticky page headers above gantt body */
+  const _hdr  = document.querySelector('.gantt-header')?.offsetHeight   || 51;
+  const _tgl  = document.querySelector('.builder-toggles')?.offsetHeight || 51;
+  const _mzb  = document.querySelector('.mobile-zoom-bar')?.offsetHeight || 85;
+  const STICKY_TOP = _hdr + _tgl + _mzb + COL_HEAD_H - 8;
   const showText = ganttZoom > 0.5;
   const nowOffsetPxV = (Date.now() - todayStart.getTime()) / (24 * 60 * 60 * 1000) * PX;
 
@@ -1273,9 +1310,11 @@ function renderMobileHorizontal() {
 /* ── TOOLTIP (desktop) ── */
 const tooltip = document.getElementById('ganttTooltip');
 function showTooltip(e, upg, bNum, boosts, startD, endD) {
+  const isSim = hasPendingChanges && !upg._isCurrent && !upg._synthetic;
   let html = `<div class="tt-name">${upg._isCurrent?'▶ ACTIVE &nbsp;':''}${upg.upgrade||''}</div>`;
-  html += `<div class="tt-row"><span class="tt-label">Start</span><span class="tt-value">${fmtDate(startD)}</span></div>`;
-  html += `<div class="tt-row"><span class="tt-label">End</span><span class="tt-value">${fmtDate(endD)}</span></div>`;
+  if (isSim) html += `<div style="font-size:9px;font-weight:700;color:var(--gold);background:rgba(245,208,76,0.12);border-radius:4px;padding:3px 6px;margin-bottom:6px;">📊 Simulated — not saved yet</div>`;
+  html += `<div class="tt-row"><span class="tt-label">Start</span><span class="tt-value">${fmtDate(startD)}${isSim?' <span style="color:var(--gold);font-size:9px">~</span>':''}</span></div>`;
+  html += `<div class="tt-row"><span class="tt-label">End</span><span class="tt-value">${fmtDate(endD)}${isSim?' <span style="color:var(--gold);font-size:9px">~</span>':''}</span></div>`;
   html += `<div class="tt-row"><span class="tt-label">Duration</span><span class="tt-value">${upg.duration||'—'}</span></div>`;
   if (boosts.length) {
     html += `<div class="tt-boost">⚡ ${boosts.length} boost${boosts.length>1?'s':''}</div>`;
@@ -1300,6 +1339,11 @@ function showSheet(upg, bNum, boosts, startD, endD) {
   document.querySelector('.mobile-sheet')?.remove();
   const s = document.createElement('div');
   s.className = 'mobile-sheet';
+  const isSim = hasPendingChanges && !upg._isCurrent && !upg._synthetic;
+  const simBadge = isSim
+    ? `<div style="margin-bottom:10px;padding:4px 8px;background:rgba(245,208,76,0.14);border-radius:6px;font-size:10px;color:var(--gold);font-weight:700;border:1px solid rgba(245,208,76,0.3);">📊 Simulated order — not saved yet</div>`
+    : '';
+  const simTilde = isSim ? ' <span style="color:var(--gold);font-size:9px;font-weight:700">~</span>' : '';
   let bHtml = '';
   if (boosts.length) {
     bHtml = `<div class="sheet-boost">⚡ ${boosts.length} boost${boosts.length>1?'s':''}</div>`;
@@ -1308,8 +1352,9 @@ function showSheet(upg, bNum, boosts, startD, endD) {
   s.innerHTML = `
     <div class="sheet-handle"></div>
     <div class="sheet-title">${upg._isCurrent?'▶ ':''}${upg.upgrade||''}</div>
-    <div class="sheet-row"><span class="sheet-label">Start</span><span class="sheet-value">${fmtDate(startD)}</span></div>
-    <div class="sheet-row"><span class="sheet-label">End</span><span class="sheet-value">${fmtDate(endD)}</span></div>
+    ${simBadge}
+    <div class="sheet-row"><span class="sheet-label">Start</span><span class="sheet-value">${fmtDate(startD)}${simTilde}</span></div>
+    <div class="sheet-row"><span class="sheet-label">End</span><span class="sheet-value">${fmtDate(endD)}${simTilde}</span></div>
     <div class="sheet-row"><span class="sheet-label">Duration</span><span class="sheet-value">${upg.duration||'—'}</span></div>
     ${bHtml}`;
   document.body.appendChild(s);
@@ -1356,12 +1401,122 @@ function goBack() {
 function createGhost(rect, builderNum, upg) {
   const ghost = document.createElement('div');
   ghost.className = 'drag-ghost';
-  const w = Math.min(Math.max(rect.width, 80), 220);
-  ghost.style.cssText = `width:${w}px; height:${Math.max(rect.height, 28)}px; left:${rect.left + (rect.width - w) / 2}px; top:${rect.top}px;`;
-  ghost.style.background = BUILDER_COLORS[builderNum];
-  ghost.textContent = (upg.upgrade || '?').slice(0, 24);
+  const w = Math.min(Math.max(rect.width, 130), 230);
+  const h = Math.max(rect.height, 36);
+  ghost.style.cssText = `width:${w}px; height:${h}px; left:${rect.left + (rect.width - w) / 2}px; top:${rect.top}px; background:${BUILDER_COLORS[builderNum]};`;
+  const img = document.createElement('img');
+  img.src = getUpgradeImage(upg.upgrade);
+  img.onerror = () => { img.src = 'Images/Upgrades/PH.png'; };
+  img.style.cssText = `width:${h - 8}px; height:${h - 8}px;`;
+  const lbl = document.createElement('span');
+  lbl.textContent = (upg.upgrade || '?').slice(0, 22);
+  ghost.append(img, lbl);
   document.body.appendChild(ghost);
   return ghost;
+}
+
+/* ── Drop preview state ── */
+let _dropPreviewEl  = null;
+let _lastPreviewKey = null;
+
+function clearDropPreview() {
+  if (_dropPreviewEl) { _dropPreviewEl.remove(); _dropPreviewEl = null; }
+  _lastPreviewKey = null;
+}
+
+/* Simulate the drop and return the upgrade's projected _startDate/_endDate */
+function computeDropPreview(targetBuilder, clientX, clientY) {
+  if (!dragState) return null;
+  const { upg, fromBuilderNum } = dragState;
+  const tgtB = ganttData.find(b => b.builderNum === targetBuilder);
+  if (!tgtB) return null;
+
+  let cloned = tgtB.upgrades.map(u => ({ ...u }));
+
+  /* If same builder, remove dragged item first (mirrors onDragEnd logic) */
+  if (targetBuilder === fromBuilderNum) {
+    const si = cloned.findIndex(u => u._uid === upg._uid);
+    if (si !== -1) cloned.splice(si, 1);
+  }
+
+  /* Find insertion position */
+  const beforeUid    = insertBeforeUid(targetBuilder, clientX, clientY);
+  const tgtActiveIdx = cloned.findIndex(u => u._isCurrent || u._synthetic);
+  const minInsert    = tgtActiveIdx === -1 ? 0 : tgtActiveIdx + 1;
+  let insertAt       = beforeUid ? cloned.findIndex(u => u._uid === beforeUid) : -1;
+  if (insertAt !== -1 && insertAt <= tgtActiveIdx) insertAt = minInsert;
+
+  const simUpg = { ...upg };
+  if (insertAt === -1) cloned.push(simUpg);
+  else cloned.splice(Math.max(insertAt, minInsert), 0, simUpg);
+
+  /* Simulate restitch */
+  const activeIdx = cloned.findIndex(u => u._isCurrent);
+  let cursor = activeIdx !== -1 && cloned[activeIdx]._endDate instanceof Date
+    ? new Date(cloned[activeIdx]._endDate) : new Date();
+  const start = activeIdx !== -1 ? activeIdx + 1 : 0;
+  for (let i = start; i < cloned.length; i++) {
+    const u = cloned[i];
+    u._startDate = new Date(cursor);
+    u._endDate   = new Date(cursor.getTime() + (u.durationMinutes || 0) * 60000);
+    cursor = u._endDate;
+  }
+  return cloned.find(u => u === simUpg) || null;
+}
+
+function updateDropPreview(targetBuilder, clientX, clientY) {
+  const beforeUid = insertBeforeUid(targetBuilder, clientX, clientY);
+  const key = `${targetBuilder}:${beforeUid}`;
+  if (key === _lastPreviewKey && _dropPreviewEl) return; /* no positional change */
+  _lastPreviewKey = key;
+  clearDropPreview();
+
+  const simUpg = computeDropPreview(targetBuilder, clientX, clientY);
+  if (!simUpg || !simUpg._startDate || !simUpg._endDate) return;
+
+  const isMobile     = window.innerWidth <= 768;
+  const isMobileVert = isMobile && mobileOrientation === 'vertical';
+  const bColor       = BUILDER_COLORS[targetBuilder];
+
+  const preview = document.createElement('div');
+  preview.className = 'drop-preview';
+
+  /* Image inside preview */
+  const pImg = document.createElement('img');
+  pImg.src = getUpgradeImage(dragState.upg.upgrade);
+  pImg.onerror = () => { pImg.src = 'Images/Upgrades/PH.png'; };
+  pImg.style.cssText = 'object-fit:contain; display:block; margin:auto;';
+
+  if (isMobileVert) {
+    const colBody = document.querySelector(`#mobileColumns .mobile-builder-col[data-builder="${targetBuilder}"] .mobile-col-body`);
+    if (!colBody) return;
+    const PXv   = Math.max(Math.round(110 * ganttZoom), 20);
+    const topPx = daysBetween(todayStart, simUpg._startDate) * PXv;
+    const hPx   = Math.max(daysBetween(simUpg._startDate, simUpg._endDate) * PXv, 8);
+    preview.style.cssText = `left:4px; right:4px; top:${topPx}px; height:${hPx}px; border:2px dashed ${bColor}; background:${hexAlpha(bColor, 0.28)};`;
+    pImg.style.cssText += ` width:${Math.min(hPx - 8, 36)}px; height:${Math.min(hPx - 8, 36)}px; padding-top:${Math.max((hPx - 44) / 2, 2)}px;`;
+    preview.appendChild(pImg);
+    colBody.appendChild(preview);
+  } else {
+    const PXh = Math.max(Math.round(140 * ganttZoom), 20);
+    const LW  = isMobile ? 80 : 130;
+    const rowEl = isMobile
+      ? document.querySelector(`#mobileColumns [data-builder="${targetBuilder}"]`)
+      : document.querySelector(`#ganttDesktop [data-builder="${targetBuilder}"]`);
+    if (!rowEl) return;
+    const cellEl = Array.from(rowEl.children).find(c => c.style.flex === '1' || c.style.position === 'relative') || rowEl.lastElementChild;
+    if (!cellEl) return;
+    const RH     = parseInt(rowEl.style.height) || 62;
+    const BT     = Math.round(RH * 0.09);
+    const BH     = RH - BT * 2;
+    const leftPx = daysBetween(todayStart, simUpg._startDate) * PXh;
+    const wPx    = Math.max(daysBetween(simUpg._startDate, simUpg._endDate) * PXh, 20);
+    preview.style.cssText = `left:${leftPx}px; width:${wPx}px; top:${BT}px; height:${BH}px; border:2px dashed ${bColor}; background:${hexAlpha(bColor, 0.28)}; display:flex; align-items:center; justify-content:center;`;
+    pImg.style.cssText += ` width:${Math.min(BH - 6, wPx - 6)}px; height:${BH - 6}px;`;
+    preview.appendChild(pImg);
+    cellEl.appendChild(preview);
+  }
+  _dropPreviewEl = preview;
 }
 
 /* ── Start drag ── */
@@ -1440,6 +1595,9 @@ function onDragMove(clientX, clientY) {
   if (target !== null) {
     document.querySelectorAll(`[data-builder="${target}"]`).forEach(el => el.classList.add('row-drop-target'));
     dragState.hoverBuilderNum = target;
+    updateDropPreview(target, clientX, clientY);
+  } else {
+    clearDropPreview();
   }
 }
 
@@ -1448,6 +1606,7 @@ function onDragEnd(clientX, clientY) {
   if (!dragState) return;
   const { upg, fromBuilderNum, ghost, origBarEl, committed, hoverBuilderNum } = dragState;
   if (ghost) ghost.remove();
+  clearDropPreview();
   document.body.style.userSelect = '';
   document.querySelectorAll('.row-drop-target').forEach(el => el.classList.remove('row-drop-target'));
   if (origBarEl) origBarEl.style.opacity = '';
@@ -1460,9 +1619,19 @@ function onDragEnd(clientX, clientY) {
   const tgtB = ganttData.find(b => b.builderNum === targetBuilder);
   if (!srcB || !tgtB) return;
 
-  // Remove from source
   const srcIdx = srcB.upgrades.indexOf(upg);
   if (srcIdx === -1) return;
+
+  /* Same-spot detection: if dropped back at original position, no-op */
+  if (targetBuilder === fromBuilderNum) {
+    const beforeUid = insertBeforeUid(targetBuilder, clientX, clientY);
+    const nextItem  = srcB.upgrades[srcIdx + 1];
+    const isSameSpot = (beforeUid === null && !nextItem) ||
+                       (nextItem && beforeUid === nextItem._uid);
+    if (isSameSpot) return;
+  }
+
+  // Remove from source
   srcB.upgrades.splice(srcIdx, 1);
 
   // Find insertion point in target (never before the active/synthetic item)
@@ -1602,6 +1771,7 @@ function toggleDragMode() {
     if (dragState.origBarEl) dragState.origBarEl.style.opacity = '';
     document.querySelectorAll('.row-drop-target').forEach(el => el.classList.remove('row-drop-target'));
     document.body.style.userSelect = '';
+    clearDropPreview();
     dragState = null;
   }
 }
