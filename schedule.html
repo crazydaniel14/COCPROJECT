@@ -339,6 +339,21 @@
     .cancel-btn.has-changes { border-color:rgba(255,100,100,.6); color:#FF6B6B; cursor:pointer; opacity:1; }
     .cancel-btn.has-changes:hover { background:rgba(255,100,100,.15); }
 
+    /* ── VIOLATION STYLES ── */
+    @keyframes violPulse { from{filter:brightness(1)} to{filter:brightness(1.35)} }
+    .gantt-bar.violation-bar, .mobile-bar.violation-bar {
+      background:#c0392b !important; border-color:rgba(255,120,120,0.9) !important;
+      animation:violPulse 0.8s ease-in-out infinite alternate;
+    }
+    .gantt-bar.blocker-bar, .mobile-bar.blocker-bar {
+      outline:3px solid #ff4444 !important; outline-offset:2px;
+    }
+    .save-btn.has-violations {
+      background:rgba(255,70,70,0.18) !important; border-color:rgba(255,70,70,0.7) !important;
+      color:#ff6b6b !important; cursor:not-allowed !important; opacity:1;
+    }
+    .save-btn.has-violations:hover { background:rgba(255,70,70,0.28) !important; }
+
     /* Bottom sheet */
     .mobile-sheet {
       position:fixed; bottom:0; left:0; right:0; z-index:9999;
@@ -502,6 +517,10 @@ let originalGanttData = null;  /* snapshot on load for diff/save */
 let hasPendingChanges = false;
 let dragState         = null;  /* active drag context */
 let dragModeEnabled   = false; /* must be ON to drag; prevents pinch-scroll conflicts */
+let _violations       = { violatingUids: new Set(), blockerUids: new Set() };
+let _hasViolations    = false;
+let _minScrollDesktop = 0;   /* px: leftmost allowed scrollLeft on ganttWrap */
+let _minScrollMobileH = 0;   /* px: leftmost allowed scrollLeft on mobileColumns (horiz) */
 
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded', () => {
@@ -557,7 +576,81 @@ document.getElementById('zoomIn').addEventListener('click',  () => { ganttZoom =
   });
 
   loadGantt();
+
+  /* Clamp scroll so the user can never scroll left of the NOW line */
+  document.getElementById('ganttWrap').addEventListener('scroll', function() {
+    if (this.scrollLeft < _minScrollDesktop) this.scrollLeft = _minScrollDesktop;
+  });
+  document.getElementById('mobileColumns').addEventListener('scroll', function() {
+    if (mobileOrientation === 'horizontal' && this.scrollLeft < _minScrollMobileH) {
+      this.scrollLeft = _minScrollMobileH;
+    }
+  });
+
+  /* Warn user if they try to leave with unsaved changes */
+  window.addEventListener('beforeunload', e => {
+    if (hasPendingChanges) { e.preventDefault(); e.returnValue = ''; }
+  });
 });
+
+/* ════════════════════════════════════════════
+   VIOLATION DETECTION
+   Flags any upgrade whose immediately-preceding level (same base name, level-1)
+   hasn't finished yet — i.e. it would start before the prior level ends.
+════════════════════════════════════════════ */
+function detectViolations() {
+  const byBase = new Map(); // normalised base → [{upg, level}]
+  for (const b of ganttData) {
+    for (const upg of b.upgrades) {
+      if (!upg._startDate || !upg._endDate || !upg._uid) continue;
+      const m = (upg.upgrade || '').match(/^(.+?)\s+(?:Level|Lvl)\s+(\d+)$/i);
+      if (!m) continue;
+      const base  = m[1].trim().toLowerCase();
+      const level = parseInt(m[2]);
+      if (!byBase.has(base)) byBase.set(base, []);
+      byBase.get(base).push({ upg, level });
+    }
+  }
+
+  const violatingUids = new Set();
+  const blockerUids   = new Set();
+
+  for (const [, items] of byBase) {
+    for (const item of items) {
+      // Find any occurrence of the same building at level-1
+      const prevItems = items.filter(i => i.level === item.level - 1);
+      for (const prev of prevItems) {
+        // Violation: prev level ends AFTER this level starts
+        if (prev.upg._endDate > item.upg._startDate) {
+          violatingUids.add(item.upg._uid);
+          blockerUids.add(prev.upg._uid);
+        }
+      }
+    }
+  }
+
+  _violations    = { violatingUids, blockerUids };
+  _hasViolations = violatingUids.size > 0;
+}
+
+function updateSaveBtnViolation() {
+  document.querySelectorAll('.save-btn').forEach(btn => {
+    const isMobileBtn = btn.id === 'saveBtnMobile';
+    if (_hasViolations && hasPendingChanges) {
+      btn.disabled = true;
+      btn.classList.remove('has-changes');
+      btn.classList.add('has-violations');
+      btn.textContent = isMobileBtn ? '⚠️ Fix Order' : '⚠️ Fix Level Order First';
+    } else if (hasPendingChanges) {
+      btn.disabled = false;
+      btn.classList.add('has-changes');
+      btn.classList.remove('has-violations');
+      btn.textContent = isMobileBtn ? '💾 Save' : '💾 Save Order';
+    } else {
+      btn.classList.remove('has-violations');
+    }
+  });
+}
 
 function applyZoom() {
   document.getElementById('zoomLevel').textContent = Math.round(ganttZoom * 100) + '%';
@@ -783,6 +876,9 @@ function hexAlpha(hex, a) {
    FIX #6: image = full bar height
 ════════════════════════════════════════════ */
 function renderDesktop() {
+  detectViolations();
+  const wrap = document.getElementById('ganttWrap');
+  const _savedScrollDesktop = wrap ? wrap.scrollLeft : 0;
   const container = document.getElementById('ganttDesktop');
   container.innerHTML = '';
 
@@ -981,6 +1077,9 @@ const dayLbl = document.createElement('div');
       bar.addEventListener('mouseenter', e => showTooltip(e, upg, b.builderNum, boosts, startD, endD));
       bar.addEventListener('mousemove',  e => moveTooltip(e));
       bar.addEventListener('mouseleave', hideTooltip);
+      /* Violation highlighting */
+      if (_violations.violatingUids.has(upg._uid)) bar.classList.add('violation-bar');
+      if (_violations.blockerUids.has(upg._uid))   bar.classList.add('blocker-bar');
       cell.appendChild(bar);
     });
 
@@ -994,10 +1093,12 @@ const dayLbl = document.createElement('div');
   canvas.appendChild(nowLine);
 
   container.appendChild(canvas);
+  updateSaveBtnViolation();
 
-  /* Scroll so "now" is at the left edge of the viewport */
+  /* Scroll so "now" is at the left edge (clamped minimum for future scroll events) */
   requestAnimationFrame(() => {
-    document.getElementById('ganttWrap').scrollLeft = nowOffsetPx;
+    _minScrollDesktop = nowOffsetPx;
+    wrap.scrollLeft   = nowOffsetPx;  /* overridden by onDragEnd double-RAF when preserving */
   });
 }
 
@@ -1005,10 +1106,12 @@ const dayLbl = document.createElement('div');
    MOBILE RENDER — branches on mobileOrientation
 ════════════════════════════════════════════ */
 function renderMobile() {
+  detectViolations();
   if (mobileOrientation === 'horizontal') {
     renderMobileHorizontal();
   } else {
     renderMobileVertical();
+    updateSaveBtnViolation();
   }
 }
 
@@ -1154,6 +1257,9 @@ function renderMobileVertical() {
           bar.addEventListener('touchstart', e => { e.stopPropagation(); startDrag(e, n, upg, bar); }, { passive: false });
         }
         bar.addEventListener('click', e => { e.stopPropagation(); showSheet(upg, n, boosts, startD, endD); });
+        /* Violation highlighting */
+        if (_violations.violatingUids.has(upg._uid)) bar.classList.add('violation-bar');
+        if (_violations.blockerUids.has(upg._uid))   bar.classList.add('blocker-bar');
         colBody.appendChild(bar);
       });
     }
@@ -1166,6 +1272,7 @@ function renderMobileVertical() {
 /* ── HORIZONTAL (rows, time flows right — compact desktop style) ── */
 function renderMobileHorizontal() {
   const wrapper = document.getElementById('mobileColumns');
+  const _savedScrollMobile = wrapper ? wrapper.scrollLeft : 0;
   wrapper.innerHTML = '';
   wrapper.style.display = 'block';
   wrapper.style.overflowX = 'auto';
@@ -1292,6 +1399,9 @@ function renderMobileHorizontal() {
         bar.addEventListener('touchstart', e => { e.stopPropagation(); startDrag(e, b.builderNum, upg, bar); }, { passive: false });
       }
       bar.addEventListener('click', e => { e.stopPropagation(); showSheet(upg, b.builderNum, boosts, startD, endD); });
+      /* Violation highlighting */
+      if (_violations.violatingUids.has(upg._uid)) bar.classList.add('violation-bar');
+      if (_violations.blockerUids.has(upg._uid))   bar.classList.add('blocker-bar');
       cell.appendChild(bar);
     });
 
@@ -1305,16 +1415,23 @@ function renderMobileHorizontal() {
   canvas.appendChild(nowLineH);
 
   wrapper.appendChild(canvas);
+  updateSaveBtnViolation();
 
-  /* Scroll so "now" is at the left edge */
-  requestAnimationFrame(() => { wrapper.scrollLeft = nowOffsetPx; });
+  requestAnimationFrame(() => {
+    _minScrollMobileH    = nowOffsetPx;
+    wrapper.scrollLeft   = nowOffsetPx; /* overridden by onDragEnd double-RAF when preserving */
+  });
 }
 
 /* ── TOOLTIP (desktop) ── */
 const tooltip = document.getElementById('ganttTooltip');
 function showTooltip(e, upg, bNum, boosts, startD, endD) {
   const isSim = hasPendingChanges && !upg._isCurrent && !upg._synthetic;
+  const isViol    = _violations.violatingUids.has(upg._uid);
+  const isBlocker = _violations.blockerUids.has(upg._uid);
   let html = `<div class="tt-name">${upg._isCurrent?'▶ ACTIVE &nbsp;':''}${upg.upgrade||''}</div>`;
+  if (isViol)    html += `<div style="font-size:9px;font-weight:700;color:#ff6b6b;background:rgba(255,70,70,0.14);border-radius:4px;padding:3px 7px;margin-bottom:6px;border:1px solid rgba(255,100,100,0.3)">⚠️ Level violation — previous level hasn't finished yet</div>`;
+  if (isBlocker) html += `<div style="font-size:9px;font-weight:700;color:#ff6b6b;background:rgba(255,70,70,0.14);border-radius:4px;padding:3px 7px;margin-bottom:6px;border:1px solid rgba(255,100,100,0.3)">🚫 Blocking a higher-level upgrade</div>`;
   if (isSim) html += `<div style="font-size:9px;font-weight:700;color:var(--gold);background:rgba(245,208,76,0.12);border-radius:4px;padding:3px 6px;margin-bottom:6px;">📊 Simulated — not saved yet</div>`;
   html += `<div class="tt-row"><span class="tt-label">Start</span><span class="tt-value">${fmtDate(startD)}${isSim?' <span style="color:var(--gold);font-size:9px">~</span>':''}</span></div>`;
   html += `<div class="tt-row"><span class="tt-label">End</span><span class="tt-value">${fmtDate(endD)}${isSim?' <span style="color:var(--gold);font-size:9px">~</span>':''}</span></div>`;
@@ -1725,8 +1842,21 @@ function onDragEnd(clientX, clientY) {
   if (targetBuilder !== fromBuilderNum) restitchBuilder(tgtB);
   computeRange();
   setSaveState(true);
+
+  /* Save scroll position before renders so drag doesn't snap back to NOW */
+  const _wrapEl  = document.getElementById('ganttWrap');
+  const _colEl   = document.getElementById('mobileColumns');
+  const _savedSD = _wrapEl ? _wrapEl.scrollLeft : 0;
+  const _savedSM = _colEl  ? _colEl.scrollLeft  : 0;
+
   renderDesktop();
   renderMobile();
+
+  /* Double-RAF: runs after each render's own RAF, restoring the user's scroll position */
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (_wrapEl) _wrapEl.scrollLeft = Math.max(_savedSD, _minScrollDesktop);
+    if (_colEl && mobileOrientation === 'horizontal') _colEl.scrollLeft = Math.max(_savedSM, _minScrollMobileH);
+  }));
 }
 
 /* ── Re-stitch a single builder after drag ── */
@@ -1748,6 +1878,10 @@ function restitchBuilder(b) {
 /* ── Save order to server ── */
 async function saveOrder() {
   if (!hasPendingChanges) return;
+  if (_hasViolations) {
+    alert('⚠️ Fix all level-order violations (red bars) before saving.');
+    return;
+  }
   document.querySelectorAll('.save-btn').forEach(b => { b.disabled = true; b.textContent = 'Saving…'; });
   try {
     // 1. Collect upgrades that changed builder
