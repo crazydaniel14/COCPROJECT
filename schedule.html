@@ -212,7 +212,6 @@
       height:84px; border-bottom:1px solid var(--border); border-right:1px solid var(--border);
       display:flex; align-items:flex-end; padding:0 5px 8px;
       font-size:9px; font-weight:700; color:var(--text-dim); text-transform:uppercase;
-      position:sticky; z-index:15; background:var(--bg);
     }
     .mobile-time-tick {
       border-right:1px solid var(--border); border-bottom:1px solid var(--border);
@@ -227,7 +226,12 @@
     .mobile-col-header {
       height:84px; border-bottom:3px solid;
       display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:6px 4px;
-      position:sticky; z-index:15; background:var(--bg);
+    }
+    /* Sticky header row that lives OUTSIDE mobileColumns (avoids overflow-x:auto blocking sticky) */
+    #mobileVHeaders {
+      display:none; overflow:hidden; background:var(--bg);
+      border-bottom:2px solid var(--border); height:84px; flex-shrink:0;
+      position:sticky; z-index:20;
     }
     .mobile-col-header img { width:32px; height:32px; object-fit:contain; }
     .mobile-col-header span { font-size:11px; font-weight:700; white-space:nowrap; }
@@ -460,6 +464,8 @@
     </div>
   </div>
   <div class="state-msg" id="stateMsgMobile"><div class="spinner"></div><span>Loading schedule…</span></div>
+  <!-- Sticky column-header row for vertical mode — outside mobileColumns so page-scroll sticky works -->
+  <div id="mobileVHeaders"></div>
   <div class="mobile-columns-wrapper" id="mobileColumns" style="display:none"></div>
 </div>
 
@@ -528,6 +534,7 @@ let _minScrollDesktop      = 0;    /* px: leftmost allowed scrollLeft on ganttWr
 let _minScrollMobileH      = 0;    /* px: leftmost allowed scrollLeft on mobileColumns (horiz) */
 let _preserveScrollDesktop = null; /* set in onDragEnd so RAF restores instead of jumping to NOW */
 let _preserveScrollMobile  = null;
+let _vhSyncListener        = null; /* scroll-sync listener for mobileVHeaders — removed on re-render */
 
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded', () => {
@@ -707,6 +714,8 @@ function setLoading(on) {
   document.getElementById('ganttDesktop').style.display   = on ? 'none'  : 'block';
   document.getElementById('stateMsgMobile').style.display = on ? 'flex'  : 'none';
   document.getElementById('mobileColumns').style.display  = on ? 'none'  : 'flex';
+  const vh = document.getElementById('mobileVHeaders');
+  if (vh && on) vh.style.display = 'none'; /* renderMobileVertical will re-show it */
   const isMobile = window.innerWidth <= 768;
   document.getElementById('zoomBar').style.display = (!on && !isMobile) ? 'flex' : 'none';
 }
@@ -1118,27 +1127,34 @@ const dayLbl = document.createElement('div');
 ════════════════════════════════════════════ */
 function renderMobile() {
   detectViolations();
+  const vHeaders = document.getElementById('mobileVHeaders');
   if (mobileOrientation === 'horizontal') {
+    if (vHeaders) vHeaders.style.display = 'none';
     renderMobileHorizontal();
   } else {
-    renderMobileVertical();
+    renderMobileVertical(); /* vHeaders shown inside renderMobileVertical */
     updateSaveBtnViolation();
   }
 }
 
 /* ── VERTICAL (columns, time flows down) ── */
 function renderMobileVertical() {
-  const wrapper = document.getElementById('mobileColumns');
+  const wrapper  = document.getElementById('mobileColumns');
+  const vHeaders = document.getElementById('mobileVHeaders');
+
+  /* Remove previous scroll-sync listener before clearing DOM */
+  if (_vhSyncListener) { wrapper.removeEventListener('scroll', _vhSyncListener); _vhSyncListener = null; }
   wrapper.innerHTML = '';
   wrapper.style.display = 'flex';
 
   const PX = Math.max(Math.round(110 * ganttZoom), 20);
   const COL_HEAD_H = 84;
-  /* Dynamic: sum of all sticky page headers above gantt body */
   const _hdr  = document.querySelector('.gantt-header')?.offsetHeight   || 51;
   const _tgl  = document.querySelector('.builder-toggles')?.offsetHeight || 51;
   const _mzb  = document.querySelector('.mobile-zoom-bar')?.offsetHeight || 85;
-  const STICKY_TOP = _hdr + _tgl + _mzb + COL_HEAD_H - 8;
+  const HEADER_STICKY_TOP = _hdr + _tgl + _mzb;
+  /* Bar labels still need to clear the sticky header row (COL_HEAD_H tall) */
+  const STICKY_TOP = HEADER_STICKY_TOP + COL_HEAD_H - 8;
   const showText = ganttZoom > 0.5;
   const nowOffsetPxV = (Date.now() - todayStart.getTime()) / (24 * 60 * 60 * 1000) * PX;
 
@@ -1146,16 +1162,49 @@ function renderMobileVertical() {
   const days = Array.from({length:totalDays},(_,i)=>{ const d=new Date(todayStart); d.setDate(d.getDate()+i); return d; });
   const bodyH = totalDays * PX;
 
-  const HEADER_STICKY_TOP = _hdr + _tgl + _mzb;
+  /* ── Sticky header row (outside mobileColumns so overflow-x:auto doesn't trap it) ──
+     Contains: [Date label | B1 header | B2 header | …]
+     Horizontal position synced with mobileColumns scrollLeft via JS transform          */
+  if (vHeaders) {
+    vHeaders.innerHTML = '';
+    vHeaders.style.cssText = `display:flex; position:sticky; top:${HEADER_STICKY_TOP}px; z-index:20; background:var(--bg); border-bottom:2px solid var(--border); height:${COL_HEAD_H}px; overflow:hidden;`;
 
-  /* Time axis */
+    /* "Date" cell — also sticky on left so it stays visible during horizontal scroll */
+    const vhTime = document.createElement('div');
+    vhTime.style.cssText = `width:58px; flex-shrink:0; position:sticky; left:0; z-index:21; background:var(--bg); border-right:1px solid var(--border); display:flex; align-items:flex-end; padding:0 5px 8px; font-size:9px; font-weight:700; color:var(--text-dim); text-transform:uppercase;`;
+    vhTime.textContent = 'Date';
+    vHeaders.appendChild(vhTime);
+
+    /* Column header cells — in a container that translates horizontally with mobileColumns scroll */
+    const vhInner = document.createElement('div');
+    vhInner.id = 'mobileVHeadersInner';
+    vhInner.style.cssText = `display:flex; flex-shrink:0; will-change:transform;`;
+    for (let n = 1; n <= 6; n++) {
+      const bd = ganttData.find(b => b.builderNum === n);
+      const bColor = BUILDER_COLORS[n];
+      const upgCount = bd ? bd.upgrades.filter(u => !u._synthetic).length : 0;
+      const hCell = document.createElement('div');
+      hCell.dataset.vhBuilder = n;
+      hCell.style.cssText = `width:120px; flex-shrink:0; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:6px 4px; border-bottom:3px solid ${bColor}; border-right:1px solid var(--border); display:${activeBuilders.has(n)?'flex':'none'};`;
+      hCell.innerHTML = `
+        <img src="Images/Builders/Builder ${n}.png" style="width:24px;height:24px;object-fit:contain" onerror="this.style.display='none'" alt="">
+        <span style="color:${bColor};font-size:11px;font-weight:700">B${n}</span>
+        <span style="color:var(--text-dim);font-size:8px;font-weight:700">${upgCount} upg</span>`;
+      vhInner.appendChild(hCell);
+    }
+    vHeaders.appendChild(vhInner);
+
+    /* Sync horizontal position of inner cells with mobileColumns horizontal scroll */
+    _vhSyncListener = function() {
+      const inner = document.getElementById('mobileVHeadersInner');
+      if (inner) inner.style.transform = `translateX(-${this.scrollLeft}px)`;
+    };
+    wrapper.addEventListener('scroll', _vhSyncListener);
+  }
+
+  /* Time axis — no header here (it's in vHeaders now) */
   const axis = document.createElement('div');
   axis.className = 'mobile-time-axis';
-  const axisHead = document.createElement('div');
-  axisHead.className = 'mobile-time-header';
-  axisHead.style.top = HEADER_STICKY_TOP + 'px';
-  axisHead.textContent = 'Date';
-  axis.appendChild(axisHead);
   days.forEach((d,i) => {
     const t = document.createElement('div');
     t.className = 'mobile-time-tick' + (i===0?' today-row':'');
@@ -1164,14 +1213,14 @@ function renderMobileVertical() {
     t.textContent = i===0 ? '▶ Now' : fmtDay(d);
     axis.appendChild(t);
   });
-  /* Horizontal "now" line in time axis */
   const axisNowLine = document.createElement('div');
-  axisNowLine.style.cssText = `position:absolute; left:0; right:0; top:${COL_HEAD_H + nowOffsetPxV}px; height:2px; background:var(--gold); opacity:0.7; z-index:5; pointer-events:none;`;
+  /* top offset no longer includes COL_HEAD_H — axis starts with ticks now */
+  axisNowLine.style.cssText = `position:absolute; left:0; right:0; top:${nowOffsetPxV}px; height:2px; background:var(--gold); opacity:0.7; z-index:5; pointer-events:none;`;
   axis.style.position = 'relative';
   axis.appendChild(axisNowLine);
   wrapper.appendChild(axis);
 
-  /* Builder columns */
+  /* Builder columns — no col-header inside (it's in vHeaders now) */
   for (let n = 1; n <= 6; n++) {
     const bd = ganttData.find(b => b.builderNum === n);
     const bColor = BUILDER_COLORS[n];
@@ -1180,17 +1229,6 @@ function renderMobileVertical() {
     col.className = 'mobile-builder-col';
     col.dataset.builder = n;
     if (!activeBuilders.has(n)) col.classList.add('hidden-col');
-
-    const colHead = document.createElement('div');
-    colHead.className = 'mobile-col-header';
-    colHead.style.borderBottomColor = bColor;
-    colHead.style.top = HEADER_STICKY_TOP + 'px';
-    const upgCount = bd ? bd.upgrades.filter(u => !u._synthetic).length : 0;
-    colHead.innerHTML = `
-      <img src="Images/Builders/Builder ${n}.png" onerror="this.style.display='none'" alt="">
-      <span style="color:${bColor}">B${n}</span>
-      <span style="color:var(--text-dim);font-size:8px;font-weight:700">${upgCount} upg</span>`;
-    col.appendChild(colHead);
 
     const colBody = document.createElement('div');
     colBody.className = 'mobile-col-body';
@@ -2093,6 +2131,9 @@ function toggleBuilder(n) {
   } else {
     const mc = document.querySelector(`.mobile-builder-col[data-builder="${n}"]`);
     if (mc) mc.classList.toggle('hidden-col', !activeBuilders.has(n));
+    /* Also show/hide the corresponding cell in the external sticky header row */
+    const vhCell = document.querySelector(`#mobileVHeadersInner [data-vh-builder="${n}"]`);
+    if (vhCell) vhCell.style.display = activeBuilders.has(n) ? 'flex' : 'none';
   }
 }
 </script>
