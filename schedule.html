@@ -535,6 +535,7 @@ let _minScrollMobileH      = 0;    /* px: leftmost allowed scrollLeft on mobileC
 let _preserveScrollDesktop = null; /* set in onDragEnd so RAF restores instead of jumping to NOW */
 let _preserveScrollMobile  = null;
 let _vhSyncListener        = null; /* scroll-sync listener for mobileVHeaders — removed on re-render */
+let _vhTouchHandlers       = null; /* touch-forward handlers on mobileVHeaders — removed on re-render */
 
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded', () => {
@@ -1142,8 +1143,15 @@ function renderMobileVertical() {
   const wrapper  = document.getElementById('mobileColumns');
   const vHeaders = document.getElementById('mobileVHeaders');
 
-  /* Remove previous scroll-sync listener before clearing DOM */
+  /* Remove previous listeners before clearing DOM */
   if (_vhSyncListener) { wrapper.removeEventListener('scroll', _vhSyncListener); _vhSyncListener = null; }
+  if (_vhTouchHandlers && vHeaders) {
+    vHeaders.removeEventListener('touchstart',  _vhTouchHandlers.start);
+    vHeaders.removeEventListener('touchmove',   _vhTouchHandlers.move);
+    vHeaders.removeEventListener('touchend',    _vhTouchHandlers.end);
+    vHeaders.removeEventListener('touchcancel', _vhTouchHandlers.end);
+    _vhTouchHandlers = null;
+  }
   wrapper.innerHTML = '';
   wrapper.style.display = 'flex';
 
@@ -1204,19 +1212,22 @@ function renderMobileVertical() {
     wrapper.addEventListener('scroll', _vhSyncListener);
 
     /* Forward horizontal swipes on vHeaders to mobileColumns so the user can
-       scroll left/right from the sticky header row (useful especially in drag mode) */
+       scroll left/right from the sticky header row (useful especially in drag mode).
+       Handlers are stored in _vhTouchHandlers so they can be removed on re-render. */
     let _vhTouchX = null;
-    vHeaders.addEventListener('touchstart', e => {
-      _vhTouchX = e.touches[0].clientX;
-    }, { passive: true });
-    vHeaders.addEventListener('touchmove', e => {
+    const vhStart = e => { _vhTouchX = e.touches[0].clientX; };
+    const vhMove  = e => {
       if (_vhTouchX === null) return;
       const dx = _vhTouchX - e.touches[0].clientX;
       _vhTouchX = e.touches[0].clientX;
       wrapper.scrollLeft += dx;
-    }, { passive: true });
-    vHeaders.addEventListener('touchend',   () => { _vhTouchX = null; }, { passive: true });
-    vHeaders.addEventListener('touchcancel',() => { _vhTouchX = null; }, { passive: true });
+    };
+    const vhEnd = () => { _vhTouchX = null; };
+    vHeaders.addEventListener('touchstart',  vhStart, { passive: true });
+    vHeaders.addEventListener('touchmove',   vhMove,  { passive: true });
+    vHeaders.addEventListener('touchend',    vhEnd,   { passive: true });
+    vHeaders.addEventListener('touchcancel', vhEnd,   { passive: true });
+    _vhTouchHandlers = { start: vhStart, move: vhMove, end: vhEnd };
   }
 
   /* Time axis — no header here (it's in vHeaders now) */
@@ -1237,12 +1248,6 @@ function renderMobileVertical() {
   axis.style.position = 'relative';
   axis.appendChild(axisNowLine);
   wrapper.appendChild(axis);
-
-  /* Initial transform sync so time axis is correctly placed at current scrollLeft */
-  requestAnimationFrame(() => {
-    const sl = wrapper.scrollLeft;
-    if (sl > 0) axis.style.transform = `translateX(${sl}px)`;
-  });
 
   /* Builder columns — no col-header inside (it's in vHeaders now) */
   for (let n = 1; n <= 6; n++) {
@@ -1344,6 +1349,20 @@ function renderMobileVertical() {
     col.appendChild(colBody);
     wrapper.appendChild(col);
   }
+
+  /* Restore mobileColumns horizontal scroll position (e.g. after drag re-render) */
+  requestAnimationFrame(() => {
+    if (_preserveScrollMobile !== null) {
+      wrapper.scrollLeft = _preserveScrollMobile;
+      _preserveScrollMobile = null;
+    }
+    /* Sync transforms to the (possibly restored) scrollLeft */
+    const sl = wrapper.scrollLeft;
+    const inner = document.getElementById('mobileVHeadersInner');
+    if (inner) inner.style.transform = `translateX(-${sl}px)`;
+    const timeAxis = document.getElementById('mobileTimeAxisEl');
+    if (timeAxis) timeAxis.style.transform = `translateX(${sl}px)`;
+  });
 }
 
 /* ── HORIZONTAL (rows, time flows right — compact desktop style) ── */
@@ -1863,23 +1882,29 @@ function onDragMove(clientX, clientY) {
   dragState.ghost.style.top  = (parseFloat(dragState.ghost.style.top)  + dy) + 'px';
   dragState.lastX = clientX; dragState.lastY = clientY;
 
-  /* Mobile edge auto-scroll so the user can drag to items off-screen */
+  /* Edge auto-scroll so the user can drag to items off-screen */
+  const EDGE = 80, SPD = 14;
   if (window.innerWidth <= 768) {
-    const EDGE = 80, SPD = 14;
     const col = document.getElementById('mobileColumns');
+    /* Both orientations: scroll mobileColumns horizontally at left/right edges */
+    if (col) {
+      if      (clientX < 90)                        col.scrollLeft -= SPD;
+      else if (clientX > window.innerWidth - 50)    col.scrollLeft += SPD;
+    }
+    /* Vertical mode: also page-scroll up/down */
     if (mobileOrientation === 'vertical') {
-      /* Vertical: page-scroll up/down AND horizontal-scroll mobileColumns left/right */
       if      (clientY < EDGE)                        window.scrollBy(0, -SPD);
       else if (clientY > window.innerHeight - EDGE)   window.scrollBy(0,  SPD);
-      if (col) {
-        if      (clientX < 90)                        col.scrollLeft -= SPD;
-        else if (clientX > window.innerWidth - 50)    col.scrollLeft += SPD;
-      }
-    } else {
-      if (col) {
-        if      (clientX < 90)                        col.scrollLeft -= SPD;
-        else if (clientX > window.innerWidth - 50)    col.scrollLeft += SPD;
-      }
+    }
+  } else {
+    /* Desktop: scroll ganttWrap horizontally + page vertically near edges */
+    const wrap = document.getElementById('ganttWrap');
+    if (wrap) {
+      const rect = wrap.getBoundingClientRect();
+      if      (clientX < rect.left  + EDGE) wrap.scrollLeft -= SPD;
+      else if (clientX > rect.right - EDGE) wrap.scrollLeft += SPD;
+      if      (clientY < EDGE)              window.scrollBy(0, -SPD);
+      else if (clientY > window.innerHeight - EDGE) window.scrollBy(0, SPD);
     }
   }
 
@@ -1956,9 +1981,10 @@ function onDragEnd(clientX, clientY) {
   renderDesktop();
   renderMobile();
 
-  /* Restore page scroll for vertical mobile (page scroll isn't touched by render RAFs) */
+  /* Restore page scroll for vertical mobile — double-RAF ensures layout has settled
+     before we scroll, so the browser doesn't undo our restore during reflow */
   if (window.innerWidth <= 768 && mobileOrientation === 'vertical') {
-    requestAnimationFrame(() => window.scrollTo(0, _savedScrollY));
+    requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, _savedScrollY)));
   }
 }
 
