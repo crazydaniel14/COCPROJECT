@@ -207,7 +207,7 @@
     .mobile-columns-wrapper { display:flex; overflow-x:auto; }
     .mobile-columns-wrapper::-webkit-scrollbar { display:none; }
 
-    .mobile-time-axis { flex-shrink:0; width:58px; position:sticky; left:0; background:var(--bg); z-index:10; }
+    .mobile-time-axis { flex-shrink:0; width:58px; background:var(--bg); z-index:10; touch-action:pan-y; }
     .mobile-time-header {
       height:84px; border-bottom:1px solid var(--border); border-right:1px solid var(--border);
       display:flex; align-items:flex-end; padding:0 5px 8px;
@@ -231,7 +231,7 @@
     #mobileVHeaders {
       display:none; overflow:hidden; background:var(--bg);
       border-bottom:2px solid var(--border); height:84px; flex-shrink:0;
-      position:sticky; z-index:20;
+      position:sticky; z-index:20; touch-action:pan-y;
     }
     .mobile-col-header img { width:32px; height:32px; object-fit:contain; }
     .mobile-col-header span { font-size:11px; font-weight:700; white-space:nowrap; }
@@ -1182,7 +1182,7 @@ function renderMobileVertical() {
     for (let n = 1; n <= 6; n++) {
       const bd = ganttData.find(b => b.builderNum === n);
       const bColor = BUILDER_COLORS[n];
-      const upgCount = bd ? bd.upgrades.filter(u => !u._synthetic).length : 0;
+      const upgCount = bd ? bd.upgrades.length : 0;
       const hCell = document.createElement('div');
       hCell.dataset.vhBuilder = n;
       hCell.style.cssText = `width:120px; flex-shrink:0; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:6px 4px; border-bottom:3px solid ${bColor}; border-right:1px solid var(--border); display:${activeBuilders.has(n)?'flex':'none'};`;
@@ -1198,6 +1198,8 @@ function renderMobileVertical() {
     _vhSyncListener = function() {
       const inner = document.getElementById('mobileVHeadersInner');
       if (inner) inner.style.transform = `translateX(-${this.scrollLeft}px)`;
+      const timeAxis = document.getElementById('mobileTimeAxisEl');
+      if (timeAxis) timeAxis.style.transform = `translateX(${this.scrollLeft}px)`;
     };
     wrapper.addEventListener('scroll', _vhSyncListener);
   }
@@ -1205,6 +1207,7 @@ function renderMobileVertical() {
   /* Time axis — no header here (it's in vHeaders now) */
   const axis = document.createElement('div');
   axis.className = 'mobile-time-axis';
+  axis.id = 'mobileTimeAxisEl';
   days.forEach((d,i) => {
     const t = document.createElement('div');
     t.className = 'mobile-time-tick' + (i===0?' today-row':'');
@@ -1219,6 +1222,12 @@ function renderMobileVertical() {
   axis.style.position = 'relative';
   axis.appendChild(axisNowLine);
   wrapper.appendChild(axis);
+
+  /* Initial transform sync so time axis is correctly placed at current scrollLeft */
+  requestAnimationFrame(() => {
+    const sl = wrapper.scrollLeft;
+    if (sl > 0) axis.style.transform = `translateX(${sl}px)`;
+  });
 
   /* Builder columns — no col-header inside (it's in vHeaders now) */
   for (let n = 1; n <= 6; n++) {
@@ -1839,7 +1848,7 @@ function onDragMove(clientX, clientY) {
   dragState.ghost.style.top  = (parseFloat(dragState.ghost.style.top)  + dy) + 'px';
   dragState.lastX = clientX; dragState.lastY = clientY;
 
-  /* Mobile edge auto-scroll so the user can drag to items off-screen */
+  /* Edge auto-scroll so the user can drag to items off-screen */
   if (window.innerWidth <= 768) {
     const EDGE = 80, SPD = 14;
     if (mobileOrientation === 'vertical') {
@@ -1851,6 +1860,15 @@ function onDragMove(clientX, clientY) {
         if      (clientX < 90)                        col.scrollLeft -= SPD;
         else if (clientX > window.innerWidth - 50)    col.scrollLeft += SPD;
       }
+    }
+  } else {
+    /* Desktop: auto-scroll ganttWrap when dragging near left/right edges */
+    const wrap = document.getElementById('ganttWrap');
+    if (wrap) {
+      const EDGE = 100, SPD = 16;
+      const rect = wrap.getBoundingClientRect();
+      if      (clientX < rect.left + EDGE)  wrap.scrollLeft -= SPD;
+      else if (clientX > rect.right - EDGE) wrap.scrollLeft += SPD;
     }
   }
 
