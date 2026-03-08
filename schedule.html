@@ -539,6 +539,8 @@ let _preserveScrollMobile  = null;
 let _vhSyncListener        = null; /* scroll-sync listener for mobileVHeaders — removed on re-render */
 let _vhScrollListener      = null; /* vHeaders→mobileColumns scroll-sync listener — removed on re-render */
 let _syncingScroll         = false; /* mutex prevents bidirectional scroll loops */
+let _edgeScrollDeltaY      = 0;    /* vertical edge-scroll velocity for rAF loop */
+let _edgeScrollRafId       = null; /* rAF handle for vertical edge-scroll loop */
 
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded', () => {
@@ -1756,8 +1758,7 @@ function updateDropPreview(targetBuilder, clientX, clientY) {
   if (key === _lastPreviewKey && _dropPreviewEl) return; /* no positional change */
   _lastPreviewKey = key;
 
-  /* Remove old preview element (but DON'T restore bar positions yet —
-     restoreSimulatedBarPositions is called before re-applying to avoid flicker) */
+  /* Remove old preview element and restore bar positions before re-applying */
   if (_dropPreviewEl) { _dropPreviewEl.remove(); _dropPreviewEl = null; }
   restoreSimulatedBarPositions();
 
@@ -1842,30 +1843,74 @@ function builderRowAt(x, y) {
   return row ? parseInt(row.dataset.builder) : null;
 }
 
-/* ── Find uid of upgrade to insert BEFORE (null = end) ── */
+/* ── Find uid of upgrade to insert BEFORE (null = end) ──
+   Uses DATA positions (ganttData dates → pixel math) instead of DOM positions so
+   the result is unaffected by simulated bar shifts during drag preview. */
 function insertBeforeUid(builderNum, clientX, clientY) {
-  /* Use only the VISIBLE container to avoid desktop/mobile DOM cross-contamination */
   const isMobile     = window.innerWidth <= 768;
   const isMobileVert = isMobile && mobileOrientation === 'vertical';
-  let sel;
+  const bd = ganttData.find(b => b.builderNum === builderNum);
+  if (!bd) return null;
+
+  /* Draggable upgrades in chronological order, excluding the bar being dragged */
+  const draggable = bd.upgrades.filter(u =>
+    !u._isCurrent && !u._synthetic && u._uid &&
+    u._uid !== dragState?.upg?._uid && u._startDate && u._endDate
+  );
+
   if (isMobileVert) {
-    sel = `#mobileColumns .mobile-builder-col[data-builder="${builderNum}"] .mobile-bar[data-draggable="1"]`;
+    const PX = Math.max(Math.round(110 * ganttZoom), 20);
+    const colBody = document.querySelector(
+      `#mobileColumns .mobile-builder-col[data-builder="${builderNum}"] .mobile-col-body`);
+    if (!colBody) return null;
+    const offsetTop = colBody.getBoundingClientRect().top;
+    const localY = clientY - offsetTop;
+    for (const upg of draggable) {
+      const topPx = daysBetween(todayStart, upg._startDate) * PX;
+      const hPx   = Math.max(daysBetween(upg._startDate, upg._endDate) * PX, 8);
+      if (localY < topPx + hPx / 2) return upg._uid;
+    }
   } else if (isMobile) {
-    sel = `#mobileColumns [data-builder="${builderNum}"] .gantt-bar[data-draggable="1"]`;
+    const PX = Math.max(Math.round(140 * ganttZoom), 20);
+    const rowEl = document.querySelector(`#mobileColumns [data-builder="${builderNum}"]`);
+    if (!rowEl) return null;
+    const cellEl = Array.from(rowEl.children).find(c =>
+      c.style.flex === '1' || c.style.position === 'relative') || rowEl.lastElementChild;
+    if (!cellEl) return null;
+    const offsetLeft = cellEl.getBoundingClientRect().left;
+    const localX = clientX - offsetLeft;
+    for (const upg of draggable) {
+      const leftPx = daysBetween(todayStart, upg._startDate) * PX;
+      const wPx    = Math.max(daysBetween(upg._startDate, upg._endDate) * PX, 6);
+      if (localX < leftPx + wPx / 2) return upg._uid;
+    }
   } else {
-    sel = `#ganttDesktop [data-builder="${builderNum}"] .gantt-bar[data-draggable="1"]`;
-  }
-  const bars = [...document.querySelectorAll(sel)].sort((a, b) => {
-    const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
-    return isMobileVert ? ra.top - rb.top : ra.left - rb.left;
-  });
-  for (const bar of bars) {
-    const rect  = bar.getBoundingClientRect();
-    const mid   = isMobileVert ? rect.top + rect.height / 2 : rect.left + rect.width / 2;
-    const coord = isMobileVert ? clientY : clientX;
-    if (coord < mid) return bar.dataset.upgUid;
+    const PX = Math.max(Math.round(140 * ganttZoom), 20);
+    const rowEl = document.querySelector(`#ganttDesktop [data-builder="${builderNum}"]`);
+    if (!rowEl) return null;
+    const cellEl = Array.from(rowEl.children).find(c =>
+      c.style.flex === '1' || c.style.position === 'relative') || rowEl.lastElementChild;
+    if (!cellEl) return null;
+    const offsetLeft = cellEl.getBoundingClientRect().left;
+    const localX = clientX - offsetLeft;
+    for (const upg of draggable) {
+      const leftPx = daysBetween(todayStart, upg._startDate) * PX;
+      const wPx    = Math.max(daysBetween(upg._startDate, upg._endDate) * PX, 6);
+      if (localX < leftPx + wPx / 2) return upg._uid;
+    }
   }
   return null; // insert at end
+}
+
+/* ── Vertical edge-scroll rAF loop (runs outside touchmove so iOS doesn't block it) ── */
+function _edgeScrollTick() {
+  if (!dragState || _edgeScrollDeltaY === 0) { _edgeScrollRafId = null; return; }
+  window.scrollBy(0, _edgeScrollDeltaY);
+  _edgeScrollRafId = requestAnimationFrame(_edgeScrollTick);
+}
+function startEdgeScrollLoop() {
+  if (_edgeScrollRafId) return;
+  _edgeScrollRafId = requestAnimationFrame(_edgeScrollTick);
 }
 
 /* ── Drag move ── */
@@ -1895,12 +1940,15 @@ function onDragMove(clientX, clientY) {
       if      (clientX < 90)                        col.scrollLeft -= SPD;
       else if (clientX > window.innerWidth - 50)    col.scrollLeft += SPD;
     }
-    /* Vertical mode: also page-scroll up/down.
+    /* Vertical mode: also page-scroll up/down via rAF loop so it works on iOS
+       even though touchmove calls e.preventDefault().
        Top threshold is larger to account for the sticky header stack (~220px) */
     if (mobileOrientation === 'vertical') {
       const EDGE_TOP = 220;
-      if      (clientY < EDGE_TOP)                    window.scrollBy(0, -SPD);
-      else if (clientY > window.innerHeight - EDGE)   window.scrollBy(0,  SPD);
+      if      (clientY < EDGE_TOP)                   _edgeScrollDeltaY = -SPD;
+      else if (clientY > window.innerHeight - EDGE)  _edgeScrollDeltaY =  SPD;
+      else                                           _edgeScrollDeltaY =  0;
+      if (_edgeScrollDeltaY !== 0 && !_edgeScrollRafId) startEdgeScrollLoop();
     }
   } else {
     /* Desktop: scroll ganttWrap horizontally + page vertically near edges */
@@ -1929,6 +1977,9 @@ function onDragMove(clientX, clientY) {
 /* ── Drag end / drop ── */
 function onDragEnd(clientX, clientY) {
   if (!dragState) return;
+  /* Stop vertical edge-scroll rAF loop */
+  _edgeScrollDeltaY = 0;
+  if (_edgeScrollRafId) { cancelAnimationFrame(_edgeScrollRafId); _edgeScrollRafId = null; }
   const { upg, fromBuilderNum, ghost, origBarEl, committed, hoverBuilderNum } = dragState;
   if (ghost) ghost.remove();
   clearDropPreview();
@@ -2139,6 +2190,8 @@ function toggleDragMode() {
   });
   /* When drag mode is off, cancel any in-progress drag */
   if (!dragModeEnabled && dragState) {
+    _edgeScrollDeltaY = 0;
+    if (_edgeScrollRafId) { cancelAnimationFrame(_edgeScrollRafId); _edgeScrollRafId = null; }
     if (dragState.ghost) dragState.ghost.remove();
     if (dragState.origBarEl) dragState.origBarEl.style.opacity = '';
     document.querySelectorAll('.row-drop-target').forEach(el => el.classList.remove('row-drop-target'));
