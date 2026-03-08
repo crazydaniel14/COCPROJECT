@@ -229,10 +229,13 @@
     }
     /* Sticky header row that lives OUTSIDE mobileColumns (avoids overflow-x:auto blocking sticky) */
     #mobileVHeaders {
-      display:none; overflow:hidden; background:var(--bg);
+      display:none; background:var(--bg);
       border-bottom:2px solid var(--border); height:84px; flex-shrink:0;
-      position:sticky; z-index:20; touch-action:pan-y;
+      position:sticky; z-index:20;
+      overflow-x:auto; overflow-y:hidden;
+      scrollbar-width:none; -ms-overflow-style:none;
     }
+    #mobileVHeaders::-webkit-scrollbar { display:none; }
     .mobile-col-header img { width:32px; height:32px; object-fit:contain; }
     .mobile-col-header span { font-size:11px; font-weight:700; white-space:nowrap; }
     .mobile-col-body { position:relative; }
@@ -245,11 +248,10 @@
     }
     .mobile-bar:active { filter:brightness(1.2); }
 
-    /* Sticky label inside bar — sticks relative to page vertical scroll.
-       top is set dynamically in JS = header+toggles+col-header height. */
+    /* Label always at top of bar — absolute so icon never drifts to bar bottom */
     .mobile-bar-label {
-      position:sticky;
-      padding:6px 5px 4px;
+      position:absolute; top:4px; left:0; right:0;
+      padding:0 5px;
       display:flex; flex-direction:column; align-items:center; gap:4px;
       pointer-events:none; z-index:3;
     }
@@ -535,7 +537,8 @@ let _minScrollMobileH      = 0;    /* px: leftmost allowed scrollLeft on mobileC
 let _preserveScrollDesktop = null; /* set in onDragEnd so RAF restores instead of jumping to NOW */
 let _preserveScrollMobile  = null;
 let _vhSyncListener        = null; /* scroll-sync listener for mobileVHeaders — removed on re-render */
-let _vhTouchHandlers       = null; /* touch-forward handlers on mobileVHeaders — removed on re-render */
+let _vhScrollListener      = null; /* vHeaders→mobileColumns scroll-sync listener — removed on re-render */
+let _syncingScroll         = false; /* mutex prevents bidirectional scroll loops */
 
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded', () => {
@@ -1143,16 +1146,15 @@ function renderMobileVertical() {
   const wrapper  = document.getElementById('mobileColumns');
   const vHeaders = document.getElementById('mobileVHeaders');
 
-  /* Remove previous listeners before clearing DOM */
-  if (_vhSyncListener) { wrapper.removeEventListener('scroll', _vhSyncListener); _vhSyncListener = null; }
-  if (_vhTouchHandlers && vHeaders) {
-    vHeaders.removeEventListener('touchstart',  _vhTouchHandlers.start);
-    vHeaders.removeEventListener('touchmove',   _vhTouchHandlers.move);
-    vHeaders.removeEventListener('touchend',    _vhTouchHandlers.end);
-    vHeaders.removeEventListener('touchcancel', _vhTouchHandlers.end);
-    _vhTouchHandlers = null;
-  }
+  /* Remove previous scroll-sync listeners before clearing DOM */
+  if (_vhSyncListener)   { wrapper.removeEventListener('scroll', _vhSyncListener);   _vhSyncListener   = null; }
+  if (_vhScrollListener) { vHeaders && vHeaders.removeEventListener('scroll', _vhScrollListener); _vhScrollListener = null; }
+
+  /* Prevent page-scroll collapse during DOM rebuild (keeps window.scrollY stable) */
+  const _prevBodyH = wrapper.scrollHeight;
+  if (_prevBodyH > 0) wrapper.style.minHeight = _prevBodyH + 'px';
   wrapper.innerHTML = '';
+  wrapper.style.minHeight = '';
   wrapper.style.display = 'flex';
 
   const PX = Math.max(Math.round(110 * ganttZoom), 20);
@@ -1175,18 +1177,19 @@ function renderMobileVertical() {
      Horizontal position synced with mobileColumns scrollLeft via JS transform          */
   if (vHeaders) {
     vHeaders.innerHTML = '';
-    vHeaders.style.cssText = `display:flex; position:sticky; top:${HEADER_STICKY_TOP}px; z-index:20; background:var(--bg); border-bottom:2px solid var(--border); height:${COL_HEAD_H}px; overflow:hidden;`;
+    /* vHeaders is now a real native scroll container — bidirectionally synced with mobileColumns */
+    vHeaders.style.cssText = `display:flex; position:sticky; top:${HEADER_STICKY_TOP}px; z-index:20; background:var(--bg); border-bottom:2px solid var(--border); height:${COL_HEAD_H}px; overflow-x:auto; overflow-y:hidden; scrollbar-width:none;`;
 
-    /* "Date" cell — also sticky on left so it stays visible during horizontal scroll */
+    /* "Date" cell — sticky left inside scroll container */
     const vhTime = document.createElement('div');
     vhTime.style.cssText = `width:58px; flex-shrink:0; position:sticky; left:0; z-index:21; background:var(--bg); border-right:1px solid var(--border); display:flex; align-items:flex-end; padding:0 5px 8px; font-size:9px; font-weight:700; color:var(--text-dim); text-transform:uppercase;`;
     vhTime.textContent = 'Date';
     vHeaders.appendChild(vhTime);
 
-    /* Column header cells — in a container that translates horizontally with mobileColumns scroll */
+    /* Column header cells — natural flow, no transform needed */
     const vhInner = document.createElement('div');
     vhInner.id = 'mobileVHeadersInner';
-    vhInner.style.cssText = `display:flex; flex-shrink:0; will-change:transform;`;
+    vhInner.style.cssText = `display:flex; flex-shrink:0;`;
     for (let n = 1; n <= 6; n++) {
       const bd = ganttData.find(b => b.builderNum === n);
       const bColor = BUILDER_COLORS[n];
@@ -1202,32 +1205,27 @@ function renderMobileVertical() {
     }
     vHeaders.appendChild(vhInner);
 
-    /* Sync horizontal position of inner cells with mobileColumns horizontal scroll */
+    /* mobileColumns → vHeaders sync (and time axis transform) */
     _vhSyncListener = function() {
-      const inner = document.getElementById('mobileVHeadersInner');
-      if (inner) inner.style.transform = `translateX(-${this.scrollLeft}px)`;
+      if (_syncingScroll) return;
+      _syncingScroll = true;
+      vHeaders.scrollLeft = this.scrollLeft;
       const timeAxis = document.getElementById('mobileTimeAxisEl');
       if (timeAxis) timeAxis.style.transform = `translateX(${this.scrollLeft}px)`;
+      _syncingScroll = false;
     };
     wrapper.addEventListener('scroll', _vhSyncListener);
 
-    /* Forward horizontal swipes on vHeaders to mobileColumns so the user can
-       scroll left/right from the sticky header row (useful especially in drag mode).
-       Handlers are stored in _vhTouchHandlers so they can be removed on re-render. */
-    let _vhTouchX = null;
-    const vhStart = e => { _vhTouchX = e.touches[0].clientX; };
-    const vhMove  = e => {
-      if (_vhTouchX === null) return;
-      const dx = _vhTouchX - e.touches[0].clientX;
-      _vhTouchX = e.touches[0].clientX;
-      wrapper.scrollLeft += dx;
+    /* vHeaders → mobileColumns sync (user swipes the header row directly) */
+    _vhScrollListener = function() {
+      if (_syncingScroll) return;
+      _syncingScroll = true;
+      wrapper.scrollLeft = vHeaders.scrollLeft;
+      const timeAxis = document.getElementById('mobileTimeAxisEl');
+      if (timeAxis) timeAxis.style.transform = `translateX(${vHeaders.scrollLeft}px)`;
+      _syncingScroll = false;
     };
-    const vhEnd = () => { _vhTouchX = null; };
-    vHeaders.addEventListener('touchstart',  vhStart, { passive: true });
-    vHeaders.addEventListener('touchmove',   vhMove,  { passive: true });
-    vHeaders.addEventListener('touchend',    vhEnd,   { passive: true });
-    vHeaders.addEventListener('touchcancel', vhEnd,   { passive: true });
-    _vhTouchHandlers = { start: vhStart, move: vhMove, end: vhEnd };
+    vHeaders.addEventListener('scroll', _vhScrollListener);
   }
 
   /* Time axis — no header here (it's in vHeaders now) */
@@ -1292,9 +1290,15 @@ function renderMobileVertical() {
         bar.className = 'mobile-bar';
         bar.style.cssText = `top:${topPx}px; height:${hPx}px; background:${barCol}; border-color:${bordCol};`;
 
+        if (upg._isCurrent) {
+          const badge = document.createElement('div');
+          badge.style.cssText = `position:absolute;top:0;left:0;right:0;text-align:center;background:rgba(255,255,255,0.92);color:#000;font-size:7px;font-weight:800;padding:1px 4px;border-radius:0 0 4px 4px;white-space:nowrap;pointer-events:none;letter-spacing:.4px;line-height:1.5;z-index:4;`;
+          badge.textContent = (upg._startDate && upg._startDate.getTime() < todayStart.getTime()) ? `▶ since ${fmtDay(upg._startDate)}` : '▶ NOW';
+          bar.appendChild(badge);
+        }
+
         const lbl = document.createElement('div');
         lbl.className = 'mobile-bar-label';
-        lbl.style.top = STICKY_TOP + 'px';
 
         const imgEl = document.createElement('img');
         imgEl.className = 'mobile-bar-icon';
@@ -1356,10 +1360,10 @@ function renderMobileVertical() {
       wrapper.scrollLeft = _preserveScrollMobile;
       _preserveScrollMobile = null;
     }
-    /* Sync transforms to the (possibly restored) scrollLeft */
+    /* Sync vHeaders and time axis to current scrollLeft */
     const sl = wrapper.scrollLeft;
-    const inner = document.getElementById('mobileVHeadersInner');
-    if (inner) inner.style.transform = `translateX(-${sl}px)`;
+    const vh = document.getElementById('mobileVHeaders');
+    if (vh) vh.scrollLeft = sl;
     const timeAxis = document.getElementById('mobileTimeAxisEl');
     if (timeAxis) timeAxis.style.transform = `translateX(${sl}px)`;
   });
@@ -1891,20 +1895,23 @@ function onDragMove(clientX, clientY) {
       if      (clientX < 90)                        col.scrollLeft -= SPD;
       else if (clientX > window.innerWidth - 50)    col.scrollLeft += SPD;
     }
-    /* Vertical mode: also page-scroll up/down */
+    /* Vertical mode: also page-scroll up/down.
+       Top threshold is larger to account for the sticky header stack (~220px) */
     if (mobileOrientation === 'vertical') {
-      if      (clientY < EDGE)                        window.scrollBy(0, -SPD);
+      const EDGE_TOP = 220;
+      if      (clientY < EDGE_TOP)                    window.scrollBy(0, -SPD);
       else if (clientY > window.innerHeight - EDGE)   window.scrollBy(0,  SPD);
     }
   } else {
     /* Desktop: scroll ganttWrap horizontally + page vertically near edges */
     const wrap = document.getElementById('ganttWrap');
     if (wrap) {
+      const D_EDGE = 130, D_SPD = 20;
       const rect = wrap.getBoundingClientRect();
-      if      (clientX < rect.left  + EDGE) wrap.scrollLeft -= SPD;
-      else if (clientX > rect.right - EDGE) wrap.scrollLeft += SPD;
-      if      (clientY < EDGE)              window.scrollBy(0, -SPD);
-      else if (clientY > window.innerHeight - EDGE) window.scrollBy(0, SPD);
+      if      (clientX < rect.left  + D_EDGE) wrap.scrollLeft -= D_SPD;
+      else if (clientX > rect.right - D_EDGE) wrap.scrollLeft += D_SPD;
+      if      (clientY < D_EDGE)              window.scrollBy(0, -D_SPD);
+      else if (clientY > window.innerHeight - D_EDGE) window.scrollBy(0, D_SPD);
     }
   }
 
@@ -2090,6 +2097,7 @@ async function saveOrder() {
 
     // 5. Done — refresh with fresh data
     setSaveState(false);
+    if (dragModeEnabled) toggleDragMode();
     await loadGantt();
   } catch (err) {
     console.error('Save failed:', err);
@@ -2150,6 +2158,7 @@ function cancelChanges() {
   }
   computeRange();
   setSaveState(false);
+  if (dragModeEnabled) toggleDragMode();
   renderDesktop();
   renderMobile();
 }
@@ -2189,6 +2198,10 @@ function toggleBuilder(n) {
     /* Also show/hide the corresponding cell in the external sticky header row */
     const vhCell = document.querySelector(`#mobileVHeadersInner [data-vh-builder="${n}"]`);
     if (vhCell) vhCell.style.display = activeBuilders.has(n) ? 'flex' : 'none';
+    /* Re-sync vHeaders scroll position after layout change */
+    const vhEl = document.getElementById('mobileVHeaders');
+    const colEl = document.getElementById('mobileColumns');
+    if (vhEl && colEl) vhEl.scrollLeft = colEl.scrollLeft;
   }
 }
 </script>
