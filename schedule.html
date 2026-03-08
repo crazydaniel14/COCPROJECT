@@ -1202,6 +1202,21 @@ function renderMobileVertical() {
       if (timeAxis) timeAxis.style.transform = `translateX(${this.scrollLeft}px)`;
     };
     wrapper.addEventListener('scroll', _vhSyncListener);
+
+    /* Forward horizontal swipes on vHeaders to mobileColumns so the user can
+       scroll left/right from the sticky header row (useful especially in drag mode) */
+    let _vhTouchX = null;
+    vHeaders.addEventListener('touchstart', e => {
+      _vhTouchX = e.touches[0].clientX;
+    }, { passive: true });
+    vHeaders.addEventListener('touchmove', e => {
+      if (_vhTouchX === null) return;
+      const dx = _vhTouchX - e.touches[0].clientX;
+      _vhTouchX = e.touches[0].clientX;
+      wrapper.scrollLeft += dx;
+    }, { passive: true });
+    vHeaders.addEventListener('touchend',   () => { _vhTouchX = null; }, { passive: true });
+    vHeaders.addEventListener('touchcancel',() => { _vhTouchX = null; }, { passive: true });
   }
 
   /* Time axis — no header here (it's in vHeaders now) */
@@ -1848,27 +1863,23 @@ function onDragMove(clientX, clientY) {
   dragState.ghost.style.top  = (parseFloat(dragState.ghost.style.top)  + dy) + 'px';
   dragState.lastX = clientX; dragState.lastY = clientY;
 
-  /* Edge auto-scroll so the user can drag to items off-screen */
+  /* Mobile edge auto-scroll so the user can drag to items off-screen */
   if (window.innerWidth <= 768) {
     const EDGE = 80, SPD = 14;
+    const col = document.getElementById('mobileColumns');
     if (mobileOrientation === 'vertical') {
+      /* Vertical: page-scroll up/down AND horizontal-scroll mobileColumns left/right */
       if      (clientY < EDGE)                        window.scrollBy(0, -SPD);
       else if (clientY > window.innerHeight - EDGE)   window.scrollBy(0,  SPD);
-    } else {
-      const col = document.getElementById('mobileColumns');
       if (col) {
         if      (clientX < 90)                        col.scrollLeft -= SPD;
         else if (clientX > window.innerWidth - 50)    col.scrollLeft += SPD;
       }
-    }
-  } else {
-    /* Desktop: auto-scroll ganttWrap when dragging near left/right edges */
-    const wrap = document.getElementById('ganttWrap');
-    if (wrap) {
-      const EDGE = 100, SPD = 16;
-      const rect = wrap.getBoundingClientRect();
-      if      (clientX < rect.left + EDGE)  wrap.scrollLeft -= SPD;
-      else if (clientX > rect.right - EDGE) wrap.scrollLeft += SPD;
+    } else {
+      if (col) {
+        if      (clientX < 90)                        col.scrollLeft -= SPD;
+        else if (clientX > window.innerWidth - 50)    col.scrollLeft += SPD;
+      }
     }
   }
 
