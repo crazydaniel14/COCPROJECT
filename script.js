@@ -74,9 +74,9 @@ const IMAGE_MAP = {
   "Workshop": ["Lvl 8"],
   "Spell Tower": ["Lvl 4"],
   "Inferno Tower": ["Lvl 12"],
-  "X-Bow": ["Lvl 12&13&14"]
-  "Hero Hall":["Lvl 12]"]
-  "Laboratory":["Lvl 16"]
+  "X-Bow": ["Lvl 12&13&14"],
+  "Hero Hall":["Lvl 12]"],
+  "Laboratory":["Lvl 16"],
   "Clan Castle":["Lvl 14"]
 };
 
