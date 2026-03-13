@@ -77,7 +77,8 @@ const IMAGE_MAP = {
   "X-Bow": ["Lvl 12&13&14"],
   "Hero Hall":["Lvl 12]"],
   "Laboratory":["Lvl 16"],
-  "Clan Castle":["Lvl 14"]
+  "Clan Castle":["Lvl 14"],
+  "Revenge Tower":["Lvl 1","Lvl 2"]
 };
 
 function getUpgradeImage(upgradeName) {
