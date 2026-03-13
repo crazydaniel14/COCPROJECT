@@ -105,16 +105,19 @@
     /* ── DESKTOP GANTT ── */
     .gantt-wrap { overflow-x:auto; overflow-y:visible; }
 
-    /* Bar has overflow:visible so sticky .bar-inner works */
+    /* clip-path clips content to bar bounds without creating a scroll container,
+       so position:sticky on .bar-inner still references .gantt-wrap correctly */
     .gantt-bar {
       position:absolute; border-radius:8px;
       display:flex; align-items:center; padding:0;
       cursor:pointer; overflow:visible;
+      clip-path: inset(0 round 8px);
       transition:filter .15s, box-shadow .15s;
       border:2.5px solid rgba(255,255,255,0.45);
       box-shadow:inset 0 -3px 0 rgba(0,0,0,0.3);
     }
-    .gantt-bar:hover { filter:brightness(1.15); box-shadow:0 0 0 2px rgba(255,255,255,0.7), inset 0 -3px 0 rgba(0,0,0,0.3); z-index:5; }
+    /* outline is not clipped by clip-path, so hover ring shows outside bar */
+    .gantt-bar:hover { filter:brightness(1.15); outline:2px solid rgba(255,255,255,0.7); outline-offset:1px; box-shadow:inset 0 -3px 0 rgba(0,0,0,0.3); z-index:5; }
 
     /* Sticky inner: left is set dynamically = label-col-width, so it hugs that edge */
     .bar-inner {
@@ -134,16 +137,20 @@
   position:absolute; right:4px; top:50%; transform:translateY(-50%);
   font-size:8px; font-weight:800; color:#fff;
   background:rgba(0,0,0,0.45); border-radius:4px;
-  padding:1px 4px; white-space:nowrap; pointer-events:none;
-  max-width:80px; overflow:hidden; text-overflow:ellipsis;
+  padding:2px 5px; pointer-events:none;
+  text-align:right; line-height:1.45;
    }
+    .gantt-boost-marker {
       position:absolute; top:2px; width:14px; height:14px; background:#fff;
       border-radius:50%; display:flex; align-items:center; justify-content:center;
       font-size:8px; z-index:3; pointer-events:none; box-shadow:0 1px 4px rgba(0,0,0,.4);
     }
     .bar-active-badge {
-      position:absolute; top:-11px; left:6px; background:var(--gold); color:#000;
-      font-size:8px; font-weight:800; padding:1px 6px; border-radius:3px; white-space:nowrap; pointer-events:none;
+      position:absolute; top:0; left:8px;
+      background:rgba(255,255,255,0.92); color:#000;
+      font-size:7px; font-weight:800; padding:1px 5px;
+      border-radius:0 0 4px 4px; white-space:nowrap; pointer-events:none;
+      letter-spacing:.4px; line-height:1.4;
     }
 
     /* ── TOOLTIP ── */
@@ -173,16 +180,26 @@
 .toggle-btn { padding:6px 10px; font-size:11px; }
   }
 
-  /* Mobile zoom bar */
+  /* Mobile zoom bar — 2-row layout */
   .mobile-zoom-bar {
-    display:flex; align-items:center; justify-content:center; gap:8px;
-    padding:8px 16px; background:var(--surface);
+    display:flex; flex-direction:column; gap:5px;
+    padding:7px 12px; background:var(--surface);
     border-bottom:1px solid var(--border);
     position:sticky; top:101px; z-index:185;
   }
-  .mobile-zoom-bar .zoom-btn { width:34px; height:34px; font-size:18px; }
-  .mobile-zoom-bar .zoom-label { font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; }
-  .mobile-zoom-bar .zoom-level { font-size:12px; font-weight:800; color:var(--gold); min-width:40px; text-align:center; }
+  .mzb-row { display:flex; align-items:center; gap:5px; width:100%; }
+  .mzb-sep { width:1px; height:22px; background:rgba(255,255,255,0.12); flex-shrink:0; }
+  .mobile-zoom-bar .zoom-btn { width:30px; height:30px; font-size:16px; }
+  .zoom-btn.mzb-jump { width:auto !important; padding:0 7px !important; font-size:10px !important; font-weight:700 !important; }
+  .mobile-zoom-bar .zoom-label { font-size:10px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.4px; }
+  .mobile-zoom-bar .zoom-level { font-size:12px; font-weight:800; color:var(--gold); min-width:36px; text-align:center; }
+  .orient-btn {
+    display:flex; align-items:center; gap:4px;
+    background:var(--surface2); border:1.5px solid var(--border); border-radius:8px;
+    padding:5px 8px; color:var(--text-dim); font-family:'Lexend',sans-serif;
+    font-size:10px; font-weight:700; cursor:pointer; transition:all .18s; white-space:nowrap;
+  }
+  .orient-btn.active { border-color:var(--gold); color:var(--gold); }
     @media (min-width:769px) { .gantt-mobile { display:none; } }
 
     /* ── MOBILE GANTT ── */
@@ -190,7 +207,7 @@
     .mobile-columns-wrapper { display:flex; overflow-x:auto; }
     .mobile-columns-wrapper::-webkit-scrollbar { display:none; }
 
-    .mobile-time-axis { flex-shrink:0; width:58px; position:sticky; left:0; background:var(--bg); z-index:10; }
+    .mobile-time-axis { flex-shrink:0; width:58px; background:var(--bg); z-index:10; touch-action:pan-y; }
     .mobile-time-header {
       height:84px; border-bottom:1px solid var(--border); border-right:1px solid var(--border);
       display:flex; align-items:flex-end; padding:0 5px 8px;
@@ -208,25 +225,33 @@
     .mobile-builder-col.hidden-col { display:none; }
     .mobile-col-header {
       height:84px; border-bottom:3px solid;
-      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:6px 4px;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:6px 4px;
     }
+    /* Sticky header row that lives OUTSIDE mobileColumns (avoids overflow-x:auto blocking sticky) */
+    #mobileVHeaders {
+      display:none; background:var(--bg);
+      border-bottom:2px solid var(--border); height:84px; flex-shrink:0;
+      position:sticky; z-index:20;
+      overflow-x:auto; overflow-y:hidden;
+      scrollbar-width:none; -ms-overflow-style:none;
+    }
+    #mobileVHeaders::-webkit-scrollbar { display:none; }
     .mobile-col-header img { width:32px; height:32px; object-fit:contain; }
     .mobile-col-header span { font-size:11px; font-weight:700; white-space:nowrap; }
     .mobile-col-body { position:relative; }
 
-    /* Mobile bar — overflow:visible so sticky children work */
+    /* clip-path clips content without creating scroll container — preserves sticky */
     .mobile-bar {
       position:absolute; left:4px; right:4px; border-radius:8px;
       border:2px solid rgba(255,255,255,0.3); cursor:pointer; min-height:8px;
-      transition:filter .12s;
+      overflow:visible; clip-path: inset(0 round 8px); transition:filter .12s;
     }
     .mobile-bar:active { filter:brightness(1.2); }
 
-    /* Sticky label inside bar — sticks relative to page vertical scroll.
-       top is set dynamically in JS = header+toggles+col-header height. */
+    /* Label always at top of bar — absolute so icon never drifts to bar bottom */
     .mobile-bar-label {
-      position:sticky;
-      padding:6px 5px 4px;
+      position:absolute; top:4px; left:0; right:0;
+      padding:0 5px;
       display:flex; flex-direction:column; align-items:center; gap:4px;
       pointer-events:none; z-index:3;
     }
@@ -264,6 +289,82 @@
       font-size:8px; box-shadow:0 1px 4px rgba(0,0,0,.5); pointer-events:none;
     }
 
+    /* Prevent browser scroll/zoom on draggable bars when drag mode is active */
+    body.drag-mode-active .mobile-bar[data-draggable="1"] { touch-action: none; }
+
+    /* ── DRAG & DROP ── */
+    .save-btn {
+      display:flex; align-items:center; gap:5px;
+      border-radius:8px; border:1.5px solid var(--border);
+      background:var(--surface2); color:var(--text-dim);
+      font-family:'Lexend',sans-serif; font-size:12px; font-weight:700;
+      padding:6px 14px; cursor:not-allowed; transition:all .18s; white-space:nowrap;
+      opacity:0.4;
+    }
+    .save-btn.has-changes {
+      background:rgba(245,160,40,.18); border-color:rgba(245,160,40,.7);
+      color:var(--gold); cursor:pointer; opacity:1;
+    }
+    .save-btn.has-changes:hover { background:rgba(245,160,40,.3); }
+    .drag-ghost {
+      position:fixed; z-index:9999; pointer-events:none;
+      border-radius:8px; opacity:0.88; font-family:'Lexend',sans-serif;
+      font-size:11px; font-weight:700; color:#000;
+      display:flex; align-items:center; gap:7px; padding:4px 10px;
+      box-shadow:0 6px 28px rgba(0,0,0,.7); user-select:none;
+    }
+    .drag-ghost img { object-fit:contain; flex-shrink:0; border-radius:4px; }
+    .drag-ghost span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    /* Drop preview bar — shown in target row during drag */
+    .drop-preview {
+      position:absolute; border-radius:8px; pointer-events:none; z-index:10;
+      animation:previewPulse 1s ease-in-out infinite alternate;
+    }
+    @keyframes previewPulse { from { opacity:0.5; } to { opacity:0.85; } }
+    /* Smooth bar-shift animation while dragging (applied via JS) */
+    .sim-active .gantt-bar { transition: left 0.14s ease, width 0.14s ease, filter .15s, box-shadow .15s !important; }
+    .sim-active .mobile-bar { transition: top 0.14s ease, height 0.14s ease, filter .12s !important; }
+    .row-drop-target { outline:2px solid var(--gold) !important; outline-offset:-2px; }
+    .drag-mode-btn {
+      display:flex; align-items:center; gap:5px;
+      border-radius:8px; border:1.5px solid var(--border);
+      background:var(--surface2); color:var(--text-dim);
+      font-family:'Lexend',sans-serif; font-size:11px; font-weight:700;
+      padding:6px 12px; cursor:pointer; transition:all .18s; white-space:nowrap;
+    }
+    .drag-mode-btn.active { background:rgba(204,93,232,.2); border-color:rgba(204,93,232,.6); color:#CC5DE8; }
+    .drag-mode-btn:hover  { border-color:var(--gold); }
+    .scroll-arrow-btn {
+      display:flex; width:30px; height:30px; border-radius:8px;
+      border:1.5px solid var(--border); background:var(--surface2);
+      color:var(--text); font-size:16px; cursor:pointer;
+      align-items:center; justify-content:center; transition:all .15s; user-select:none;
+    }
+    .scroll-arrow-btn:hover { border-color:var(--gold); color:var(--gold); }
+    .cancel-btn {
+      width:30px; height:30px; border-radius:8px;
+      border:1.5px solid var(--border); background:var(--surface2);
+      color:var(--text-dim); font-size:15px; cursor:not-allowed;
+      align-items:center; justify-content:center; opacity:0.35; transition:all .18s; display:flex;
+    }
+    .cancel-btn.has-changes { border-color:rgba(255,100,100,.6); color:#FF6B6B; cursor:pointer; opacity:1; }
+    .cancel-btn.has-changes:hover { background:rgba(255,100,100,.15); }
+
+    /* ── VIOLATION STYLES ── */
+    @keyframes violPulse { from{filter:brightness(1)} to{filter:brightness(1.35)} }
+    .gantt-bar.violation-bar, .mobile-bar.violation-bar {
+      background:#c0392b !important; border-color:rgba(255,120,120,0.9) !important;
+      animation:violPulse 0.8s ease-in-out infinite alternate;
+    }
+    .gantt-bar.blocker-bar, .mobile-bar.blocker-bar {
+      border:3px solid #ff4444 !important;
+    }
+    .save-btn.has-violations {
+      background:rgba(255,70,70,0.18) !important; border-color:rgba(255,70,70,0.7) !important;
+      color:#ff6b6b !important; cursor:not-allowed !important; opacity:1;
+    }
+    .save-btn.has-violations:hover { background:rgba(255,70,70,0.28) !important; }
+
     /* Bottom sheet */
     .mobile-sheet {
       position:fixed; bottom:0; left:0; right:0; z-index:9999;
@@ -284,7 +385,7 @@
 <body>
 
 <header class="gantt-header">
-  <button class="back-btn" onclick="window.location.href='index.html'">← Back</button>
+  <button class="back-btn" onclick="goBack()">← Back</button>
   <div class="gantt-title">⚒️ Build Schedule</div>
   <button class="refresh-btn" id="refreshBtn" onclick="loadGantt()">↻ Refresh</button>
 </header>
@@ -321,18 +422,52 @@
   <button class="zoom-btn" id="jump1W" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;">1W</button>
   <button class="zoom-btn" id="jump1M" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;">1M</button>
   <button class="zoom-btn" id="jump3M" style="width:auto;padding:0 10px;font-size:11px;font-weight:700;">3M</button>
+  <div style="width:1px;height:24px;background:rgba(255,255,255,0.12);margin:0 6px;"></div>
+  <button class="drag-mode-btn" id="dragToggleDesktop" onclick="toggleDragMode()">✥ Drag Mode</button>
+  <button class="scroll-arrow-btn" id="dScrollL" title="Scroll left"
+    onmousedown="startScroll('ganttWrap',-1)" onmouseup="stopScroll()" onmouseleave="stopScroll()"
+    ontouchstart="startScroll('ganttWrap',-1)" ontouchend="stopScroll()">‹</button>
+  <button class="scroll-arrow-btn" id="dScrollR" title="Scroll right"
+    onmousedown="startScroll('ganttWrap',1)" onmouseup="stopScroll()" onmouseleave="stopScroll()"
+    ontouchstart="startScroll('ganttWrap',1)" ontouchend="stopScroll()">›</button>
+  <div style="width:1px;height:24px;background:rgba(255,255,255,0.12);margin:0 6px;"></div>
+  <button class="save-btn" id="saveBtnDesktop" disabled onclick="saveOrder()">💾 Save Order</button>
+  <button class="cancel-btn" id="cancelBtnDesktop" onclick="cancelChanges()" title="Discard changes">✕</button>
 </div>
 
 <!-- MOBILE -->
-<!-- MOBILE -->
 <div class="gantt-mobile" id="ganttMobile">
   <div class="mobile-zoom-bar">
-    <span class="zoom-label">Zoom</span>
-    <button class="zoom-btn" id="mobileZoomOut">−</button>
-    <span class="zoom-level" id="mobileZoomLevel">100%</span>
-    <button class="zoom-btn" id="mobileZoomIn">+</button>
+    <!-- Row 1: Zoom + Jump + Orientation -->
+    <div class="mzb-row">
+      <span class="zoom-label">Zoom</span>
+      <button class="zoom-btn" id="mobileZoomOut">−</button>
+      <span class="zoom-level" id="mobileZoomLevel">100%</span>
+      <button class="zoom-btn" id="mobileZoomIn">+</button>
+      <div class="mzb-sep"></div>
+      <button class="zoom-btn mzb-jump" id="mJump1W">1W</button>
+      <button class="zoom-btn mzb-jump" id="mJump1M">1M</button>
+      <button class="zoom-btn mzb-jump" id="mJump3M">3M</button>
+      <div class="mzb-sep"></div>
+      <button class="orient-btn" id="mobileOrientBtn">⇄ Horiz</button>
+    </div>
+    <!-- Row 2: Drag mode + Scroll arrows + Save/Cancel -->
+    <div class="mzb-row">
+      <button class="drag-mode-btn" id="dragToggleMobile" onclick="toggleDragMode()">✥ Drag Mode</button>
+      <button class="scroll-arrow-btn" id="mScrollL"
+        onmousedown="startScroll('mobileColumns',-1)" onmouseup="stopScroll()" onmouseleave="stopScroll()"
+        ontouchstart="startScroll('mobileColumns',-1)" ontouchend="stopScroll()">‹</button>
+      <button class="scroll-arrow-btn" id="mScrollR"
+        onmousedown="startScroll('mobileColumns',1)" onmouseup="stopScroll()" onmouseleave="stopScroll()"
+        ontouchstart="startScroll('mobileColumns',1)" ontouchend="stopScroll()">›</button>
+      <div style="flex:1"></div>
+      <button class="save-btn" id="saveBtnMobile" disabled onclick="saveOrder()">💾 Save</button>
+      <button class="cancel-btn" id="cancelBtnMobile" onclick="cancelChanges()" title="Discard changes">✕</button>
+    </div>
   </div>
   <div class="state-msg" id="stateMsgMobile"><div class="spinner"></div><span>Loading schedule…</span></div>
+  <!-- Sticky column-header row for vertical mode — outside mobileColumns so page-scroll sticky works -->
+  <div id="mobileVHeaders"></div>
   <div class="mobile-columns-wrapper" id="mobileColumns" style="display:none"></div>
 </div>
 
@@ -352,17 +487,25 @@ const BUILDER_COLORS = {
   6: '#20C997'    /* teal        */
 };
 
-const HERO_NAMES = ["Archer Queen","Barbarian King","Grand Warden","Minion Prince","Royal Champion"];
+const HERO_NAMES = ["Archer Queen","Barbarian King","Dragon Duke","Grand Warden","Minion Prince","Royal Champion","Longshot","Smasher"];
 const IMAGE_MAP = {
   "Air Bomb":["Lvl 11"],"Archer Tower":["Lvl 21"],"Blacksmith":["Lvl 9"],
   "Bomb":["Lvl 11&12","Lvl 13&14"],"Builder Hut":["Level 7&8&9"],
   "Dark Elixir Drill":["Lvl 10","Lvl 11"],"Dark Elixir Storage":["Lvl 12"],
   "Elixir Collector":["Lvl 17"],"Elixir Storage":["Lvl 18"],
+  "Fire Spitter":["Lvl 3"],
   "Giant Bomb":["Lvl 6","Lvl 7&8","Lvl 9&10"],"Gold Mine":["Lvl 17"],
-  "Gold Storage":["Lvl 18"],"Hidden Tesla":["Lvl 16"],"Monolith":["Lvl 2&3&4"],
-  "Mortar":["Lvl 17"],"Scattershot":["Lvl 6&7&8"],"Seeking Air Mine":["Lvl 5&6"],
+  "Gold Storage":["Lvl 18"],"Hidden Tesla":["Lvl 16","Lvl 17"],"Inferno Tower":["Lvl 12"],
+  "Monolith":["Lvl 2&3&4"],"Mortar":["Lvl 17"],"Pet House":["Lvl 12"],
+  "Scattershot":["Lvl 6&7&8"],"Seeking Air Mine":["Lvl 5&6"],"Spell Tower":["Lvl 4"],
   "Spring Trap":["Lvl 7&8","Lvl 9&10"],"Town Hall":["Lvl 18"],
-  "Wizard Tower":["Lvl 17"],"Workshop":["Lvl 8"],"X-Bow":["Lvl 12&13&14"]
+  "Wizard Tower":["Lvl 17"],"Workshop":["Lvl 8"],"X-Bow":["Lvl 12&13&14"],
+  "Hero Hall":["Lvl 11&12"],
+  "Laboratory":["Lvl 16"],
+  "Clan Castle":["Lvl 14"],
+  "Revenge Tower":["Lvl 1","Lvl 2"],
+  "Super Wizard Tower":["Lvl 1", "Lvl 2"],
+  "Ricochet Cannon":["Lvl 4"]
 };
 
 function getUpgradeImage(name) {
@@ -381,13 +524,29 @@ function getUpgradeImage(name) {
 }
 
 /* ── STATE ── */
-let ganttData      = [];
-let boostPlan      = [];
-let currentWork    = {};
-let activeBuilders = new Set([1,2,3,4,5,6]);
-let todayStart     = null;
-let rangeEnd       = null;
-let ganttZoom      = 1.0;   /* 0.25 … 4.0 */
+let ganttData         = [];
+let boostPlan         = [];
+let currentWork       = {};
+let activeBuilders    = new Set([1,2,3,4,5,6]);
+let todayStart        = null;
+let rangeEnd          = null;
+let ganttZoom         = 1.0;   /* 0.25 … 4.0 */
+let mobileOrientation = 'vertical'; /* 'vertical' | 'horizontal' */
+let originalGanttData = null;  /* snapshot on load for diff/save */
+let hasPendingChanges = false;
+let dragState         = null;  /* active drag context */
+let dragModeEnabled   = false; /* must be ON to drag; prevents pinch-scroll conflicts */
+let _violations       = { violatingUids: new Set(), blockerUids: new Set() };
+let _hasViolations    = false;
+let _minScrollDesktop      = 0;    /* px: leftmost allowed scrollLeft on ganttWrap */
+let _minScrollMobileH      = 0;    /* px: leftmost allowed scrollLeft on mobileColumns (horiz) */
+let _preserveScrollDesktop = null; /* set in onDragEnd so RAF restores instead of jumping to NOW */
+let _preserveScrollMobile  = null;
+let _vhSyncListener        = null; /* scroll-sync listener for mobileVHeaders — removed on re-render */
+let _vhScrollListener      = null; /* vHeaders→mobileColumns scroll-sync listener — removed on re-render */
+let _syncingScroll         = false; /* mutex prevents bidirectional scroll loops */
+let _edgeScrollDeltaY      = 0;    /* vertical edge-scroll velocity for rAF loop */
+let _edgeScrollRafId       = null; /* rAF handle for vertical edge-scroll loop */
 
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded', () => {
@@ -400,20 +559,124 @@ document.getElementById('zoomIn').addEventListener('click',  () => { ganttZoom =
   document.getElementById('zoomOut').addEventListener('click', () => { ganttZoom = Math.max(ganttZoom - 0.25, 0.25); applyZoom(); });
   document.getElementById('mobileZoomIn')?.addEventListener('click',  () => { ganttZoom = Math.min(ganttZoom + 0.25, 4);    applyMobileZoom(); });
   document.getElementById('mobileZoomOut')?.addEventListener('click', () => { ganttZoom = Math.max(ganttZoom - 0.25, 0.25); applyMobileZoom(); });
-  
-  // Jump buttons — scroll gantt to that offset from today
-  function jumpToDay(days) {
-    const wrap = document.getElementById('ganttWrap');
-    if (!wrap || !todayStart) return;
-    const PX = Math.max(Math.round(140 * ganttZoom), 20);
-    const LW = 130;
-    wrap.scrollLeft = LW + days * PX;
+
+  // Jump buttons — zoom to show exactly N days in the viewport
+  function jumpToWindow(days) {
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      const wrapper = document.getElementById('mobileColumns');
+      if (!wrapper || !todayStart) return;
+      const isVert = mobileOrientation === 'vertical';
+      const LW     = isVert ? 58 : 80;
+      const basePX = isVert ? 110 : 140;
+      const avail  = wrapper.clientWidth - LW;
+      ganttZoom    = Math.min(Math.max(Math.round(avail / days) / basePX, 0.1), 4);
+      applyMobileZoom();
+      wrapper.scrollLeft = 0;
+    } else {
+      const wrap = document.getElementById('ganttWrap');
+      if (!wrap || !todayStart) return;
+      const availPx = wrap.clientWidth - 130;
+      ganttZoom = Math.min(Math.max(Math.round(availPx / days) / 140, 0.1), 4);
+      applyZoom();
+      wrap.scrollLeft = 0;
+    }
   }
-  document.getElementById('jump1W')?.addEventListener('click', () => jumpToDay(7));
-  document.getElementById('jump1M')?.addEventListener('click', () => jumpToDay(30));
-  document.getElementById('jump3M')?.addEventListener('click', () => jumpToDay(90));
+  document.getElementById('jump1W')?.addEventListener('click', () => jumpToWindow(7));
+  document.getElementById('jump1M')?.addEventListener('click', () => jumpToWindow(30));
+  document.getElementById('jump3M')?.addEventListener('click', () => jumpToWindow(90));
+  document.getElementById('mJump1W')?.addEventListener('click', () => jumpToWindow(7));
+  document.getElementById('mJump1M')?.addEventListener('click', () => jumpToWindow(30));
+  document.getElementById('mJump3M')?.addEventListener('click', () => jumpToWindow(90));
+
+  // Mobile orientation toggle
+  document.getElementById('mobileOrientBtn')?.addEventListener('click', () => {
+    mobileOrientation = mobileOrientation === 'vertical' ? 'horizontal' : 'vertical';
+    const btn = document.getElementById('mobileOrientBtn');
+    if (mobileOrientation === 'horizontal') {
+      btn.textContent = '↕ Vertical'; btn.classList.add('active');
+    } else {
+      btn.textContent = '⇄ Horizontal'; btn.classList.remove('active');
+    }
+    renderMobile();
+  });
+
   loadGantt();
+
+  /* Clamp scroll so the user can never scroll left of the NOW line */
+  document.getElementById('ganttWrap').addEventListener('scroll', function() {
+    if (this.scrollLeft < _minScrollDesktop) this.scrollLeft = _minScrollDesktop;
+  });
+  document.getElementById('mobileColumns').addEventListener('scroll', function() {
+    if (mobileOrientation === 'horizontal' && this.scrollLeft < _minScrollMobileH) {
+      this.scrollLeft = _minScrollMobileH;
+    }
+  });
+
+  /* Warn user if they try to leave with unsaved changes */
+  window.addEventListener('beforeunload', e => {
+    if (hasPendingChanges) { e.preventDefault(); e.returnValue = ''; }
+  });
 });
+
+/* ════════════════════════════════════════════
+   VIOLATION DETECTION
+   Flags any upgrade whose immediately-preceding level (same base name, level-1)
+   hasn't finished yet — i.e. it would start before the prior level ends.
+════════════════════════════════════════════ */
+function detectViolations() {
+  const byBase = new Map(); // normalised base → [{upg, level}]
+  for (const b of ganttData) {
+    for (const upg of b.upgrades) {
+      if (!upg._startDate || !upg._endDate || !upg._uid) continue;
+      const m = (upg.upgrade || '').match(/^(.+?)\s+(?:Level|Lvl)\s+(\d+)$/i);
+      if (!m) continue;
+      const base  = m[1].trim().toLowerCase();
+      const level = parseInt(m[2]);
+      if (!byBase.has(base)) byBase.set(base, []);
+      byBase.get(base).push({ upg, level });
+    }
+  }
+
+  const violatingUids = new Set();
+  const blockerUids   = new Set();
+
+  for (const [, items] of byBase) {
+    for (const item of items) {
+      // Find any occurrence of the same building at level-1
+      const prevItems = items.filter(i => i.level === item.level - 1);
+      for (const prev of prevItems) {
+        // Violation: prev level ends AFTER this level starts
+        if (prev.upg._endDate > item.upg._startDate) {
+          violatingUids.add(item.upg._uid);
+          blockerUids.add(prev.upg._uid);
+        }
+      }
+    }
+  }
+
+  _violations    = { violatingUids, blockerUids };
+  _hasViolations = violatingUids.size > 0;
+}
+
+function updateSaveBtnViolation() {
+  document.querySelectorAll('.save-btn').forEach(btn => {
+    const isMobileBtn = btn.id === 'saveBtnMobile';
+    if (_hasViolations && hasPendingChanges) {
+      btn.disabled = true;
+      btn.classList.remove('has-changes');
+      btn.classList.add('has-violations');
+      btn.textContent = isMobileBtn ? '⚠️ Fix Order' : '⚠️ Fix Level Order First';
+    } else if (hasPendingChanges) {
+      btn.disabled = false;
+      btn.classList.add('has-changes');
+      btn.classList.remove('has-violations');
+      btn.textContent = isMobileBtn ? '💾 Save' : '💾 Save Order';
+    } else {
+      btn.classList.remove('has-violations');
+    }
+  });
+}
 
 function applyZoom() {
   document.getElementById('zoomLevel').textContent = Math.round(ganttZoom * 100) + '%';
@@ -421,15 +684,16 @@ function applyZoom() {
 }
 
 function applyMobileZoom() {
-  const lvl = Math.round(ganttZoom * 100) + '%';
-  const el = document.getElementById('mobileZoomLevel');
-  if (el) el.textContent = lvl;
-  document.getElementById('mobileColumns').innerHTML = '';
+  document.getElementById('mobileZoomLevel').textContent = Math.round(ganttZoom * 100) + '%';
   renderMobile();
 }
   
 /* ── LOAD ── */
 async function loadGantt() {
+  if (hasPendingChanges) {
+    if (!confirm('You have unsaved reorder changes. Refresh and discard them?')) return;
+    setSaveState(false);
+  }
   const btn = document.getElementById('refreshBtn');
   btn.classList.add('loading'); btn.textContent = '↻ Loading…';
   setLoading(true);
@@ -443,6 +707,7 @@ async function loadGantt() {
     boostPlan   = boosts;
     currentWork = work;
     stitchTimelines();
+    annotateOriginalPositions();
     computeRange();
     renderDesktop();
     renderMobile();
@@ -461,6 +726,8 @@ function setLoading(on) {
   document.getElementById('ganttDesktop').style.display   = on ? 'none'  : 'block';
   document.getElementById('stateMsgMobile').style.display = on ? 'flex'  : 'none';
   document.getElementById('mobileColumns').style.display  = on ? 'none'  : 'flex';
+  const vh = document.getElementById('mobileVHeaders');
+  if (vh && on) vh.style.display = 'none'; /* renderMobileVertical will re-show it */
   const isMobile = window.innerWidth <= 768;
   document.getElementById('zoomBar').style.display = (!on && !isMobile) ? 'flex' : 'none';
 }
@@ -590,6 +857,12 @@ function fmtShort(d) {
   if (!d||isNaN(d)) return '';
   return d.toLocaleString('en-US',{timeZone:'America/New_York',month:'numeric',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true});
 }
+function fmtShortHTML(d) {
+  if (!d||isNaN(d)) return '';
+  const date = d.toLocaleDateString('en-US',{timeZone:'America/New_York',month:'numeric',day:'numeric'});
+  const time = d.toLocaleTimeString('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit',hour12:true});
+  return `${date}<br><span style="opacity:.8;font-size:7.5px">${time}</span>`;
+}
 
 /* ── RANGE ── */
 function computeRange() {
@@ -631,11 +904,15 @@ function hexAlpha(hex, a) {
    FIX #6: image = full bar height
 ════════════════════════════════════════════ */
 function renderDesktop() {
+  detectViolations();
+  const wrap = document.getElementById('ganttWrap');
+  const _savedScrollDesktop = wrap ? wrap.scrollLeft : 0;
   const container = document.getElementById('ganttDesktop');
   container.innerHTML = '';
 
 const PX  = Math.max(Math.round(140 * ganttZoom), 20);  /* px per day */
   const LW  = 130;              /* label-col width */
+  const nowOffsetPx = (Date.now() - todayStart.getTime()) / (24 * 60 * 60 * 1000) * PX; /* px from midnight to now */
   /* Distribute height: 6 builders = 90px each. Fewer builders = proportionally taller rows */
   const visibleCount = activeBuilders.size || 1;
   const RH  = Math.min(Math.round(90 * (6 / visibleCount)), 200); /* row height, max 200px */
@@ -739,7 +1016,7 @@ const dayLbl = document.createElement('div');
 
     if (bi===0) {
       const nowPin = document.createElement('div');
-      nowPin.style.cssText = `position:absolute; top:0; left:0; transform:translateX(-50%); background:var(--gold); color:#000; font-size:8px; font-weight:800; padding:2px 6px; border-radius:0 0 4px 4px; white-space:nowrap; z-index:20;`;
+      nowPin.style.cssText = `position:absolute; top:0; left:${nowOffsetPx}px; transform:translateX(-50%); background:var(--gold); color:#000; font-size:8px; font-weight:800; padding:2px 6px; border-radius:0 0 4px 4px; white-space:nowrap; z-index:20;`;
       nowPin.textContent = 'NOW';
       cell.appendChild(nowPin);
     }
@@ -766,7 +1043,9 @@ const dayLbl = document.createElement('div');
       if (upg._isCurrent) {
         const badge = document.createElement('div');
         badge.className = 'bar-active-badge';
-        badge.textContent = '▶ ACTIVE';
+        badge.textContent = (upg._startDate && upg._startDate.getTime() < todayStart.getTime())
+          ? `▶ since ${fmtDay(upg._startDate)}`
+          : '▶ NOW';
         bar.appendChild(badge);
       }
 
@@ -784,8 +1063,8 @@ const dayLbl = document.createElement('div');
       imgEl.alt = upg.upgrade || '';
       inner.appendChild(imgEl);
 
-      /* Name + duration — only shown when bar is wide enough */
-      if (widthPx > BH + 40) {
+      /* Name + duration — only shown at zoom > 50% and bar wide enough */
+      if (ganttZoom > 0.5 && widthPx > BH + 40) {
         const textCol = document.createElement('div');
         textCol.className = 'bar-text-col';
         textCol.innerHTML = `
@@ -799,7 +1078,7 @@ const dayLbl = document.createElement('div');
       if (widthPx > 60) {
         const endBadge = document.createElement('div');
         endBadge.className = 'bar-end-badge';
-        endBadge.textContent = fmtShort(endD);
+        endBadge.innerHTML = fmtShortHTML(endD);
         bar.appendChild(endBadge);
       }
 
@@ -815,9 +1094,20 @@ const dayLbl = document.createElement('div');
         bar.appendChild(dot);
       });
 
+      /* Drag handling */
+      bar.dataset.upgUid    = upg._uid || '';
+      bar.dataset.draggable = (upg._isCurrent || upg._synthetic) ? '0' : '1';
+      if (!upg._isCurrent && !upg._synthetic && upg._uid) {
+        bar.style.cursor = 'grab';
+        bar.addEventListener('mousedown',  e => { if (e.button !== 0) return; e.stopPropagation(); startDrag(e, b.builderNum, upg, bar); });
+        bar.addEventListener('touchstart', e => { e.stopPropagation(); startDrag(e, b.builderNum, upg, bar); }, { passive: false });
+      }
       bar.addEventListener('mouseenter', e => showTooltip(e, upg, b.builderNum, boosts, startD, endD));
       bar.addEventListener('mousemove',  e => moveTooltip(e));
       bar.addEventListener('mouseleave', hideTooltip);
+      /* Violation highlighting */
+      if (_violations.violatingUids.has(upg._uid)) bar.classList.add('violation-bar');
+      if (_violations.blockerUids.has(upg._uid))   bar.classList.add('blocker-bar');
       cell.appendChild(bar);
     });
 
@@ -825,45 +1115,147 @@ const dayLbl = document.createElement('div');
     canvas.appendChild(row);
   });
 
+  /* Vertical "now" line spanning all rows */
+  const nowLine = document.createElement('div');
+  nowLine.style.cssText = `position:absolute; top:0; bottom:0; left:${LW + nowOffsetPx}px; width:2px; background:var(--gold); opacity:0.55; z-index:11; pointer-events:none;`;
+  canvas.appendChild(nowLine);
+
   container.appendChild(canvas);
+  updateSaveBtnViolation();
+
+  requestAnimationFrame(() => {
+    _minScrollDesktop = nowOffsetPx;
+    if (_preserveScrollDesktop !== null) {
+      wrap.scrollLeft = Math.max(_preserveScrollDesktop, _minScrollDesktop);
+      _preserveScrollDesktop = null;
+    } else {
+      wrap.scrollLeft = _minScrollDesktop;
+    }
+  });
 }
 
 /* ════════════════════════════════════════════
-   MOBILE RENDER
-   FIX #2: hidden-col hides column entirely (flex gap closes)
-   FIX #4: larger finish time label
-   FIX #6: 44px image, text below image
+   MOBILE RENDER — branches on mobileOrientation
 ════════════════════════════════════════════ */
 function renderMobile() {
-  const wrapper = document.getElementById('mobileColumns');
-  wrapper.innerHTML = '';
+  detectViolations();
+  const vHeaders = document.getElementById('mobileVHeaders');
+  if (mobileOrientation === 'horizontal') {
+    if (vHeaders) vHeaders.style.display = 'none';
+    renderMobileHorizontal();
+  } else {
+    renderMobileVertical(); /* vHeaders shown inside renderMobileVertical */
+    updateSaveBtnViolation();
+  }
+}
 
-  const PX = 110;       /* px per day */
+/* ── VERTICAL (columns, time flows down) ── */
+function renderMobileVertical() {
+  const wrapper  = document.getElementById('mobileColumns');
+  const vHeaders = document.getElementById('mobileVHeaders');
+
+  /* Remove previous scroll-sync listeners before clearing DOM */
+  if (_vhSyncListener)   { wrapper.removeEventListener('scroll', _vhSyncListener);   _vhSyncListener   = null; }
+  if (_vhScrollListener) { vHeaders && vHeaders.removeEventListener('scroll', _vhScrollListener); _vhScrollListener = null; }
+
+  /* Prevent page-scroll collapse during DOM rebuild (keeps window.scrollY stable) */
+  const _prevBodyH = wrapper.scrollHeight;
+  if (_prevBodyH > 0) wrapper.style.minHeight = _prevBodyH + 'px';
+  wrapper.innerHTML = '';
+  wrapper.style.minHeight = '';
+  wrapper.style.display = 'flex';
+
+  const PX = Math.max(Math.round(110 * ganttZoom), 20);
   const COL_HEAD_H = 84;
-  /* sticky top for label = top of page headers + col header */
-  const STICKY_TOP = 51 + 50 + COL_HEAD_H - 8;
+  const _hdr  = document.querySelector('.gantt-header')?.offsetHeight   || 51;
+  const _tgl  = document.querySelector('.builder-toggles')?.offsetHeight || 51;
+  const _mzb  = document.querySelector('.mobile-zoom-bar')?.offsetHeight || 85;
+  const HEADER_STICKY_TOP = _hdr + _tgl + _mzb;
+  /* Bar labels still need to clear the sticky header row (COL_HEAD_H tall) */
+  const STICKY_TOP = HEADER_STICKY_TOP + COL_HEAD_H - 8;
+  const showText = ganttZoom > 0.5;
+  const nowOffsetPxV = (Date.now() - todayStart.getTime()) / (24 * 60 * 60 * 1000) * PX;
 
   const totalDays = Math.ceil(daysBetween(todayStart, rangeEnd)) + 2;
   const days = Array.from({length:totalDays},(_,i)=>{ const d=new Date(todayStart); d.setDate(d.getDate()+i); return d; });
   const bodyH = totalDays * PX;
 
-  /* Time axis */
+  /* ── Sticky header row (outside mobileColumns so overflow-x:auto doesn't trap it) ──
+     Contains: [Date label | B1 header | B2 header | …]
+     Horizontal position synced with mobileColumns scrollLeft via JS transform          */
+  if (vHeaders) {
+    vHeaders.innerHTML = '';
+    /* vHeaders is now a real native scroll container — bidirectionally synced with mobileColumns */
+    vHeaders.style.cssText = `display:flex; position:sticky; top:${HEADER_STICKY_TOP}px; z-index:20; background:var(--bg); border-bottom:2px solid var(--border); height:${COL_HEAD_H}px; overflow-x:auto; overflow-y:hidden; scrollbar-width:none;`;
+
+    /* "Date" cell — sticky left inside scroll container */
+    const vhTime = document.createElement('div');
+    vhTime.style.cssText = `width:58px; flex-shrink:0; position:sticky; left:0; z-index:21; background:var(--bg); border-right:1px solid var(--border); display:flex; align-items:flex-end; padding:0 5px 8px; font-size:9px; font-weight:700; color:var(--text-dim); text-transform:uppercase;`;
+    vhTime.textContent = 'Date';
+    vHeaders.appendChild(vhTime);
+
+    /* Column header cells — natural flow, no transform needed */
+    const vhInner = document.createElement('div');
+    vhInner.id = 'mobileVHeadersInner';
+    vhInner.style.cssText = `display:flex; flex-shrink:0;`;
+    for (let n = 1; n <= 6; n++) {
+      const bd = ganttData.find(b => b.builderNum === n);
+      const bColor = BUILDER_COLORS[n];
+      const upgCount = bd ? bd.upgrades.length : 0;
+      const hCell = document.createElement('div');
+      hCell.dataset.vhBuilder = n;
+      hCell.style.cssText = `width:120px; flex-shrink:0; flex-direction:column; align-items:center; justify-content:center; gap:3px; padding:6px 4px; border-bottom:3px solid ${bColor}; border-right:1px solid var(--border); display:${activeBuilders.has(n)?'flex':'none'};`;
+      hCell.innerHTML = `
+        <img src="Images/Builders/Builder ${n}.png" style="width:24px;height:24px;object-fit:contain" onerror="this.style.display='none'" alt="">
+        <span style="color:${bColor};font-size:11px;font-weight:700">B${n}</span>
+        <span style="color:var(--text-dim);font-size:8px;font-weight:700">${upgCount} upg</span>`;
+      vhInner.appendChild(hCell);
+    }
+    vHeaders.appendChild(vhInner);
+
+    /* mobileColumns → vHeaders sync (and time axis transform) */
+    _vhSyncListener = function() {
+      if (_syncingScroll) return;
+      _syncingScroll = true;
+      vHeaders.scrollLeft = this.scrollLeft;
+      const timeAxis = document.getElementById('mobileTimeAxisEl');
+      if (timeAxis) timeAxis.style.transform = `translateX(${this.scrollLeft}px)`;
+      _syncingScroll = false;
+    };
+    wrapper.addEventListener('scroll', _vhSyncListener);
+
+    /* vHeaders → mobileColumns sync (user swipes the header row directly) */
+    _vhScrollListener = function() {
+      if (_syncingScroll) return;
+      _syncingScroll = true;
+      wrapper.scrollLeft = vHeaders.scrollLeft;
+      const timeAxis = document.getElementById('mobileTimeAxisEl');
+      if (timeAxis) timeAxis.style.transform = `translateX(${vHeaders.scrollLeft}px)`;
+      _syncingScroll = false;
+    };
+    vHeaders.addEventListener('scroll', _vhScrollListener);
+  }
+
+  /* Time axis — no header here (it's in vHeaders now) */
   const axis = document.createElement('div');
   axis.className = 'mobile-time-axis';
-  const axisHead = document.createElement('div');
-  axisHead.className = 'mobile-time-header';
-  axisHead.textContent = 'Date';
-  axis.appendChild(axisHead);
+  axis.id = 'mobileTimeAxisEl';
   days.forEach((d,i) => {
     const t = document.createElement('div');
     t.className = 'mobile-time-tick' + (i===0?' today-row':'');
     t.style.height = PX + 'px';
+    t.style.position = 'relative';
     t.textContent = i===0 ? '▶ Now' : fmtDay(d);
     axis.appendChild(t);
   });
+  const axisNowLine = document.createElement('div');
+  /* top offset no longer includes COL_HEAD_H — axis starts with ticks now */
+  axisNowLine.style.cssText = `position:absolute; left:0; right:0; top:${nowOffsetPxV}px; height:2px; background:var(--gold); opacity:0.7; z-index:5; pointer-events:none;`;
+  axis.style.position = 'relative';
+  axis.appendChild(axisNowLine);
   wrapper.appendChild(axis);
 
-  /* Builder columns */
+  /* Builder columns — no col-header inside (it's in vHeaders now) */
   for (let n = 1; n <= 6; n++) {
     const bd = ganttData.find(b => b.builderNum === n);
     const bColor = BUILDER_COLORS[n];
@@ -872,14 +1264,6 @@ function renderMobile() {
     col.className = 'mobile-builder-col';
     col.dataset.builder = n;
     if (!activeBuilders.has(n)) col.classList.add('hidden-col');
-
-    const colHead = document.createElement('div');
-    colHead.className = 'mobile-col-header';
-    colHead.style.borderBottomColor = bColor;
-    colHead.innerHTML = `
-      <img src="Images/Builders/Builder ${n}.png" onerror="this.style.display='none'" alt="">
-      <span style="color:${bColor}">B${n}</span>`;
-    col.appendChild(colHead);
 
     const colBody = document.createElement('div');
     colBody.className = 'mobile-col-body';
@@ -891,18 +1275,21 @@ function renderMobile() {
       dr.style.cssText = `position:absolute; left:0; right:0; top:${i*PX}px; height:${PX}px; border-top:${isMonth?'2px':'1px'} solid ${i===0?'rgba(245,208,76,0.3)':isMonth?'rgba(255,255,255,0.16)':'var(--border)'};`;
       colBody.appendChild(dr);
     });
+    /* Horizontal "now" line in column body */
+    const colNowLine = document.createElement('div');
+    colNowLine.style.cssText = `position:absolute; left:0; right:0; top:${nowOffsetPxV}px; height:2px; background:var(--gold); opacity:0.55; z-index:5; pointer-events:none;`;
+    colBody.appendChild(colNowLine);
 
     if (bd) {
       bd.upgrades.forEach((upg, idx) => {
         const startD = upg._startDate, endD = upg._endDate;
         if (!startD||!endD) return;
         const clampS = Math.max(startD.getTime(), todayStart.getTime());
-        const clampE = Math.min(endD.getTime(),   rangeEnd.getTime());
+        const clampE = Math.min(endD.getTime(), rangeEnd.getTime());
         if (clampS >= clampE) return;
 
         const topPx = daysBetween(todayStart, new Date(clampS)) * PX;
         const hPx   = Math.max(daysBetween(new Date(clampS), new Date(clampE)) * PX, 8);
-
         const isEven = idx % 2 === 0;
         const barCol  = isEven ? bColor : hexAlpha(bColor, 0.6);
         const bordCol = upg._isCurrent ? '#fff' : isEven ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)';
@@ -911,12 +1298,16 @@ function renderMobile() {
         bar.className = 'mobile-bar';
         bar.style.cssText = `top:${topPx}px; height:${hPx}px; background:${barCol}; border-color:${bordCol};`;
 
-        /* Sticky label (FIX #5) */
+        if (upg._isCurrent) {
+          const badge = document.createElement('div');
+          badge.style.cssText = `position:absolute;top:0;left:0;right:0;text-align:center;background:rgba(255,255,255,0.92);color:#000;font-size:7px;font-weight:800;padding:1px 4px;border-radius:0 0 4px 4px;white-space:nowrap;pointer-events:none;letter-spacing:.4px;line-height:1.5;z-index:4;`;
+          badge.textContent = (upg._startDate && upg._startDate.getTime() < todayStart.getTime()) ? `▶ since ${fmtDay(upg._startDate)}` : '▶ NOW';
+          bar.appendChild(badge);
+        }
+
         const lbl = document.createElement('div');
         lbl.className = 'mobile-bar-label';
-        lbl.style.top = STICKY_TOP + 'px';
 
-        /* Large image — text below (FIX #6) */
         const imgEl = document.createElement('img');
         imgEl.className = 'mobile-bar-icon';
         imgEl.src = getUpgradeImage(upg.upgrade);
@@ -924,21 +1315,22 @@ function renderMobile() {
         imgEl.alt = upg.upgrade || '';
         lbl.appendChild(imgEl);
 
+        /* Always show text block; at low zoom only show duration (most useful at a glance) */
         const tb = document.createElement('div');
         tb.className = 'mobile-bar-text-block';
         tb.innerHTML = `
-          <div class="mobile-bar-name">${upg.upgrade||''}</div>
+          ${showText ? `<div class="mobile-bar-name">${upg.upgrade||''}</div>` : ''}
           ${upg.duration ? `<div class="mobile-bar-dur">${upg.duration}</div>` : ''}`;
         lbl.appendChild(tb);
         bar.appendChild(lbl);
 
-        /* Large finish time (FIX #4) */
-        const endLbl = document.createElement('div');
-        endLbl.className = 'mobile-bar-end';
-        endLbl.textContent = fmtShort(endD);
-        bar.appendChild(endLbl);
+        if (showText) {
+          const endLbl = document.createElement('div');
+          endLbl.className = 'mobile-bar-end';
+          endLbl.innerHTML = fmtShortHTML(endD);
+          bar.appendChild(endLbl);
+        }
 
-        /* Boost dots */
         getBoosts(n, startD, endD).forEach(boost => {
           const bTop = daysBetween(new Date(clampS), boost.date) * PX;
           if (bTop < 0 || bTop > hPx) return;
@@ -950,7 +1342,18 @@ function renderMobile() {
         });
 
         const boosts = getBoosts(n, startD, endD);
+        /* Drag handling */
+        bar.dataset.upgUid    = upg._uid || '';
+        bar.dataset.draggable = (upg._isCurrent || upg._synthetic) ? '0' : '1';
+        if (!upg._isCurrent && !upg._synthetic && upg._uid) {
+          bar.style.cursor = 'grab';
+          bar.addEventListener('mousedown',  e => { if (e.button !== 0) return; e.stopPropagation(); startDrag(e, n, upg, bar); });
+          bar.addEventListener('touchstart', e => { e.stopPropagation(); startDrag(e, n, upg, bar); }, { passive: false });
+        }
         bar.addEventListener('click', e => { e.stopPropagation(); showSheet(upg, n, boosts, startD, endD); });
+        /* Violation highlighting */
+        if (_violations.violatingUids.has(upg._uid)) bar.classList.add('violation-bar');
+        if (_violations.blockerUids.has(upg._uid))   bar.classList.add('blocker-bar');
         colBody.appendChild(bar);
       });
     }
@@ -958,14 +1361,193 @@ function renderMobile() {
     col.appendChild(colBody);
     wrapper.appendChild(col);
   }
+
+  /* Restore mobileColumns horizontal scroll position (e.g. after drag re-render) */
+  requestAnimationFrame(() => {
+    if (_preserveScrollMobile !== null) {
+      wrapper.scrollLeft = _preserveScrollMobile;
+      _preserveScrollMobile = null;
+    }
+    /* Sync vHeaders and time axis to current scrollLeft */
+    const sl = wrapper.scrollLeft;
+    const vh = document.getElementById('mobileVHeaders');
+    if (vh) vh.scrollLeft = sl;
+    const timeAxis = document.getElementById('mobileTimeAxisEl');
+    if (timeAxis) timeAxis.style.transform = `translateX(${sl}px)`;
+  });
+}
+
+/* ── HORIZONTAL (rows, time flows right — compact desktop style) ── */
+function renderMobileHorizontal() {
+  const wrapper = document.getElementById('mobileColumns');
+  const _savedScrollMobile = wrapper ? wrapper.scrollLeft : 0;
+  wrapper.innerHTML = '';
+  wrapper.style.display = 'block';
+  wrapper.style.overflowX = 'auto';
+
+  const PX  = Math.max(Math.round(140 * ganttZoom), 20);
+  const LW  = 80;   /* compact label column */
+  const nowOffsetPx = (Date.now() - todayStart.getTime()) / (24 * 60 * 60 * 1000) * PX;
+  const RH  = 62;
+  const BT  = 6;
+  const BH  = RH - BT * 2;
+
+  const totalDays = Math.ceil(daysBetween(todayStart, rangeEnd)) + 2;
+  const days = Array.from({length:totalDays},(_,i)=>{ const d=new Date(todayStart); d.setDate(d.getDate()+i); return d; });
+  const totalW = LW + totalDays * PX;
+
+  const canvas = document.createElement('div');
+  canvas.style.cssText = `position:relative; min-width:${totalW}px;`;
+
+  /* Date header */
+  const header = document.createElement('div');
+  header.style.cssText = `display:flex; border-bottom:2px solid var(--border); background:var(--bg); position:sticky; top:0; z-index:12;`;
+
+  const corner = document.createElement('div');
+  corner.style.cssText = `width:${LW}px; flex-shrink:0; position:sticky; left:0; z-index:13; background:var(--bg); border-right:1px solid var(--border); display:flex; align-items:center; padding:0 8px; font-size:9px; font-weight:700; color:var(--text-dim); text-transform:uppercase;`;
+  corner.textContent = 'Builder';
+  header.appendChild(corner);
+
+  days.forEach((d, i) => {
+    const isMonth = i > 0 && d.getDate() === 1;
+    const cell = document.createElement('div');
+    const labelText = i===0 ? 'NOW' : PX < 40 ? (isMonth ? d.toLocaleDateString('en-US',{month:'short'}).toUpperCase() : '') : fmtDay(d);
+    cell.style.cssText = `width:${PX}px; flex-shrink:0; display:flex; align-items:center; justify-content:center; border-left:${isMonth?'2px solid rgba(255,255,255,0.2)':'1px solid var(--border)'}; padding:4px 0; font-size:${i===0?9:8}px; font-weight:${i===0||isMonth?800:600}; color:${i===0?'var(--gold)':isMonth?'rgba(255,255,255,0.55)':'var(--text-dim)'}; white-space:nowrap; overflow:hidden;`;
+    cell.textContent = labelText;
+    header.appendChild(cell);
+  });
+  canvas.appendChild(header);
+
+  /* Builder rows */
+  const visible = ganttData.filter(b => activeBuilders.has(b.builderNum));
+  visible.forEach((b, bi) => {
+    const bColor = BUILDER_COLORS[b.builderNum];
+
+    const row = document.createElement('div');
+    row.style.cssText = `display:flex; position:relative; height:${RH}px; border-bottom:1px solid var(--border);`;
+    row.dataset.builder = b.builderNum;
+
+    const labelEl = document.createElement('div');
+    labelEl.style.cssText = `width:${LW}px; flex-shrink:0; position:sticky; left:0; z-index:9; background:var(--bg); display:flex; align-items:center; gap:5px; padding:0 6px; border-right:1px solid var(--border); border-left:3px solid ${bColor};`;
+    labelEl.innerHTML = `
+      <img src="Images/Builders/Builder ${b.builderNum}.png" style="width:22px;height:22px;object-fit:contain" onerror="this.style.display='none'" alt="">
+      <div style="font-size:10px;font-weight:800;color:${bColor};line-height:1.2">B${b.builderNum}</div>`;
+    row.appendChild(labelEl);
+
+    const cell = document.createElement('div');
+    cell.style.cssText = `position:relative; flex:1; height:${RH}px; overflow:hidden;`;
+
+    days.forEach((d, i) => {
+      const isMonth = i > 0 && d.getDate() === 1;
+      const dl = document.createElement('div');
+      dl.style.cssText = `position:absolute; top:0; bottom:0; left:${i*PX}px; width:${isMonth?2:1}px; background:${i===0?'rgba(245,208,76,0.18)':isMonth?'rgba(255,255,255,0.13)':'var(--border)'};`;
+      cell.appendChild(dl);
+    });
+
+    b.upgrades.forEach((upg, idx) => {
+      const startD = upg._startDate, endD = upg._endDate;
+      if (!startD||!endD) return;
+      const clampS = Math.max(startD.getTime(), todayStart.getTime());
+      const clampE = Math.min(endD.getTime(), rangeEnd.getTime());
+      if (clampS >= clampE) return;
+
+      const leftPx  = daysBetween(todayStart, new Date(clampS)) * PX;
+      const widthPx = Math.max(daysBetween(new Date(clampS), new Date(clampE)) * PX, 6);
+      const isEven  = idx % 2 === 0;
+      const barCol  = isEven ? bColor : hexAlpha(bColor, 0.58);
+      const bordCol = upg._isCurrent ? '#fff' : isEven ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.18)';
+
+      const bar = document.createElement('div');
+      bar.className = 'gantt-bar';
+      bar.style.cssText = `left:${leftPx}px; width:${widthPx}px; top:${BT}px; height:${BH}px; background:${barCol}; border-color:${bordCol};`;
+
+      if (upg._isCurrent) {
+        const badge = document.createElement('div');
+        badge.className = 'bar-active-badge';
+        badge.textContent = (upg._startDate && upg._startDate.getTime() < todayStart.getTime())
+          ? `▶ since ${fmtDay(upg._startDate)}`
+          : '▶ NOW';
+        bar.appendChild(badge);
+      }
+
+      const inner = document.createElement('div');
+      inner.className = 'bar-inner';
+      inner.style.left = LW + 'px';
+
+      const imgEl = document.createElement('img');
+      imgEl.className = 'bar-icon';
+      imgEl.style.cssText = `width:${Math.min(BH, widthPx - 4)}px; height:${BH}px; max-width:${BH}px;`;
+      imgEl.src = getUpgradeImage(upg.upgrade);
+      imgEl.onerror = () => imgEl.src = 'Images/Upgrades/PH.png';
+      inner.appendChild(imgEl);
+
+      if (ganttZoom > 0.5 && widthPx > BH + 40) {
+        const textCol = document.createElement('div');
+        textCol.className = 'bar-text-col';
+        textCol.innerHTML = `<div class="bar-name" style="font-size:10px">${upg.upgrade||''}</div>`;
+        inner.appendChild(textCol);
+      }
+      bar.appendChild(inner);
+
+      if (widthPx > 60) {
+        const endBadge = document.createElement('div');
+        endBadge.className = 'bar-end-badge';
+        endBadge.style.fontSize = '7px';
+        endBadge.innerHTML = fmtShortHTML(endD);
+        bar.appendChild(endBadge);
+      }
+
+      const boosts = getBoosts(b.builderNum, startD, endD);
+      /* Drag handling */
+      bar.dataset.upgUid    = upg._uid || '';
+      bar.dataset.draggable = (upg._isCurrent || upg._synthetic) ? '0' : '1';
+      if (!upg._isCurrent && !upg._synthetic && upg._uid) {
+        bar.style.cursor = 'grab';
+        bar.addEventListener('mousedown',  e => { if (e.button !== 0) return; e.stopPropagation(); startDrag(e, b.builderNum, upg, bar); });
+        bar.addEventListener('touchstart', e => { e.stopPropagation(); startDrag(e, b.builderNum, upg, bar); }, { passive: false });
+      }
+      bar.addEventListener('click', e => { e.stopPropagation(); showSheet(upg, b.builderNum, boosts, startD, endD); });
+      /* Violation highlighting */
+      if (_violations.violatingUids.has(upg._uid)) bar.classList.add('violation-bar');
+      if (_violations.blockerUids.has(upg._uid))   bar.classList.add('blocker-bar');
+      cell.appendChild(bar);
+    });
+
+    row.appendChild(cell);
+    canvas.appendChild(row);
+  });
+
+  /* Vertical "now" line */
+  const nowLineH = document.createElement('div');
+  nowLineH.style.cssText = `position:absolute; top:0; bottom:0; left:${LW + nowOffsetPx}px; width:2px; background:var(--gold); opacity:0.55; z-index:11; pointer-events:none;`;
+  canvas.appendChild(nowLineH);
+
+  wrapper.appendChild(canvas);
+  updateSaveBtnViolation();
+
+  requestAnimationFrame(() => {
+    _minScrollMobileH = nowOffsetPx;
+    if (_preserveScrollMobile !== null) {
+      wrapper.scrollLeft = Math.max(_preserveScrollMobile, _minScrollMobileH);
+      _preserveScrollMobile = null;
+    } else {
+      wrapper.scrollLeft = _minScrollMobileH;
+    }
+  });
 }
 
 /* ── TOOLTIP (desktop) ── */
 const tooltip = document.getElementById('ganttTooltip');
 function showTooltip(e, upg, bNum, boosts, startD, endD) {
+  const isSim = hasPendingChanges && !upg._isCurrent && !upg._synthetic;
+  const isViol    = _violations.violatingUids.has(upg._uid);
+  const isBlocker = _violations.blockerUids.has(upg._uid);
   let html = `<div class="tt-name">${upg._isCurrent?'▶ ACTIVE &nbsp;':''}${upg.upgrade||''}</div>`;
-  html += `<div class="tt-row"><span class="tt-label">Start</span><span class="tt-value">${fmtDate(startD)}</span></div>`;
-  html += `<div class="tt-row"><span class="tt-label">End</span><span class="tt-value">${fmtDate(endD)}</span></div>`;
+  if (isViol)    html += `<div style="font-size:9px;font-weight:700;color:#ff6b6b;background:rgba(255,70,70,0.14);border-radius:4px;padding:3px 7px;margin-bottom:6px;border:1px solid rgba(255,100,100,0.3)">⚠️ Level violation — previous level hasn't finished yet</div>`;
+  if (isBlocker) html += `<div style="font-size:9px;font-weight:700;color:#ff6b6b;background:rgba(255,70,70,0.14);border-radius:4px;padding:3px 7px;margin-bottom:6px;border:1px solid rgba(255,100,100,0.3)">🚫 Blocking a higher-level upgrade</div>`;
+  if (isSim) html += `<div style="font-size:9px;font-weight:700;color:var(--gold);background:rgba(245,208,76,0.12);border-radius:4px;padding:3px 6px;margin-bottom:6px;">📊 Simulated — not saved yet</div>`;
+  html += `<div class="tt-row"><span class="tt-label">Start</span><span class="tt-value">${fmtDate(startD)}${isSim?' <span style="color:var(--gold);font-size:9px">~</span>':''}</span></div>`;
+  html += `<div class="tt-row"><span class="tt-label">End</span><span class="tt-value">${fmtDate(endD)}${isSim?' <span style="color:var(--gold);font-size:9px">~</span>':''}</span></div>`;
   html += `<div class="tt-row"><span class="tt-label">Duration</span><span class="tt-value">${upg.duration||'—'}</span></div>`;
   if (boosts.length) {
     html += `<div class="tt-boost">⚡ ${boosts.length} boost${boosts.length>1?'s':''}</div>`;
@@ -990,6 +1572,11 @@ function showSheet(upg, bNum, boosts, startD, endD) {
   document.querySelector('.mobile-sheet')?.remove();
   const s = document.createElement('div');
   s.className = 'mobile-sheet';
+  const isSim = hasPendingChanges && !upg._isCurrent && !upg._synthetic;
+  const simBadge = isSim
+    ? `<div style="margin-bottom:10px;padding:4px 8px;background:rgba(245,208,76,0.14);border-radius:6px;font-size:10px;color:var(--gold);font-weight:700;border:1px solid rgba(245,208,76,0.3);">📊 Simulated order — not saved yet</div>`
+    : '';
+  const simTilde = isSim ? ' <span style="color:var(--gold);font-size:9px;font-weight:700">~</span>' : '';
   let bHtml = '';
   if (boosts.length) {
     bHtml = `<div class="sheet-boost">⚡ ${boosts.length} boost${boosts.length>1?'s':''}</div>`;
@@ -998,22 +1585,683 @@ function showSheet(upg, bNum, boosts, startD, endD) {
   s.innerHTML = `
     <div class="sheet-handle"></div>
     <div class="sheet-title">${upg._isCurrent?'▶ ':''}${upg.upgrade||''}</div>
-    <div class="sheet-row"><span class="sheet-label">Start</span><span class="sheet-value">${fmtDate(startD)}</span></div>
-    <div class="sheet-row"><span class="sheet-label">End</span><span class="sheet-value">${fmtDate(endD)}</span></div>
+    ${simBadge}
+    <div class="sheet-row"><span class="sheet-label">Start</span><span class="sheet-value">${fmtDate(startD)}${simTilde}</span></div>
+    <div class="sheet-row"><span class="sheet-label">End</span><span class="sheet-value">${fmtDate(endD)}${simTilde}</span></div>
     <div class="sheet-row"><span class="sheet-label">Duration</span><span class="sheet-value">${upg.duration||'—'}</span></div>
     ${bHtml}`;
   document.body.appendChild(s);
   setTimeout(()=>document.addEventListener('click',()=>document.querySelector('.mobile-sheet')?.remove(),{once:true}),100);
 }
 
-/* ── TOGGLE BUILDERS (FIX #2: re-render desktop so no gap; hide mobile col) ── */
+/* ════════════════════════════════════════════
+   DRAG-AND-DROP REORDER / TRANSFER + SAVE
+════════════════════════════════════════════ */
+
+/* ── Annotate each upgrade with original position info ── */
+function annotateOriginalPositions() {
+  ganttData.forEach(b => {
+    const hasSynth = b.upgrades.length > 0 && b.upgrades[0]._synthetic;
+    b.upgrades.forEach((upg, idx) => {
+      if (upg._uid) return; // preserve existing annotation across re-renders
+      upg._origBuilderNum = b.builderNum;
+      upg._origIdx        = idx;
+      upg._uid            = `${b.builderNum}:${idx}:${(upg.upgrade||'').slice(0,14).replace(/\s/g,'_')}`;
+      // _sheetRow: 1-based sheet row. Sheet row 2 = active, rows 3+ = queue items.
+      // Synthetic prepend shifts indices but NOT sheet rows — queue items always at idx+2.
+      upg._sheetRow = upg._synthetic ? null : idx + 2;
+    });
+  });
+  originalGanttData = ganttData.map(b => ({ builderNum: b.builderNum, upgrades: b.upgrades.map(u => ({ ...u })) }));
+}
+
+/* ── Save button state ── */
+function setSaveState(dirty) {
+  hasPendingChanges = dirty;
+  document.querySelectorAll('.save-btn').forEach(btn => {
+    btn.disabled = !dirty;
+    btn.classList.toggle('has-changes', dirty);
+    if (!dirty) btn.textContent = btn.id === 'saveBtnMobile' ? '💾 Save' : '💾 Save Order';
+  });
+}
+
+/* ── Back / unsaved guard ── */
+function goBack() {
+  if (hasPendingChanges && !confirm('You have unsaved reorder changes. Leave and discard them?')) return;
+  window.location.href = 'index.html';
+}
+
+/* ── Create floating ghost ── */
+function createGhost(rect, builderNum, upg) {
+  const ghost = document.createElement('div');
+  ghost.className = 'drag-ghost';
+  const w = Math.min(Math.max(rect.width, 130), 230);
+  const h = Math.max(rect.height, 36);
+  ghost.style.cssText = `width:${w}px; height:${h}px; left:${rect.left + (rect.width - w) / 2}px; top:${rect.top}px; background:${BUILDER_COLORS[builderNum]};`;
+  const img = document.createElement('img');
+  img.src = getUpgradeImage(upg.upgrade);
+  img.onerror = () => { img.src = 'Images/Upgrades/PH.png'; };
+  img.style.cssText = `width:${h - 8}px; height:${h - 8}px;`;
+  const lbl = document.createElement('span');
+  lbl.textContent = (upg.upgrade || '?').slice(0, 22);
+  ghost.append(img, lbl);
+  document.body.appendChild(ghost);
+  return ghost;
+}
+
+/* ── Drop preview + bar-shift simulation state ── */
+let _dropPreviewEl    = null;
+let _lastPreviewKey   = null;
+let _simOrigPositions = new Map(); /* uid → {left, top, width, height} */
+
+function clearDropPreview() {
+  if (_dropPreviewEl) { _dropPreviewEl.remove(); _dropPreviewEl = null; }
+  _lastPreviewKey = null;
+  restoreSimulatedBarPositions();
+}
+
+/* Restore all bars that were shifted during simulation */
+function restoreSimulatedBarPositions() {
+  _simOrigPositions.forEach((orig, uid) => {
+    const bar = document.querySelector(`.gantt-bar[data-upg-uid="${uid}"], .mobile-bar[data-upg-uid="${uid}"]`);
+    if (!bar) return;
+    if (orig.left   !== null) bar.style.left   = orig.left;
+    if (orig.top    !== null) bar.style.top     = orig.top;
+    if (orig.width  !== null) bar.style.width   = orig.width;
+    if (orig.height !== null) bar.style.height  = orig.height;
+  });
+  _simOrigPositions.clear();
+}
+
+/* Simulate the drop for targetBuilder — returns ALL items with new _startDate/_endDate */
+function computeDropSimulation(targetBuilder, clientX, clientY) {
+  if (!dragState) return [];
+  const { upg, fromBuilderNum } = dragState;
+  const tgtB = ganttData.find(b => b.builderNum === targetBuilder);
+  if (!tgtB) return [];
+
+  let cloned = tgtB.upgrades.map(u => ({ ...u }));
+
+  if (targetBuilder === fromBuilderNum) {
+    const si = cloned.findIndex(u => u._uid === upg._uid);
+    if (si !== -1) cloned.splice(si, 1);
+  }
+
+  const beforeUid    = insertBeforeUid(targetBuilder, clientX, clientY);
+  const tgtActiveIdx = cloned.findIndex(u => u._isCurrent || u._synthetic);
+  const minInsert    = tgtActiveIdx === -1 ? 0 : tgtActiveIdx + 1;
+  let insertAt       = beforeUid ? cloned.findIndex(u => u._uid === beforeUid) : -1;
+  if (insertAt !== -1 && insertAt <= tgtActiveIdx) insertAt = minInsert;
+
+  /* simUpg is a copy that shares _uid with the real dragged item */
+  const simUpg = { ...upg };
+  if (insertAt === -1) cloned.push(simUpg);
+  else cloned.splice(Math.max(insertAt, minInsert), 0, simUpg);
+
+  /* Simulate restitch */
+  const activeIdx = cloned.findIndex(u => u._isCurrent);
+  let cursor = activeIdx !== -1 && cloned[activeIdx]._endDate instanceof Date
+    ? new Date(cloned[activeIdx]._endDate) : new Date();
+  const start = activeIdx !== -1 ? activeIdx + 1 : 0;
+  for (let i = start; i < cloned.length; i++) {
+    const u = cloned[i];
+    u._startDate = new Date(cursor);
+    u._endDate   = new Date(cursor.getTime() + (u.durationMinutes || 0) * 60000);
+    cursor = u._endDate;
+  }
+  return cloned;
+}
+
+/* Apply simulated positions to existing DOM bars (animate them to new spots) */
+function applySimulatedBarPositions(targetBuilder, simItems) {
+  const isMobile     = window.innerWidth <= 768;
+  const isMobileVert = isMobile && mobileOrientation === 'vertical';
+  const PXv = Math.max(Math.round(110 * ganttZoom), 20);
+  const PXh = Math.max(Math.round(140 * ganttZoom), 20);
+
+  simItems.forEach(simU => {
+    if (!simU._uid || !simU._startDate || !simU._endDate) return;
+    /* Skip the dragged item itself — its visual is the ghost + preview element */
+    if (dragState && simU._uid === dragState.upg._uid) return;
+
+    let bar;
+    if (isMobileVert) {
+      bar = document.querySelector(`#mobileColumns .mobile-builder-col[data-builder="${targetBuilder}"] .mobile-bar[data-upg-uid="${simU._uid}"]`);
+    } else {
+      const scope = isMobile ? '#mobileColumns' : '#ganttDesktop';
+      bar = document.querySelector(`${scope} [data-builder="${targetBuilder}"] .gantt-bar[data-upg-uid="${simU._uid}"]`);
+    }
+    if (!bar) return;
+
+    /* Save original position (only once per uid) */
+    if (!_simOrigPositions.has(simU._uid)) {
+      _simOrigPositions.set(simU._uid, {
+        left:   bar.style.left   || null,
+        top:    bar.style.top    || null,
+        width:  bar.style.width  || null,
+        height: bar.style.height || null
+      });
+    }
+
+    /* Move bar to simulated position */
+    if (isMobileVert) {
+      const topPx = daysBetween(todayStart, simU._startDate) * PXv;
+      const hPx   = Math.max(daysBetween(simU._startDate, simU._endDate) * PXv, 8);
+      bar.style.top    = topPx + 'px';
+      bar.style.height = hPx   + 'px';
+    } else {
+      const leftPx  = daysBetween(todayStart, simU._startDate) * PXh;
+      const widthPx = Math.max(daysBetween(simU._startDate, simU._endDate) * PXh, 6);
+      bar.style.left  = leftPx  + 'px';
+      bar.style.width = widthPx + 'px';
+    }
+  });
+}
+
+function updateDropPreview(targetBuilder, clientX, clientY) {
+  const beforeUid = insertBeforeUid(targetBuilder, clientX, clientY);
+  const key = `${targetBuilder}:${beforeUid}`;
+  if (key === _lastPreviewKey && _dropPreviewEl) return; /* no positional change */
+  _lastPreviewKey = key;
+
+  /* Remove old preview element and restore bar positions before re-applying */
+  if (_dropPreviewEl) { _dropPreviewEl.remove(); _dropPreviewEl = null; }
+  restoreSimulatedBarPositions();
+
+  /* Compute new simulation */
+  const simItems = computeDropSimulation(targetBuilder, clientX, clientY);
+  const simUpg   = simItems.find(u => u._uid === dragState?.upg?._uid);
+  if (!simUpg || !simUpg._startDate || !simUpg._endDate) return;
+
+  /* Shift all OTHER bars to their new simulated positions */
+  applySimulatedBarPositions(targetBuilder, simItems);
+
+  /* Create preview element for the DRAGGED item's new position */
+  const isMobile     = window.innerWidth <= 768;
+  const isMobileVert = isMobile && mobileOrientation === 'vertical';
+  const bColor       = BUILDER_COLORS[targetBuilder];
+  const preview      = document.createElement('div');
+  preview.className  = 'drop-preview';
+
+  const pImg = document.createElement('img');
+  pImg.src = getUpgradeImage(dragState.upg.upgrade);
+  pImg.onerror = () => { pImg.src = 'Images/Upgrades/PH.png'; };
+  pImg.style.cssText = 'object-fit:contain; display:block; margin:auto;';
+
+  if (isMobileVert) {
+    const colBody = document.querySelector(`#mobileColumns .mobile-builder-col[data-builder="${targetBuilder}"] .mobile-col-body`);
+    if (!colBody) return;
+    const PXv   = Math.max(Math.round(110 * ganttZoom), 20);
+    const topPx = daysBetween(todayStart, simUpg._startDate) * PXv;
+    const hPx   = Math.max(daysBetween(simUpg._startDate, simUpg._endDate) * PXv, 8);
+    preview.style.cssText = `left:4px; right:4px; top:${topPx}px; height:${hPx}px; border:2px dashed ${bColor}; background:${hexAlpha(bColor, 0.28)};`;
+    pImg.style.cssText += ` width:${Math.min(hPx-8,36)}px; height:${Math.min(hPx-8,36)}px; padding-top:${Math.max((hPx-44)/2,2)}px;`;
+    preview.appendChild(pImg);
+    colBody.appendChild(preview);
+  } else {
+    const PXh    = Math.max(Math.round(140 * ganttZoom), 20);
+    const rowEl  = isMobile
+      ? document.querySelector(`#mobileColumns [data-builder="${targetBuilder}"]`)
+      : document.querySelector(`#ganttDesktop [data-builder="${targetBuilder}"]`);
+    if (!rowEl) return;
+    const cellEl = Array.from(rowEl.children).find(c => c.style.flex === '1' || c.style.position === 'relative') || rowEl.lastElementChild;
+    if (!cellEl) return;
+    const RH     = parseInt(rowEl.style.height) || 62;
+    const BT     = Math.round(RH * 0.09);
+    const BH     = RH - BT * 2;
+    const leftPx = daysBetween(todayStart, simUpg._startDate) * PXh;
+    const wPx    = Math.max(daysBetween(simUpg._startDate, simUpg._endDate) * PXh, 20);
+    preview.style.cssText = `left:${leftPx}px; width:${wPx}px; top:${BT}px; height:${BH}px; border:2px dashed ${bColor}; background:${hexAlpha(bColor, 0.28)}; display:flex; align-items:center; justify-content:center;`;
+    pImg.style.cssText += ` width:${Math.min(BH-6,wPx-6)}px; height:${BH-6}px;`;
+    preview.appendChild(pImg);
+    cellEl.appendChild(preview);
+  }
+  _dropPreviewEl = preview;
+}
+
+/* ── Start drag ── */
+function startDrag(e, builderNum, upg, barEl) {
+  if (!dragModeEnabled || !upg || upg._isCurrent || upg._synthetic || dragState) return;
+  const touch   = e.touches?.[0];
+  const clientX = touch ? touch.clientX : e.clientX;
+  const clientY = touch ? touch.clientY : e.clientY;
+  dragState = { upg, fromBuilderNum: builderNum, ghost: null, origBarEl: barEl,
+    lastX: clientX, lastY: clientY, startX: clientX, startY: clientY,
+    committed: false, hoverBuilderNum: null };
+  if (!touch) {
+    dragState.committed = true;
+    dragState.ghost     = createGhost(barEl.getBoundingClientRect(), builderNum, upg);
+    barEl.style.opacity = '0.3';
+    document.body.style.userSelect = 'none';
+    document.body.classList.add('sim-active');
+    e.preventDefault();
+  }
+}
+
+/* ── Find builder number at screen coords ── */
+function builderRowAt(x, y) {
+  const g = dragState?.ghost;
+  if (g) g.style.display = 'none';
+  const el = document.elementFromPoint(x, y);
+  if (g) g.style.display = '';
+  if (!el) return null;
+  const row = el.closest('[data-builder]');
+  return row ? parseInt(row.dataset.builder) : null;
+}
+
+/* ── Find uid of upgrade to insert BEFORE (null = end) ──
+   Uses DATA positions (ganttData dates → pixel math) instead of DOM positions so
+   the result is unaffected by simulated bar shifts during drag preview. */
+function insertBeforeUid(builderNum, clientX, clientY) {
+  const isMobile     = window.innerWidth <= 768;
+  const isMobileVert = isMobile && mobileOrientation === 'vertical';
+  const bd = ganttData.find(b => b.builderNum === builderNum);
+  if (!bd) return null;
+
+  /* Draggable upgrades in chronological order, excluding the bar being dragged */
+  const draggable = bd.upgrades.filter(u =>
+    !u._isCurrent && !u._synthetic && u._uid &&
+    u._uid !== dragState?.upg?._uid && u._startDate && u._endDate
+  );
+
+  if (isMobileVert) {
+    const PX = Math.max(Math.round(110 * ganttZoom), 20);
+    const colBody = document.querySelector(
+      `#mobileColumns .mobile-builder-col[data-builder="${builderNum}"] .mobile-col-body`);
+    if (!colBody) return null;
+    const offsetTop = colBody.getBoundingClientRect().top;
+    const localY = clientY - offsetTop;
+    for (const upg of draggable) {
+      const topPx = daysBetween(todayStart, upg._startDate) * PX;
+      const hPx   = Math.max(daysBetween(upg._startDate, upg._endDate) * PX, 8);
+      if (localY < topPx + hPx / 2) return upg._uid;
+    }
+  } else if (isMobile) {
+    const PX = Math.max(Math.round(140 * ganttZoom), 20);
+    const rowEl = document.querySelector(`#mobileColumns [data-builder="${builderNum}"]`);
+    if (!rowEl) return null;
+    const cellEl = Array.from(rowEl.children).find(c =>
+      c.style.flex === '1' || c.style.position === 'relative') || rowEl.lastElementChild;
+    if (!cellEl) return null;
+    const offsetLeft = cellEl.getBoundingClientRect().left;
+    const localX = clientX - offsetLeft;
+    for (const upg of draggable) {
+      const leftPx = daysBetween(todayStart, upg._startDate) * PX;
+      const wPx    = Math.max(daysBetween(upg._startDate, upg._endDate) * PX, 6);
+      if (localX < leftPx + wPx / 2) return upg._uid;
+    }
+  } else {
+    const PX = Math.max(Math.round(140 * ganttZoom), 20);
+    const rowEl = document.querySelector(`#ganttDesktop [data-builder="${builderNum}"]`);
+    if (!rowEl) return null;
+    const cellEl = Array.from(rowEl.children).find(c =>
+      c.style.flex === '1' || c.style.position === 'relative') || rowEl.lastElementChild;
+    if (!cellEl) return null;
+    const offsetLeft = cellEl.getBoundingClientRect().left;
+    const localX = clientX - offsetLeft;
+    for (const upg of draggable) {
+      const leftPx = daysBetween(todayStart, upg._startDate) * PX;
+      const wPx    = Math.max(daysBetween(upg._startDate, upg._endDate) * PX, 6);
+      if (localX < leftPx + wPx / 2) return upg._uid;
+    }
+  }
+  return null; // insert at end
+}
+
+/* ── Vertical edge-scroll rAF loop (runs outside touchmove so iOS doesn't block it) ── */
+function _edgeScrollTick() {
+  if (!dragState || _edgeScrollDeltaY === 0) { _edgeScrollRafId = null; return; }
+  window.scrollBy(0, _edgeScrollDeltaY);
+  _edgeScrollRafId = requestAnimationFrame(_edgeScrollTick);
+}
+function startEdgeScrollLoop() {
+  if (_edgeScrollRafId) return;
+  _edgeScrollRafId = requestAnimationFrame(_edgeScrollTick);
+}
+
+/* ── Drag move ── */
+function onDragMove(clientX, clientY) {
+  if (!dragState) return;
+  if (!dragState.committed) {
+    if (Math.hypot(clientX - dragState.startX, clientY - dragState.startY) < 8) {
+      dragState.lastX = clientX; dragState.lastY = clientY; return;
+    }
+    dragState.committed = true;
+    dragState.ghost     = createGhost(dragState.origBarEl.getBoundingClientRect(), dragState.fromBuilderNum, dragState.upg);
+    dragState.origBarEl.style.opacity = '0.3';
+    document.body.style.userSelect    = 'none';
+    document.body.classList.add('sim-active');
+  }
+  const dx = clientX - dragState.lastX, dy = clientY - dragState.lastY;
+  dragState.ghost.style.left = (parseFloat(dragState.ghost.style.left) + dx) + 'px';
+  dragState.ghost.style.top  = (parseFloat(dragState.ghost.style.top)  + dy) + 'px';
+  dragState.lastX = clientX; dragState.lastY = clientY;
+
+  /* Edge auto-scroll so the user can drag to items off-screen */
+  const EDGE = 80, SPD = 14;
+  if (window.innerWidth <= 768) {
+    const col = document.getElementById('mobileColumns');
+    /* Both orientations: scroll mobileColumns horizontally at left/right edges */
+    if (col) {
+      if      (clientX < 90)                        col.scrollLeft -= SPD;
+      else if (clientX > window.innerWidth - 50)    col.scrollLeft += SPD;
+    }
+    /* Vertical mode: also page-scroll up/down via rAF loop so it works on iOS
+       even though touchmove calls e.preventDefault().
+       Top threshold is larger to account for the sticky header stack (~220px) */
+    if (mobileOrientation === 'vertical') {
+      const EDGE_TOP = 220;
+      if      (clientY < EDGE_TOP)                   _edgeScrollDeltaY = -SPD;
+      else if (clientY > window.innerHeight - EDGE)  _edgeScrollDeltaY =  SPD;
+      else                                           _edgeScrollDeltaY =  0;
+      if (_edgeScrollDeltaY !== 0 && !_edgeScrollRafId) startEdgeScrollLoop();
+    }
+  } else {
+    /* Desktop: scroll ganttWrap horizontally + page vertically near edges */
+    const wrap = document.getElementById('ganttWrap');
+    if (wrap) {
+      const D_EDGE = 130, D_SPD = 20;
+      const rect = wrap.getBoundingClientRect();
+      if      (clientX < rect.left  + D_EDGE) wrap.scrollLeft -= D_SPD;
+      else if (clientX > rect.right - D_EDGE) wrap.scrollLeft += D_SPD;
+      if      (clientY < D_EDGE)              window.scrollBy(0, -D_SPD);
+      else if (clientY > window.innerHeight - D_EDGE) window.scrollBy(0, D_SPD);
+    }
+  }
+
+  const target = builderRowAt(clientX, clientY);
+  document.querySelectorAll('.row-drop-target').forEach(el => el.classList.remove('row-drop-target'));
+  if (target !== null) {
+    document.querySelectorAll(`[data-builder="${target}"]`).forEach(el => el.classList.add('row-drop-target'));
+    dragState.hoverBuilderNum = target;
+    updateDropPreview(target, clientX, clientY);
+  } else {
+    clearDropPreview();
+  }
+}
+
+/* ── Drag end / drop ── */
+function onDragEnd(clientX, clientY) {
+  if (!dragState) return;
+  /* Stop vertical edge-scroll rAF loop */
+  _edgeScrollDeltaY = 0;
+  if (_edgeScrollRafId) { cancelAnimationFrame(_edgeScrollRafId); _edgeScrollRafId = null; }
+  const { upg, fromBuilderNum, ghost, origBarEl, committed, hoverBuilderNum } = dragState;
+  if (ghost) ghost.remove();
+  clearDropPreview();
+  document.body.style.userSelect = '';
+  document.body.classList.remove('sim-active');
+  document.querySelectorAll('.row-drop-target').forEach(el => el.classList.remove('row-drop-target'));
+  if (origBarEl) origBarEl.style.opacity = '';
+  dragState = null;
+  if (!committed) return; // was a tap
+
+  const targetBuilder = builderRowAt(clientX, clientY) ?? hoverBuilderNum;
+  if (targetBuilder === null) return;
+  const srcB = ganttData.find(b => b.builderNum === fromBuilderNum);
+  const tgtB = ganttData.find(b => b.builderNum === targetBuilder);
+  if (!srcB || !tgtB) return;
+
+  const srcIdx = srcB.upgrades.indexOf(upg);
+  if (srcIdx === -1) return;
+
+  /* Same-spot detection: if dropped back at original position, no-op */
+  if (targetBuilder === fromBuilderNum) {
+    const beforeUid = insertBeforeUid(targetBuilder, clientX, clientY);
+    const nextItem  = srcB.upgrades[srcIdx + 1];
+    const isSameSpot = (beforeUid === null && !nextItem) ||
+                       (nextItem && beforeUid === nextItem._uid);
+    if (isSameSpot) return;
+  }
+
+  // Remove from source
+  srcB.upgrades.splice(srcIdx, 1);
+
+  // Find insertion point in target (never before the active/synthetic item)
+  const tgtActiveIdx = tgtB.upgrades.findIndex(u => u._isCurrent || u._synthetic);
+  const minInsert    = tgtActiveIdx === -1 ? 0 : tgtActiveIdx + 1;
+  const beforeUid    = insertBeforeUid(targetBuilder, clientX, clientY);
+  let insertAt       = beforeUid ? tgtB.upgrades.findIndex(u => u._uid === beforeUid) : -1;
+  if (insertAt !== -1 && insertAt <= tgtActiveIdx) insertAt = minInsert;
+
+  if (insertAt === -1 || insertAt >= tgtB.upgrades.length) {
+    tgtB.upgrades.push(upg);
+  } else {
+    tgtB.upgrades.splice(Math.max(insertAt, minInsert), 0, upg);
+  }
+
+  restitchBuilder(srcB);
+  if (targetBuilder !== fromBuilderNum) restitchBuilder(tgtB);
+  computeRange();
+  setSaveState(true);
+
+  /* Tell each render's RAF to restore scroll instead of jumping to NOW */
+  const _wrapEl   = document.getElementById('ganttWrap');
+  const _colEl    = document.getElementById('mobileColumns');
+  const _savedScrollY = window.scrollY;  /* vertical mobile uses page scroll */
+  _preserveScrollDesktop = _wrapEl ? _wrapEl.scrollLeft : 0;
+  _preserveScrollMobile  = _colEl  ? _colEl.scrollLeft  : 0;
+
+  renderDesktop();
+  renderMobile();
+
+  /* Restore page scroll for vertical mobile — double-RAF ensures layout has settled
+     before we scroll, so the browser doesn't undo our restore during reflow */
+  if (window.innerWidth <= 768 && mobileOrientation === 'vertical') {
+    requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, _savedScrollY)));
+  }
+}
+
+/* ── Re-stitch a single builder after drag ── */
+function restitchBuilder(b) {
+  const activeIdx = b.upgrades.findIndex(u => u._isCurrent);
+  const anchor    = activeIdx !== -1 ? b.upgrades[activeIdx]._endDate : new Date();
+  let cursor = (anchor instanceof Date && !isNaN(anchor)) ? anchor : new Date();
+  const start = activeIdx !== -1 ? activeIdx + 1 : 0;
+  for (let i = start; i < b.upgrades.length; i++) {
+    const upg = b.upgrades[i];
+    const mins = upg.durationMinutes || 0;
+    upg._startDate = new Date(cursor);
+    upg._endDate   = new Date(cursor.getTime() + mins * 60000);
+    upg._isCurrent = false;
+    cursor = upg._endDate;
+  }
+}
+
+/* ── Save order to server ── */
+async function saveOrder() {
+  if (!hasPendingChanges) return;
+  if (_hasViolations) {
+    alert('⚠️ Fix all level-order violations (red bars) before saving.');
+    return;
+  }
+  document.querySelectorAll('.save-btn').forEach(b => { b.disabled = true; b.textContent = 'Saving…'; });
+  try {
+    // 1. Collect upgrades that changed builder
+    const transfers = [];
+    ganttData.forEach(b => {
+      b.upgrades.forEach(upg => {
+        if (!upg._uid || upg._isCurrent || upg._synthetic) return;
+        if (upg._origBuilderNum !== undefined && upg._origBuilderNum !== b.builderNum) {
+          transfers.push({ upgrade: upg.upgrade, fromBuilder: `Builder_${upg._origBuilderNum}`,
+            row: upg._sheetRow, toBuilder: `Builder_${b.builderNum}`, upg });
+        }
+      });
+    });
+
+    // 2. Group transfers by source builder (within each source, highest row first to avoid row-shift)
+    //    Different source builders are independent → run in parallel
+    const bySource = new Map();
+    for (const t of transfers) {
+      if (!bySource.has(t.fromBuilder)) bySource.set(t.fromBuilder, []);
+      bySource.get(t.fromBuilder).push(t);
+    }
+    for (const grp of bySource.values()) grp.sort((a, b) => (b.row || 0) - (a.row || 0));
+
+    // 3. Execute transfers: parallel across sources, sequential within each source
+    await Promise.all([...bySource.values()].map(async grp => {
+      for (const t of grp) {
+        console.log('Transferring:', t.upgrade, 'from', t.fromBuilder, 'row', t.row, '→', t.toBuilder);
+        const url = `${API_BASE}?action=transfer_upgrade&username=${encodeURIComponent(window.COC_USERNAME)}&upgrade=${encodeURIComponent(t.upgrade)}&from_builder=${encodeURIComponent(t.fromBuilder)}&row=${t.row}&to_builder=${encodeURIComponent(t.toBuilder)}`;
+        const res = await fetch(url).then(r => r.json());
+        if (res.status !== 'success') {
+          console.error('transfer_upgrade failed:', res, t);
+          throw new Error(res.error || `Transfer failed: ${t.upgrade}`);
+        }
+      }
+    }));
+
+    // 4. Reorder changed builders — all independent, run in parallel
+    const buildersToCheck = new Set([
+      ...ganttData.map(b => b.builderNum),
+      ...transfers.map(t => parseInt(t.fromBuilder.match(/\d+/)?.[0]))
+    ]);
+    await Promise.all([...buildersToCheck].map(async builderNum => {
+      const b     = ganttData.find(b => b.builderNum === builderNum);
+      const origB = originalGanttData?.find(ob => ob.builderNum === builderNum);
+      if (!b || !origB) return;
+      const curQueue  = b.upgrades.filter(u => !u._isCurrent && !u._synthetic);
+      const origQueue = origB.upgrades.filter(u => !u._isCurrent && !u._synthetic);
+      const changed   = curQueue.length !== origQueue.length || curQueue.some((u, i) => u._uid !== origQueue[i]?._uid);
+      if (!changed) return;
+
+      const origStayed    = origQueue.filter(u => !transfers.some(t => t.upg._uid === u._uid && t.fromBuilder === `Builder_${builderNum}`));
+      const transferredIn = transfers.filter(t => t.toBuilder === `Builder_${builderNum}`).map(t => t.upg);
+      const postQueue     = [...origStayed, ...transferredIn];
+
+      const newOrder = curQueue.map(u => postQueue.findIndex(pt => pt._uid === u._uid));
+
+      const hasMinus1   = newOrder.some(i => i === -1);
+      const lenMismatch = newOrder.length !== postQueue.length;
+      const hasDupe     = new Set(newOrder).size !== newOrder.length;
+      if (hasMinus1 || lenMismatch || hasDupe) {
+        console.error(`Builder ${builderNum} reorder skipped — invalid order array.`, {
+          newOrder, curQueueNames: curQueue.map(u => u.upgrade), postQueueNames: postQueue.map(u => u.upgrade),
+          curLen: curQueue.length, postLen: postQueue.length, hasMinus1, lenMismatch, hasDupe
+        });
+        return;
+      }
+      if (newOrder.every((v, i) => v === i)) return;
+
+      console.log(`Reordering Builder ${builderNum}:`, newOrder, '→', postQueue.map(u=>u.upgrade));
+      const url = `${API_BASE}?action=reorder_builder_upgrades&username=${encodeURIComponent(window.COC_USERNAME)}&builder=Builder_${builderNum}&order=${newOrder.join(',')}`;
+      const res = await fetch(url).then(r => r.json());
+      if (res.status !== 'success') {
+        console.error('reorder_builder_upgrades failed:', res, { builderNum, newOrder });
+        throw new Error(res.error || `Reorder failed for Builder ${builderNum}`);
+      }
+    }));
+
+    // 5. Done — refresh with fresh data
+    setSaveState(false);
+    if (dragModeEnabled) toggleDragMode();
+    await loadGantt();
+  } catch (err) {
+    console.error('Save failed:', err);
+    alert('Save failed: ' + err.message);
+    document.querySelectorAll('.save-btn').forEach(b => {
+      b.disabled = false;
+      b.classList.add('has-changes');
+      b.textContent = b.id === 'saveBtnMobile' ? '💾 Save' : '💾 Save Order';
+    });
+  }
+}
+
+/* ── Global drag listeners (init once) ── */
+(function() {
+  document.addEventListener('mousemove', e => { if (dragState) onDragMove(e.clientX, e.clientY); });
+  document.addEventListener('mouseup',   e => { if (dragState) onDragEnd(e.clientX, e.clientY); });
+  document.addEventListener('touchmove', e => {
+    if (!dragState) return;
+    onDragMove(e.touches[0].clientX, e.touches[0].clientY);
+    if (dragState?.committed) e.preventDefault();
+  }, { passive: false });
+  document.addEventListener('touchend', e => {
+    if (dragState) onDragEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+  });
+})();
+
+/* ── Toggle drag mode ── */
+function toggleDragMode() {
+  dragModeEnabled = !dragModeEnabled;
+  const zoomBar = document.getElementById('zoomBar');
+  if (zoomBar) zoomBar.classList.toggle('drag-mode-active', dragModeEnabled);
+  const mobileBar = document.querySelector('.mobile-zoom-bar');
+  if (mobileBar) mobileBar.classList.toggle('drag-mode-active', dragModeEnabled);
+  /* body class drives touch-action:none CSS on draggable bars when drag mode is on */
+  document.body.classList.toggle('drag-mode-active', dragModeEnabled);
+  document.querySelectorAll('.drag-mode-btn').forEach(btn => {
+    btn.classList.toggle('active', dragModeEnabled);
+    btn.title = dragModeEnabled ? 'Click to exit drag mode' : 'Click to enable drag mode';
+  });
+  /* When drag mode is off, cancel any in-progress drag */
+  if (!dragModeEnabled && dragState) {
+    _edgeScrollDeltaY = 0;
+    if (_edgeScrollRafId) { cancelAnimationFrame(_edgeScrollRafId); _edgeScrollRafId = null; }
+    if (dragState.ghost) dragState.ghost.remove();
+    if (dragState.origBarEl) dragState.origBarEl.style.opacity = '';
+    document.querySelectorAll('.row-drop-target').forEach(el => el.classList.remove('row-drop-target'));
+    document.body.style.userSelect = '';
+    clearDropPreview();
+    document.body.classList.remove('sim-active');
+    dragState = null;
+  }
+}
+
+/* ── Cancel / discard changes ── */
+function cancelChanges() {
+  if (!hasPendingChanges) return;
+  if (!confirm('Discard all unsaved reorder changes?')) return;
+  if (originalGanttData) {
+    ganttData = originalGanttData.map(b => ({ builderNum: b.builderNum, upgrades: b.upgrades.map(u => ({ ...u })) }));
+  }
+  computeRange();
+  setSaveState(false);
+  if (dragModeEnabled) toggleDragMode();
+  renderDesktop();
+  renderMobile();
+}
+
+/* ── Update cancel button state alongside save button ── */
+const _origSetSaveState = setSaveState;
+setSaveState = function(dirty) {
+  _origSetSaveState(dirty);
+  document.querySelectorAll('.cancel-btn').forEach(btn => btn.classList.toggle('has-changes', dirty));
+};
+
+/* ── Scroll arrow helpers (used in drag mode) ── */
+let _scrollInterval = null;
+function startScroll(containerId, dir) {
+  stopScroll();
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const step = dir * 120;
+  _scrollInterval = setInterval(() => { el.scrollLeft += step; }, 60);
+}
+function stopScroll() {
+  clearInterval(_scrollInterval);
+  _scrollInterval = null;
+}
+
+/* ── TOGGLE BUILDERS ── */
 function toggleBuilder(n) {
   const btn = document.querySelector(`.toggle-btn[data-b="${n}"]`);
   if (activeBuilders.has(n)) { activeBuilders.delete(n); btn.classList.remove('active'); }
   else                        { activeBuilders.add(n);   btn.classList.add('active'); }
-  renderDesktop();   /* desktop: full re-render, only active rows appear */
-  const mc = document.querySelector(`.mobile-builder-col[data-builder="${n}"]`);
-  if (mc) mc.classList.toggle('hidden-col', !activeBuilders.has(n));
+  renderDesktop();
+  if (mobileOrientation === 'horizontal') {
+    renderMobileHorizontal(); /* full re-render to close row gaps */
+  } else {
+    const mc = document.querySelector(`.mobile-builder-col[data-builder="${n}"]`);
+    if (mc) mc.classList.toggle('hidden-col', !activeBuilders.has(n));
+    /* Also show/hide the corresponding cell in the external sticky header row */
+    const vhCell = document.querySelector(`#mobileVHeadersInner [data-vh-builder="${n}"]`);
+    if (vhCell) vhCell.style.display = activeBuilders.has(n) ? 'flex' : 'none';
+    /* Re-sync vHeaders scroll position after layout change */
+    const vhEl = document.getElementById('mobileVHeaders');
+    const colEl = document.getElementById('mobileColumns');
+    if (vhEl && colEl) vhEl.scrollLeft = colEl.scrollLeft;
+  }
 }
 </script>
 </body>

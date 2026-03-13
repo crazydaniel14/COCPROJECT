@@ -62,7 +62,7 @@ const IMAGE_MAP = {
   "Giant Bomb": ["Lvl 6", "Lvl 7&8", "Lvl 9&10"],
   "Gold Mine": ["Lvl 17"],
   "Gold Storage": ["Lvl 18"],
-  "Hidden Tesla": ["Lvl 16"],
+  "Hidden Tesla": ["Lvl 16", "Lvl 17"],
   "Monolith": ["Lvl 2&3&4"],
   "Mortar": ["Lvl 17"],
   "Scattershot": ["Lvl 6&7&8"],
@@ -74,7 +74,13 @@ const IMAGE_MAP = {
   "Workshop": ["Lvl 8"],
   "Spell Tower": ["Lvl 4"],
   "Inferno Tower": ["Lvl 12"],
-  "X-Bow": ["Lvl 12&13&14"]
+  "X-Bow": ["Lvl 12&13&14"],
+  "Hero Hall":["Lvl 11&12"],
+  "Laboratory":["Lvl 16"],
+  "Clan Castle":["Lvl 14"],
+  "Revenge Tower":["Lvl 1","Lvl 2"],
+  "Super Wizard Tower":["Lvl 1", "Lvl 2"],
+  "Ricochet Cannon":["Lvl 4"]
 };
 
 function getUpgradeImage(upgradeName) {
