@@ -51,7 +51,7 @@ const HERO_NAMES = [
 
 const IMAGE_MAP = {
   "Air Bomb": ["Lvl 11"],
-  "Air Defense":["Lvl 16"]
+  "Air Defense":["Lvl 16"],
   "Pet House": ["Lvl 12"],
   "Archer Tower": ["Lvl 21"],
   "Blacksmith": ["Lvl 9"],
