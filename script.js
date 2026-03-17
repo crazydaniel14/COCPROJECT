@@ -45,23 +45,27 @@ const HERO_NAMES = [
   "Grand Warden",
   "Minion Prince",
   "Dragon Duke",
-  "Royal Champion"
+  "Royal Champion",
+  "Longshot"
 ];
 
 const IMAGE_MAP = {
   "Air Bomb": ["Lvl 11"],
+  "Air Defense":["Lvl 16"]
   "Pet House": ["Lvl 12"],
   "Archer Tower": ["Lvl 21"],
   "Blacksmith": ["Lvl 9"],
   "Bomb": ["Lvl 11&12", "Lvl 13&14"],
+  "Bomb Tower":["Lvl 13"],
   "Builder Hut": ["Level 7&8&9"],
   "Dark Elixir Drill": ["Lvl 10", "Lvl 11"],
-  "Dark Elixir Storage": ["Lvl 12"],
+  "Dark Elixir Storage": ["Lvl 12"],["Lvl 13"],
   "Elixir Collector": ["Lvl 17"],
-  "Elixir Storage": ["Lvl 18"],
+  "Elixir Storage": ["Lvl 18"],["Lvl 19"],
   "Giant Bomb": ["Lvl 6", "Lvl 7&8", "Lvl 9&10"],
+  "Giga Bomb":["Lvl 4"],
   "Gold Mine": ["Lvl 17"],
-  "Gold Storage": ["Lvl 18"],
+  "Gold Storage": ["Lvl 18"],["Lvl 19"],
   "Hidden Tesla": ["Lvl 16", "Lvl 17"],
   "Monolith": ["Lvl 2&3&4"],
   "Mortar": ["Lvl 17"],
@@ -70,7 +74,7 @@ const IMAGE_MAP = {
   "Spring Trap": ["Lvl 7&8", "Lvl 9&10"],
   "Town Hall": ["Lvl 18"],
   "Wizard Tower": ["Lvl 17"],
-  "Fire Spitter": ["Lvl 3"], 
+  "Firespitter": ["Lvl 3"], 
   "Workshop": ["Lvl 8"],
   "Spell Tower": ["Lvl 4"],
   "Inferno Tower": ["Lvl 12"],
@@ -80,7 +84,8 @@ const IMAGE_MAP = {
   "Clan Castle":["Lvl 14"],
   "Revenge Tower":["Lvl 1","Lvl 2"],
   "Super Wizard Tower":["Lvl 1", "Lvl 2"],
-  "Ricochet Cannon":["Lvl 4"]
+  "Ricochet Cannon":["Lvl 4"],
+  "Multi-Archer Tower":["Lvl 4"]
 };
 
 function getUpgradeImage(upgradeName) {
