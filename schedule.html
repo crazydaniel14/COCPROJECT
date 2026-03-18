@@ -474,6 +474,12 @@
 <div class="gantt-tooltip" id="ganttTooltip"></div>
 
 <script>
+/* ── HELPERS ── */
+function formatUpgradeName(name) {
+  if (!name) return '';
+  return name.replace(/\*/g, '<img src="Images/SCicon.png" style="height:1em;vertical-align:middle;margin:0 1px;" alt="SC">');
+}
+
 /* ── CONFIG ── */
 const API_BASE = "https://script.google.com/macros/s/AKfycbzaxmuwpTD9cUzrz4e4k75caCpQrTjEDefs-B5nuEaqlFoMrBHjrhDun3Iy7kPkc9j2/exec";
 
@@ -1072,7 +1078,7 @@ const dayLbl = document.createElement('div');
         const textCol = document.createElement('div');
         textCol.className = 'bar-text-col';
         textCol.innerHTML = `
-          <div class="bar-name">${upg.upgrade||''}</div>
+          <div class="bar-name">${formatUpgradeName(upg.upgrade)}</div>
           ${upg.duration && widthPx > BH + 90 ? `<div class="bar-dur">${upg.duration}</div>` : ''}`;
         inner.appendChild(textCol);
       }
@@ -1323,7 +1329,7 @@ function renderMobileVertical() {
         const tb = document.createElement('div');
         tb.className = 'mobile-bar-text-block';
         tb.innerHTML = `
-          ${showText ? `<div class="mobile-bar-name">${upg.upgrade||''}</div>` : ''}
+          ${showText ? `<div class="mobile-bar-name">${formatUpgradeName(upg.upgrade)}</div>` : ''}
           ${upg.duration ? `<div class="mobile-bar-dur">${upg.duration}</div>` : ''}`;
         lbl.appendChild(tb);
         bar.appendChild(lbl);
@@ -1488,7 +1494,7 @@ function renderMobileHorizontal() {
       if (ganttZoom > 0.5 && widthPx > BH + 40) {
         const textCol = document.createElement('div');
         textCol.className = 'bar-text-col';
-        textCol.innerHTML = `<div class="bar-name" style="font-size:10px">${upg.upgrade||''}</div>`;
+        textCol.innerHTML = `<div class="bar-name" style="font-size:10px">${formatUpgradeName(upg.upgrade)}</div>`;
         inner.appendChild(textCol);
       }
       bar.appendChild(inner);

@@ -88,6 +88,11 @@ const IMAGE_MAP = {
   "Multi-Archer Tower":["Lvl 4"]
 };
 
+function formatUpgradeName(name) {
+  if (!name) return '';
+  return name.replace(/\*/g, '<img src="Images/SCicon.png" style="height:1em;vertical-align:middle;margin:0 1px;" alt="SC">');
+}
+
 function getUpgradeImage(upgradeName) {
   const basePath = "Images/Upgrades/";
   for (const hero of HERO_NAMES) {
@@ -359,7 +364,7 @@ function renderBuilderDetails(details) {
             <div class="upgrade-name">
               <img src="${imgSrc}" class="upgrade-icon" alt="${upg.upgrade}"
                    onerror="this.src='Images/Upgrades/PH.png'" />
-              <span>${upg.upgrade}</span>
+              <span>${formatUpgradeName(upg.upgrade)}</span>
             </div>
             <div class="upgrade-duration editable-duration" data-index="${idx}">${upg.duration}</div>
             <div class="upgrade-time">
