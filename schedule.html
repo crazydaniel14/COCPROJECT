@@ -1044,7 +1044,7 @@ const dayLbl = document.createElement('div');
 
       const isEven  = idx % 2 === 0;
       const barCol  = isEven ? bColor : hexAlpha(bColor, 0.58);
-      const bordCol = upg._isCurrent ? '#ffffff' : isEven ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.18)';
+      const bordCol = (upg.upgrade && upg.upgrade.includes('*')) ? '#0047FF' : upg._isCurrent ? '#ffffff' : isEven ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.18)';
 
       const bar = document.createElement('div');
       bar.className = 'gantt-bar';
@@ -1302,7 +1302,7 @@ function renderMobileVertical() {
         const hPx   = Math.max(daysBetween(new Date(clampS), new Date(clampE)) * PX, 8);
         const isEven = idx % 2 === 0;
         const barCol  = isEven ? bColor : hexAlpha(bColor, 0.6);
-        const bordCol = upg._isCurrent ? '#fff' : isEven ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)';
+        const bordCol = (upg.upgrade && upg.upgrade.includes('*')) ? '#0047FF' : upg._isCurrent ? '#fff' : isEven ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)';
 
         const bar = document.createElement('div');
         bar.className = 'mobile-bar';
@@ -1465,7 +1465,7 @@ function renderMobileHorizontal() {
       const widthPx = Math.max(daysBetween(new Date(clampS), new Date(clampE)) * PX, 6);
       const isEven  = idx % 2 === 0;
       const barCol  = isEven ? bColor : hexAlpha(bColor, 0.58);
-      const bordCol = upg._isCurrent ? '#fff' : isEven ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.18)';
+      const bordCol = (upg.upgrade && upg.upgrade.includes('*')) ? '#0047FF' : upg._isCurrent ? '#fff' : isEven ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.18)';
 
       const bar = document.createElement('div');
       bar.className = 'gantt-bar';

@@ -364,7 +364,7 @@ function renderBuilderDetails(details) {
             <div class="upgrade-name">
               <img src="${imgSrc}" class="upgrade-icon" alt="${upg.upgrade}"
                    onerror="this.src='Images/Upgrades/PH.png'" />
-              <span>${formatUpgradeName(upg.upgrade)}</span>
+              <span${upg.upgrade && upg.upgrade.includes('*') ? ' style="color:#0047FF"' : ''}>${formatUpgradeName(upg.upgrade)}</span>
             </div>
             <div class="upgrade-duration editable-duration" data-index="${idx}">${upg.duration}</div>
             <div class="upgrade-time">
