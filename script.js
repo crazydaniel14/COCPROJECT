@@ -1597,6 +1597,7 @@ async function bootApp() {
   wireBoostFocusNavigation();
   wireBuilderCardClicks();
   wireImageButtons();
+  wireSearchFeature();
   setTimeout(() => checkForFinishedUpgrades(true), 1500);
 }
 
@@ -1611,6 +1612,178 @@ function switchUser() {
     location.reload(); // reload fresh with new username now stored
   });
 } 
+/* =========================
+   SEARCH FEATURE
+   ========================= */
+let searchDebounceTimer = null;
+
+function openSearchModal() {
+  document.getElementById('searchModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('searchInput')?.focus(), 50);
+}
+
+function closeSearchModal() {
+  document.getElementById('searchModal').style.display = 'none';
+  const input = document.getElementById('searchInput');
+  const results = document.getElementById('searchResults');
+  if (input) input.value = '';
+  if (results) results.innerHTML = '<div class="search-hint">Start typing to search upgrades across all builders</div>';
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escapeAttr(str) {
+  if (!str) return '';
+  return str.replace(/"/g, '&quot;');
+}
+
+async function performSearch(query) {
+  const resultsEl = document.getElementById('searchResults');
+  if (!resultsEl) return;
+  if (!query || query.trim().length < 2) {
+    resultsEl.innerHTML = '<div class="search-hint">Type at least 2 characters to search</div>';
+    return;
+  }
+
+  resultsEl.innerHTML = '<div class="search-loading">Searching all builders...</div>';
+
+  const q = query.trim().toLowerCase();
+  const allResults = [];
+
+  for (let i = 1; i <= 6; i++) {
+    try {
+      const data = await fetchBuilderDetails(i.toString());
+      if (data && data.upgrades) {
+        data.upgrades.forEach(upg => {
+          if ((upg.upgrade || '').toLowerCase().includes(q)) {
+            allResults.push({
+              builder: i.toString(),
+              upgradeName: upg.upgrade,
+              start: upg.start,
+              end: upg.end,
+              duration: upg.duration
+            });
+          }
+        });
+      }
+    } catch (e) {
+      console.warn(`Search: failed to fetch builder ${i}:`, e);
+    }
+  }
+
+  if (allResults.length === 0) {
+    resultsEl.innerHTML = `<div class="search-no-results">No upgrades found for "<strong style="color:#ccc">${escapeHtml(query)}</strong>"</div>`;
+    return;
+  }
+
+  resultsEl.innerHTML = allResults.map(r => `
+    <div class="search-result-item">
+      <div class="search-result-name">${escapeHtml(r.upgradeName)}</div>
+      <div class="search-result-meta">
+        <span class="search-builder-tag">Builder ${r.builder}</span>
+        <span class="search-duration">${escapeHtml(r.duration)}</span>
+      </div>
+      <div class="search-result-dates">${escapeHtml(r.start)} → ${escapeHtml(r.end)}</div>
+      <div class="search-result-footer">
+        <button class="search-jump-btn"
+                data-builder="${r.builder}"
+                data-upgrade-name="${escapeAttr(r.upgradeName)}">
+          Jump to ↗
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function findUpgradeItemByName(upgradeName) {
+  return Array.from(document.querySelectorAll('.upgrade-item'))
+    .find(el => el.dataset.upgradeName === upgradeName);
+}
+
+function waitForUpgradeItem(upgradeName, timeout = 6000) {
+  return new Promise((resolve, reject) => {
+    const existing = findUpgradeItemByName(upgradeName);
+    if (existing) { resolve(existing); return; }
+
+    const container = document.getElementById('builders-container');
+    const observer = new MutationObserver(() => {
+      const el = findUpgradeItemByName(upgradeName);
+      if (el) { observer.disconnect(); clearTimeout(timer); resolve(el); }
+    });
+    observer.observe(container, { childList: true, subtree: true });
+
+    const timer = setTimeout(() => {
+      observer.disconnect();
+      reject(new Error('Upgrade item not found: ' + upgradeName));
+    }, timeout);
+  });
+}
+
+async function jumpToUpgrade(builderNumber, upgradeName) {
+  closeSearchModal();
+
+  const container = document.getElementById('builders-container');
+  const card = container.querySelector(`.builder-card[data-builder="${builderNumber}"]`);
+  if (!card) return;
+
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  if (!openBuilders.includes(builderNumber)) {
+    card.click();
+  }
+
+  try {
+    await waitForUpgradeItem(upgradeName, 6000);
+  } catch (e) {
+    console.warn('Search jump: could not find upgrade item:', e);
+    return;
+  }
+
+  await new Promise(r => setTimeout(r, 200));
+
+  const upgradeItem = findUpgradeItemByName(upgradeName);
+  if (upgradeItem) {
+    upgradeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    upgradeItem.classList.add('search-highlight');
+    setTimeout(() => upgradeItem.classList.remove('search-highlight'), 3000);
+  }
+}
+
+function wireSearchFeature() {
+  const btn     = document.getElementById('searchBtn');
+  const modal   = document.getElementById('searchModal');
+  const closeBtn = document.getElementById('searchModalClose');
+  const input   = document.getElementById('searchInput');
+  const results = document.getElementById('searchResults');
+
+  btn?.addEventListener('click', openSearchModal);
+  closeBtn?.addEventListener('click', closeSearchModal);
+
+  modal?.addEventListener('click', e => {
+    if (e.target === modal) closeSearchModal();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && modal?.style.display !== 'none') closeSearchModal();
+  });
+
+  input?.addEventListener('input', () => {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => performSearch(input.value), 300);
+  });
+
+  results?.addEventListener('click', e => {
+    const jumpBtn = e.target.closest('.search-jump-btn');
+    if (!jumpBtn) return;
+    const builder = jumpBtn.dataset.builder;
+    const upgradeName = jumpBtn.dataset.upgradeName;
+    if (builder && upgradeName) jumpToUpgrade(builder, upgradeName);
+  });
+}
+
 /* =========================
    LOGIN SCREEN
    — Shows password field only for usernames that have
