@@ -455,11 +455,14 @@
     .search-jump-btn:hover { background:rgba(245,208,76,0.2); border-color:rgba(245,208,76,0.6); }
 
     @keyframes ganttSearchHighlight {
-      0%   { box-shadow:0 0 0 3px rgba(245,208,76,0.8), 0 0 16px rgba(245,208,76,0.4); }
-      60%  { box-shadow:0 0 0 3px rgba(245,208,76,0.8), 0 0 16px rgba(245,208,76,0.4); }
-      100% { box-shadow:none; }
+      0%   { outline:3px solid rgba(245,208,76,0.95); outline-offset:2px; filter:brightness(1.4); }
+      20%  { outline:3px solid rgba(245,208,76,0.2);  outline-offset:1px; filter:brightness(1.0); }
+      40%  { outline:3px solid rgba(245,208,76,0.95); outline-offset:2px; filter:brightness(1.4); }
+      60%  { outline:3px solid rgba(245,208,76,0.2);  outline-offset:1px; filter:brightness(1.0); }
+      80%  { outline:3px solid rgba(245,208,76,0.95); outline-offset:2px; filter:brightness(1.4); }
+      100% { outline:none; filter:brightness(1.0); }
     }
-    .gantt-bar.search-highlight { animation:ganttSearchHighlight 2.5s ease-out forwards; z-index:20; }
+    .gantt-bar.search-highlight { animation:ganttSearchHighlight 3s ease-in-out forwards; z-index:20; }
   </style>
 </head>
 <body>
@@ -2530,7 +2533,7 @@ function jumpToGanttBar(uid, builderNum) {
       const targetScroll = wrap.scrollLeft + (barRect.left - wrapRect.left) - wrap.clientWidth / 3;
       wrap.scrollLeft = Math.max(targetScroll, _minScrollDesktop);
       bar.classList.add('search-highlight');
-      setTimeout(() => bar.classList.remove('search-highlight'), 2500);
+      setTimeout(() => bar.classList.remove('search-highlight'), 3000);
     } else if (wrap && todayStart) {
       /* Fallback: compute position from start date */
       const PX = Math.max(Math.round(140 * ganttZoom), 20);
