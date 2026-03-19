@@ -131,11 +131,14 @@ button:disabled {
 .builder-card {
   position: relative;
   height: 160px;
-  background: #19191ec7;
+  background: linear-gradient(135deg, #1e1e24 0%, #17171c 100%);
   border-radius: 22px;
   overflow: hidden;
   border-left: 8px solid #f5d04c;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+  border-top: 1px solid rgba(255,255,255,0.06);
+  border-right: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(0,0,0,0.3);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
 .builder-card.next-finish {
@@ -144,8 +147,8 @@ button:disabled {
 
 .builder-card.expanded {
   grid-column: 1 / -1;
-  background: #14143d;
-  outline: 2px solid rgba(255,255,255,0.25);
+  background: linear-gradient(135deg, #1e1e2a 0%, #15151c 100%);
+  outline: 1px solid rgba(245,208,76,0.2);
 }
 
 .builder-character {
@@ -1039,7 +1042,7 @@ button:disabled {
 .builder-card.skeleton {
   pointer-events: none;
   border-left-color: #2a2a35;
-  background: #19191ec7;
+  background: linear-gradient(135deg, #1e1e24 0%, #17171c 100%);
   overflow: hidden;
 }
 
