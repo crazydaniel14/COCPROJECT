@@ -85,7 +85,8 @@ const IMAGE_MAP = {
   "Revenge Tower":["Lvl 1","Lvl 2"],
   "Super Wizard Tower":["Lvl 1","Lvl 2"],
   "Ricochet Cannon":["Lvl 4"],
-  "Multi-Archer Tower":["Lvl 4"]
+  "Multi-Archer Tower":["Lvl 4"],
+  "Multi-Gear Tower":["Lvl 3"]
 };
 
 function formatUpgradeName(name) {
