@@ -687,6 +687,22 @@ let _syncingScroll         = false; /* mutex prevents bidirectional scroll loops
 let _edgeScrollDeltaY      = 0;    /* vertical edge-scroll velocity for rAF loop */
 let _edgeScrollRafId       = null; /* rAF handle for vertical edge-scroll loop */
 
+function jumpToNow() {
+  const isMobile = window.innerWidth <= 768;
+  if (isMobile) {
+    if (mobileOrientation === 'vertical') {
+      const col = document.getElementById('mobileColumns');
+      if (col) col.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      const wrapper = document.getElementById('mobileColumns');
+      if (wrapper) wrapper.scrollTo({ left: _minScrollMobileH, behavior: 'smooth' });
+    }
+  } else {
+    const wrap = document.getElementById('ganttWrap');
+    if (wrap) wrap.scrollTo({ left: _minScrollDesktop, behavior: 'smooth' });
+  }
+}
+
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded', () => {
   let u = localStorage.getItem('coc_username');
@@ -698,25 +714,6 @@ document.getElementById('zoomIn').addEventListener('click',  () => { ganttZoom =
   document.getElementById('zoomOut').addEventListener('click', () => { ganttZoom = Math.max(ganttZoom - 0.25, 0.25); applyZoom(); });
   document.getElementById('mobileZoomIn')?.addEventListener('click',  () => { ganttZoom = Math.min(ganttZoom + 0.25, 4);    applyMobileZoom(); });
   document.getElementById('mobileZoomOut')?.addEventListener('click', () => { ganttZoom = Math.max(ganttZoom - 0.25, 0.25); applyMobileZoom(); });
-
-  // Jump buttons — zoom to show exactly N days in the viewport
-  function jumpToNow() {
-    const isMobile = window.innerWidth <= 768;
-    if (isMobile) {
-      if (mobileOrientation === 'vertical') {
-        /* Vertical: NOW is at the top of the chart — scroll page to mobileColumns */
-        const col = document.getElementById('mobileColumns');
-        if (col) col.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
-        /* Horizontal: scroll to the minimum (NOW) position */
-        const wrapper = document.getElementById('mobileColumns');
-        if (wrapper) wrapper.scrollTo({ left: _minScrollMobileH, behavior: 'smooth' });
-      }
-    } else {
-      const wrap = document.getElementById('ganttWrap');
-      if (wrap) wrap.scrollTo({ left: _minScrollDesktop, behavior: 'smooth' });
-    }
-  }
 
   function jumpToWindow(days) {
     const isMobile = window.innerWidth <= 768;
