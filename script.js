@@ -1653,40 +1653,58 @@ async function performSearch(query) {
   const q = query.trim().toLowerCase();
   const allResults = [];
 
-  for (let i = 1; i <= 6; i++) {
-    try {
-      const data = await fetchBuilderDetails(i.toString());
-      if (data && data.upgrades) {
-        data.upgrades.forEach(upg => {
-          if ((upg.upgrade || '').toLowerCase().includes(q)) {
-            allResults.push({
-              builder: i.toString(),
-              upgradeName: upg.upgrade,
-              start: upg.start,
-              end: upg.end,
-              duration: upg.duration
-            });
-          }
+  // Fetch all 6 builders in parallel for speed
+  const fetches = Array.from({ length: 6 }, (_, i) =>
+    fetchBuilderDetails((i + 1).toString()).catch(e => {
+      console.warn(`Search: failed to fetch builder ${i + 1}:`, e);
+      return null;
+    })
+  );
+  const results = await Promise.all(fetches);
+
+  results.forEach((data, idx) => {
+    if (!data?.upgrades) return;
+    const builderNum = (idx + 1).toString();
+    data.upgrades.forEach(upg => {
+      // Normalise query: treat SC icons as * so "lvl *" matches "Lvl *"
+      const name = (upg.upgrade || '').toLowerCase();
+      if (name.includes(q)) {
+        allResults.push({
+          builder: builderNum,
+          upgradeName: upg.upgrade,
+          start: upg.start,
+          end: upg.end,
+          duration: upg.duration
         });
       }
-    } catch (e) {
-      console.warn(`Search: failed to fetch builder ${i}:`, e);
-    }
-  }
+    });
+  });
 
   if (allResults.length === 0) {
     resultsEl.innerHTML = `<div class="search-no-results">No upgrades found for "<strong style="color:#ccc">${escapeHtml(query)}</strong>"</div>`;
     return;
   }
 
-  resultsEl.innerHTML = allResults.map(r => `
+  resultsEl.innerHTML = allResults.map(r => {
+    const isSC   = r.upgradeName && r.upgradeName.includes('*');
+    const imgSrc = isSC ? getSuperchargeImage(r.upgradeName) : getUpgradeImage(r.upgradeName);
+    const nameHtml = isSC
+      ? `<span style="color:#093DBA">${formatUpgradeName(escapeHtml(r.upgradeName))}</span>`
+      : escapeHtml(r.upgradeName);
+    return `
     <div class="search-result-item">
-      <div class="search-result-name">${escapeHtml(r.upgradeName)}</div>
-      <div class="search-result-meta">
-        <span class="search-builder-tag">Builder ${r.builder}</span>
-        <span class="search-duration">${escapeHtml(r.duration)}</span>
+      <div class="search-result-main">
+        <img src="${imgSrc}" class="search-result-icon"
+             onerror="this.src='Images/Upgrades/PH.png'" alt="" />
+        <div class="search-result-info">
+          <div class="search-result-name">${nameHtml}</div>
+          <div class="search-result-meta">
+            <span class="search-builder-tag">Builder ${r.builder}</span>
+            <span class="search-duration">${escapeHtml(r.duration)}</span>
+          </div>
+          <div class="search-result-dates">${escapeHtml(r.start)} → ${escapeHtml(r.end)}</div>
+        </div>
       </div>
-      <div class="search-result-dates">${escapeHtml(r.start)} → ${escapeHtml(r.end)}</div>
       <div class="search-result-footer">
         <button class="search-jump-btn"
                 data-builder="${r.builder}"
@@ -1694,8 +1712,8 @@ async function performSearch(query) {
           Jump to ↗
         </button>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 function findUpgradeItemByName(upgradeName) {
