@@ -480,6 +480,16 @@ function formatUpgradeName(name) {
   return name.replace(/\*/g, '<img src="Images/SCicon.png" style="height:1em;vertical-align:middle;margin:0 1px;" alt="SC">');
 }
 
+function getSuperchargeImage(upgradeName) {
+  const basePath = "Images/Upgrades/";
+  const baseMatch = upgradeName.match(/^(.+?)\s*(?:#\d+)?\s+Lvl\s+\*+$/i);
+  if (!baseMatch) return basePath + "PH.png";
+  const baseName = baseMatch[1].trim();
+  if (!IMAGE_MAP[baseName]) return basePath + "PH.png";
+  const entries = IMAGE_MAP[baseName];
+  return basePath + baseName + " " + entries[entries.length - 1] + ".png";
+}
+
 /* ── CONFIG ── */
 const API_BASE = "https://script.google.com/macros/s/AKfycbzaxmuwpTD9cUzrz4e4k75caCpQrTjEDefs-B5nuEaqlFoMrBHjrhDun3Iy7kPkc9j2/exec";
 
@@ -1065,13 +1075,24 @@ const dayLbl = document.createElement('div');
       inner.style.left = LW + 'px'; /* pin label to right edge of label column */
 
      /* Image — transparent background, clipped to bar height */
+      const isSC = upg.upgrade && upg.upgrade.includes('*');
       const imgEl = document.createElement('img');
       imgEl.className = 'bar-icon';
-      imgEl.style.cssText = `width:${Math.min(BH, widthPx - 4)}px; height:${BH}px; max-width:${BH}px;`;
-      imgEl.src = getUpgradeImage(upg.upgrade);
+      imgEl.style.cssText = `width:${Math.min(BH, widthPx - 4)}px; height:${BH}px; max-width:${BH}px;${isSC ? ' box-shadow:0 0 0 1.5px #093DBA;' : ''}`;
+      imgEl.src = isSC ? getSuperchargeImage(upg.upgrade) : getUpgradeImage(upg.upgrade);
       imgEl.onerror = () => imgEl.src = 'Images/Upgrades/PH.png';
       imgEl.alt = upg.upgrade || '';
-      inner.appendChild(imgEl);
+      if (isSC) {
+        const scWrap = document.createElement('div');
+        scWrap.style.cssText = 'position:relative;display:inline-flex;flex-shrink:0;';
+        const scOverlay = document.createElement('div');
+        scOverlay.style.cssText = 'position:absolute;inset:0;background:rgba(9,61,186,0.10);border-radius:5px;pointer-events:none;';
+        scWrap.appendChild(imgEl);
+        scWrap.appendChild(scOverlay);
+        inner.appendChild(scWrap);
+      } else {
+        inner.appendChild(imgEl);
+      }
 
       /* Name + duration — only shown at zoom > 50% and bar wide enough */
       if (ganttZoom > 0.5 && widthPx > BH + 40) {
@@ -1318,12 +1339,24 @@ function renderMobileVertical() {
         const lbl = document.createElement('div');
         lbl.className = 'mobile-bar-label';
 
+        const isSCm = upg.upgrade && upg.upgrade.includes('*');
         const imgEl = document.createElement('img');
         imgEl.className = 'mobile-bar-icon';
-        imgEl.src = getUpgradeImage(upg.upgrade);
+        imgEl.src = isSCm ? getSuperchargeImage(upg.upgrade) : getUpgradeImage(upg.upgrade);
         imgEl.onerror = () => imgEl.src = 'Images/Upgrades/PH.png';
         imgEl.alt = upg.upgrade || '';
-        lbl.appendChild(imgEl);
+        if (isSCm) {
+          imgEl.style.boxShadow = '0 0 0 1.5px #093DBA';
+          const scWrap = document.createElement('div');
+          scWrap.style.cssText = 'position:relative;display:inline-flex;flex-shrink:0;';
+          const scOverlay = document.createElement('div');
+          scOverlay.style.cssText = 'position:absolute;inset:0;background:rgba(9,61,186,0.10);border-radius:7px;pointer-events:none;';
+          scWrap.appendChild(imgEl);
+          scWrap.appendChild(scOverlay);
+          lbl.appendChild(scWrap);
+        } else {
+          lbl.appendChild(imgEl);
+        }
 
         /* Always show text block; at low zoom only show duration (most useful at a glance) */
         const tb = document.createElement('div');
@@ -1484,12 +1517,23 @@ function renderMobileHorizontal() {
       inner.className = 'bar-inner';
       inner.style.left = LW + 'px';
 
+      const isSC2 = upg.upgrade && upg.upgrade.includes('*');
       const imgEl = document.createElement('img');
       imgEl.className = 'bar-icon';
-      imgEl.style.cssText = `width:${Math.min(BH, widthPx - 4)}px; height:${BH}px; max-width:${BH}px;`;
-      imgEl.src = getUpgradeImage(upg.upgrade);
+      imgEl.style.cssText = `width:${Math.min(BH, widthPx - 4)}px; height:${BH}px; max-width:${BH}px;${isSC2 ? ' box-shadow:0 0 0 1.5px #093DBA;' : ''}`;
+      imgEl.src = isSC2 ? getSuperchargeImage(upg.upgrade) : getUpgradeImage(upg.upgrade);
       imgEl.onerror = () => imgEl.src = 'Images/Upgrades/PH.png';
-      inner.appendChild(imgEl);
+      if (isSC2) {
+        const scWrap = document.createElement('div');
+        scWrap.style.cssText = 'position:relative;display:inline-flex;flex-shrink:0;';
+        const scOverlay = document.createElement('div');
+        scOverlay.style.cssText = 'position:absolute;inset:0;background:rgba(9,61,186,0.10);border-radius:5px;pointer-events:none;';
+        scWrap.appendChild(imgEl);
+        scWrap.appendChild(scOverlay);
+        inner.appendChild(scWrap);
+      } else {
+        inner.appendChild(imgEl);
+      }
 
       if (ganttZoom > 0.5 && widthPx > BH + 40) {
         const textCol = document.createElement('div');

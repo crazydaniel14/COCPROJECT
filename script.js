@@ -93,6 +93,16 @@ function formatUpgradeName(name) {
   return name.replace(/\*/g, '<img src="Images/SCicon.png" style="height:1em;vertical-align:middle;margin:0 1px;" alt="SC">');
 }
 
+function getSuperchargeImage(upgradeName) {
+  const basePath = "Images/Upgrades/";
+  const baseMatch = upgradeName.match(/^(.+?)\s*(?:#\d+)?\s+Lvl\s+\*+$/i);
+  if (!baseMatch) return basePath + "PH.png";
+  const baseName = baseMatch[1].trim();
+  if (!IMAGE_MAP[baseName]) return basePath + "PH.png";
+  const entries = IMAGE_MAP[baseName];
+  return basePath + baseName + " " + entries[entries.length - 1] + ".png";
+}
+
 function getUpgradeImage(upgradeName) {
   const basePath = "Images/Upgrades/";
   for (const hero of HERO_NAMES) {
@@ -353,7 +363,8 @@ function renderBuilderDetails(details) {
     </div>
     <div class="upgrade-list" data-original-order="${originalOrder.join(',')}">
       ${details.upgrades.map((upg, idx) => {
-        const imgSrc = getUpgradeImage(upg.upgrade);
+        const isSC = upg.upgrade && upg.upgrade.includes('*');
+        const imgSrc = isSC ? getSuperchargeImage(upg.upgrade) : getUpgradeImage(upg.upgrade);
         const totalMinutes = upg.durationMinutes || 0;
         return `
           <div class="upgrade-item"
@@ -362,9 +373,16 @@ function renderBuilderDetails(details) {
                data-duration-minutes="${totalMinutes}" draggable="true">
             <div class="drag-handle">⋮⋮</div>
             <div class="upgrade-name">
+              ${isSC ? `
+              <div style="position:relative;display:inline-flex;flex-shrink:0;">
+                <img src="${imgSrc}" class="upgrade-icon" alt="${upg.upgrade}"
+                     onerror="this.src='Images/Upgrades/PH.png'"
+                     style="box-shadow:0 0 0 1.5px #093DBA;" />
+                <div style="position:absolute;inset:0;background:rgba(9,61,186,0.10);border-radius:6px;pointer-events:none;"></div>
+              </div>` : `
               <img src="${imgSrc}" class="upgrade-icon" alt="${upg.upgrade}"
-                   onerror="this.src='Images/Upgrades/PH.png'" />
-              <span${upg.upgrade && upg.upgrade.includes('*') ? ' style="color:#093DBA"' : ''}>${formatUpgradeName(upg.upgrade)}</span>
+                   onerror="this.src='Images/Upgrades/PH.png'" />`}
+              <span${isSC ? ' style="color:#093DBA"' : ''}>${formatUpgradeName(upg.upgrade)}</span>
             </div>
             <div class="upgrade-duration editable-duration" data-index="${idx}">${upg.duration}</div>
             <div class="upgrade-time">
