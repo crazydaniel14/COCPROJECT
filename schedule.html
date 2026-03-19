@@ -2356,14 +2356,16 @@ async function saveOrder() {
 }
 
 /* ── Global drag listeners (init once) ── */
+function _dragTouchMove(e) {
+  if (!dragState) return;
+  onDragMove(e.touches[0].clientX, e.touches[0].clientY);
+  if (dragState.committed) e.preventDefault();
+}
 (function() {
   document.addEventListener('mousemove', e => { if (dragState) onDragMove(e.clientX, e.clientY); });
   document.addEventListener('mouseup',   e => { if (dragState) onDragEnd(e.clientX, e.clientY); });
-  document.addEventListener('touchmove', e => {
-    if (!dragState) return;
-    onDragMove(e.touches[0].clientX, e.touches[0].clientY);
-    if (dragState?.committed) e.preventDefault();
-  }, { passive: false });
+  /* _dragTouchMove is registered/removed as non-passive only when drag mode is on (see toggleDragMode).
+     Keeping it passive by default lets the browser scroll natively without waiting for JS. */
   document.addEventListener('touchend', e => {
     if (dragState) onDragEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
   });
