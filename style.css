@@ -136,6 +136,8 @@ button:disabled {
   overflow: hidden;
   border-left: 8px solid #f5d04c;
   box-shadow: 0 8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+  display: flex;
+  align-items: stretch;
 }
 
 .builder-card.next-finish {
@@ -152,73 +154,70 @@ button:disabled {
 }
 
 .builder-character {
-  position: absolute;
-  left: 100px;
-  bottom: 10px;
-  height: 100px;
-  transform: scale(1.3);
-  transform-origin: bottom left;
+  flex-shrink: 0;
+  height: 130px;
+  width: auto;
+  align-self: flex-end;
   pointer-events: none;
+  margin-left: 6px;
 }
 
 .builder-text {
-  position: absolute;
-  left: 46%;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 48%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 12px 12px 12px 0;
   color: #ffffff;
+  min-width: 0;
 }
 
 .current-upgrade-icon {
-  position: absolute;
-  left: 33%;
-  top: 60%;
-  transform: translateY(-50%);
-  width: 70px;
-  height: 70px;
+  flex-shrink: 0;
+  width: 50px;
+  height: 50px;
   object-fit: contain;
+  align-self: center;
+  margin: 0 10px;
   z-index: 1;
   filter: drop-shadow(0 0 5px rgba(245,208,76,0.6));
 }
 
-.builder-card.expanded .builder-text {
-  left: 43%;
-  width: 56%;
-}
-
 .builder-card.expanded .current-upgrade-icon {
-  left: 35%;
-  top: 50%;
-  width: 100px;
-  height: 100px;
+  width: 58px;
+  height: 58px;
 }
 
 .builder-name {
-  font-size: 18px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: 1px;
   color: #ffffff;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  opacity: 0.7;
 }
 
 .builder-upgrade {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
-  margin-bottom: 10px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .builder-time-left {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
   color: #f5d04c;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .editable-card-duration {
   cursor: pointer;
   transition: all 0.2s;
-  padding: 4px 8px;
+  padding: 2px 6px;
   border-radius: 6px;
   display: inline-block;
 }
@@ -229,14 +228,17 @@ button:disabled {
 }
 
 .builder-finish {
-  font-size: 12px;
-  opacity: 0.85;
-  margin-bottom: 8px;
+  font-size: 11px;
+  opacity: 0.6;
+  margin-bottom: 4px;
 }
 
 .builder-next {
-  font-size: 13px;
-  opacity: 0.7;
+  font-size: 11px;
+  opacity: 0.55;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .apprentice-badge {
@@ -1111,53 +1113,41 @@ button:disabled {
 }
 
 .skeleton-builder-text {
-  position: absolute;
-  left: 46%;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 48%;
+  flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 10px;
+  padding: 12px 12px 12px 0;
 }
 
 .skeleton-character {
-  position: absolute;
-  left: 100px;
-  bottom: 10px;
-  width: 80px;
-  height: 100px;
+  flex-shrink: 0;
+  width: 70px;
+  height: 130px;
   background: #2a2a35;
   border-radius: 8px;
+  align-self: flex-end;
+  margin-left: 6px;
 }
 
 .skeleton-icon {
-  position: absolute;
-  left: 33%;
-  top: 60%;
-  transform: translateY(-50%);
-  width: 70px;
-  height: 70px;
+  flex-shrink: 0;
+  width: 50px;
+  height: 50px;
   background: #2a2a35;
   border-radius: 8px;
+  align-self: center;
+  margin: 0 10px;
 }
 
 @media (max-width: 768px) {
   .skeleton-character {
-    left: 20px;
-    bottom: 40px;
-    width: 80px;
-    height: 120px;
+    height: 170px;
   }
   .skeleton-icon {
-    left: 28%;
-    top: 70%;
-    width: 55px;
-    height: 55px;
-  }
-  .skeleton-builder-text {
-    left: 42%;
-    width: 54%;
+    width: 52px;
+    height: 52px;
   }
   .boost-finish-indicator {
     font-size: 8px;
@@ -1705,36 +1695,25 @@ button:disabled {
   }
 
   .builder-character {
-    left: 20px;
-    bottom: 40px;
-    height: 120px;
-    transform: scale(1);
+    height: 170px;
+    margin-left: 8px;
+  }
+
+  .current-upgrade-icon {
+    width: 52px !important;
+    height: 52px !important;
+    margin: 0 8px;
   }
 
   .builder-text {
-    left: 42%;
-    width: 54%;
+    padding: 14px 10px 14px 0;
   }
 
-  .builder-name   { font-size: 17px; }
-  .builder-upgrade { font-size: 15px; }
-  .builder-time-left { font-size: 17px; }
-  .builder-finish { font-size: 13px; }
+  .builder-name   { font-size: 12px; }
+  .builder-upgrade { font-size: 13px; }
+  .builder-time-left { font-size: 22px; }
+  .builder-finish { font-size: 11px; }
   .builder-next   { font-size: 10px; }
-
-  .current-upgrade-icon {
-    left: 28% !important;
-    top: 70% !important;
-    width: 55px !important;
-    height: 55px !important;
-  }
-
-  .builder-card.expanded .current-upgrade-icon {
-    left: 28% !important;
-    top: 70% !important;
-    width: 55px !important;
-    height: 55px !important;
-  }
 
   .builder-card.expanded {
     height: 210px;
