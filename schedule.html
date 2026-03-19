@@ -455,11 +455,11 @@
     .search-jump-btn:hover { background:rgba(245,208,76,0.2); border-color:rgba(245,208,76,0.6); }
 
     @keyframes ganttSearchHighlight {
-      0%   { outline:3px solid rgba(245,208,76,0.95); outline-offset:2px; filter:brightness(1.4); }
-      20%  { outline:3px solid rgba(245,208,76,0.2);  outline-offset:1px; filter:brightness(1.0); }
-      40%  { outline:3px solid rgba(245,208,76,0.95); outline-offset:2px; filter:brightness(1.4); }
-      60%  { outline:3px solid rgba(245,208,76,0.2);  outline-offset:1px; filter:brightness(1.0); }
-      80%  { outline:3px solid rgba(245,208,76,0.95); outline-offset:2px; filter:brightness(1.4); }
+      0%   { outline:4px solid #fff; outline-offset:3px; filter:brightness(2.0) saturate(0.4); }
+      20%  { outline:4px solid transparent; outline-offset:1px; filter:brightness(0.75); }
+      40%  { outline:4px solid #fff; outline-offset:3px; filter:brightness(2.0) saturate(0.4); }
+      60%  { outline:4px solid transparent; outline-offset:1px; filter:brightness(0.75); }
+      80%  { outline:4px solid #fff; outline-offset:3px; filter:brightness(2.0) saturate(0.4); }
       100% { outline:none; filter:brightness(1.0); }
     }
     .gantt-bar.search-highlight { animation:ganttSearchHighlight 3s ease-in-out forwards; z-index:20; }
