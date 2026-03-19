@@ -212,7 +212,7 @@
 
     /* ── MOBILE GANTT ── */
     .gantt-mobile { padding-bottom:60px; }
-    .mobile-columns-wrapper { display:flex; overflow-x:auto; }
+    .mobile-columns-wrapper { display:flex; overflow-x:auto; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; }
     .mobile-columns-wrapper::-webkit-scrollbar { display:none; }
 
     .mobile-time-axis { flex-shrink:0; width:58px; background:var(--bg); z-index:10; touch-action:pan-y; }
@@ -1265,7 +1265,7 @@ const dayLbl = document.createElement('div');
       if (!upg._isCurrent && !upg._synthetic && upg._uid) {
         bar.style.cursor = 'grab';
         bar.addEventListener('mousedown',  e => { if (e.button !== 0) return; e.stopPropagation(); startDrag(e, b.builderNum, upg, bar); });
-        bar.addEventListener('touchstart', e => { e.stopPropagation(); startDrag(e, b.builderNum, upg, bar); }, { passive: false });
+        bar.addEventListener('touchstart', e => { if (dragModeEnabled) { e.stopPropagation(); startDrag(e, b.builderNum, upg, bar); } }, { passive: true });
       }
       bar.addEventListener('mouseenter', e => showTooltip(e, upg, b.builderNum, boosts, startD, endD));
       bar.addEventListener('mousemove',  e => moveTooltip(e));
@@ -1525,7 +1525,7 @@ function renderMobileVertical() {
         if (!upg._isCurrent && !upg._synthetic && upg._uid) {
           bar.style.cursor = 'grab';
           bar.addEventListener('mousedown',  e => { if (e.button !== 0) return; e.stopPropagation(); startDrag(e, n, upg, bar); });
-          bar.addEventListener('touchstart', e => { e.stopPropagation(); startDrag(e, n, upg, bar); }, { passive: false });
+          bar.addEventListener('touchstart', e => { if (dragModeEnabled) { e.stopPropagation(); startDrag(e, n, upg, bar); } }, { passive: true });
         }
         bar.addEventListener('click', e => { e.stopPropagation(); showSheet(upg, n, boosts, startD, endD); });
         /* Violation highlighting */
@@ -1692,7 +1692,7 @@ function renderMobileHorizontal() {
       if (!upg._isCurrent && !upg._synthetic && upg._uid) {
         bar.style.cursor = 'grab';
         bar.addEventListener('mousedown',  e => { if (e.button !== 0) return; e.stopPropagation(); startDrag(e, b.builderNum, upg, bar); });
-        bar.addEventListener('touchstart', e => { e.stopPropagation(); startDrag(e, b.builderNum, upg, bar); }, { passive: false });
+        bar.addEventListener('touchstart', e => { if (dragModeEnabled) { e.stopPropagation(); startDrag(e, b.builderNum, upg, bar); } }, { passive: true });
       }
       bar.addEventListener('click', e => { e.stopPropagation(); showSheet(upg, b.builderNum, boosts, startD, endD); });
       /* Violation highlighting */
@@ -2374,6 +2374,12 @@ function _dragTouchMove(e) {
 /* ── Toggle drag mode ── */
 function toggleDragMode() {
   dragModeEnabled = !dragModeEnabled;
+  /* Only block native scroll (non-passive) while drag mode is active */
+  if (dragModeEnabled) {
+    document.addEventListener('touchmove', _dragTouchMove, { passive: false });
+  } else {
+    document.removeEventListener('touchmove', _dragTouchMove);
+  }
   const zoomBar = document.getElementById('zoomBar');
   if (zoomBar) zoomBar.classList.toggle('drag-mode-active', dragModeEnabled);
   const mobileBar = document.querySelector('.mobile-zoom-bar');
