@@ -2048,12 +2048,15 @@ button:disabled {
 
 /* Highlight animation for jumped-to upgrade */
 @keyframes searchHighlight {
-  0%   { background: rgba(245,208,76,0.22); box-shadow: 0 0 0 2px rgba(245,208,76,0.45); }
-  60%  { background: rgba(245,208,76,0.22); box-shadow: 0 0 0 2px rgba(245,208,76,0.45); }
+  0%   { background: rgba(245,208,76,0.22); box-shadow: 0 0 0 2px rgba(245,208,76,0.7), 0 0 14px rgba(245,208,76,0.35); }
+  20%  { background: rgba(245,208,76,0.10); box-shadow: 0 0 0 2px rgba(245,208,76,0.2), 0 0 4px rgba(245,208,76,0.1); }
+  40%  { background: rgba(245,208,76,0.22); box-shadow: 0 0 0 2px rgba(245,208,76,0.7), 0 0 14px rgba(245,208,76,0.35); }
+  60%  { background: rgba(245,208,76,0.10); box-shadow: 0 0 0 2px rgba(245,208,76,0.2), 0 0 4px rgba(245,208,76,0.1); }
+  80%  { background: rgba(245,208,76,0.22); box-shadow: 0 0 0 2px rgba(245,208,76,0.7), 0 0 14px rgba(245,208,76,0.35); }
   100% { background: transparent; box-shadow: none; }
 }
 .upgrade-item.search-highlight {
-  animation: searchHighlight 2.5s ease-out forwards;
+  animation: searchHighlight 3s ease-in-out forwards;
   border-radius: 8px;
   position: relative;
   z-index: 1;
