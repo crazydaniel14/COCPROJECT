@@ -1078,7 +1078,7 @@ const dayLbl = document.createElement('div');
       const isSC = upg.upgrade && upg.upgrade.includes('*');
       const imgEl = document.createElement('img');
       imgEl.className = 'bar-icon';
-      imgEl.style.cssText = `width:${Math.min(BH, widthPx - 4)}px; height:${BH}px; max-width:${BH}px;${isSC ? ' box-shadow:0 0 0 1.5px #093DBA;' : ''}`;
+      imgEl.style.cssText = `width:${Math.min(BH, widthPx - 4)}px; height:${BH}px; max-width:${BH}px;${isSC ? ' filter:drop-shadow(0 0 5px rgba(9,61,186,0.85));' : ''}`;
       imgEl.src = isSC ? getSuperchargeImage(upg.upgrade) : getUpgradeImage(upg.upgrade);
       imgEl.onerror = () => imgEl.src = 'Images/Upgrades/PH.png';
       imgEl.alt = upg.upgrade || '';
@@ -1346,7 +1346,7 @@ function renderMobileVertical() {
         imgEl.onerror = () => imgEl.src = 'Images/Upgrades/PH.png';
         imgEl.alt = upg.upgrade || '';
         if (isSCm) {
-          imgEl.style.boxShadow = '0 0 0 1.5px #093DBA';
+          imgEl.style.filter = 'drop-shadow(0 0 5px rgba(9,61,186,0.85))';
           const scWrap = document.createElement('div');
           scWrap.style.cssText = 'position:relative;display:inline-flex;flex-shrink:0;';
           const scOverlay = document.createElement('div');
@@ -1520,7 +1520,7 @@ function renderMobileHorizontal() {
       const isSC2 = upg.upgrade && upg.upgrade.includes('*');
       const imgEl = document.createElement('img');
       imgEl.className = 'bar-icon';
-      imgEl.style.cssText = `width:${Math.min(BH, widthPx - 4)}px; height:${BH}px; max-width:${BH}px;${isSC2 ? ' box-shadow:0 0 0 1.5px #093DBA;' : ''}`;
+      imgEl.style.cssText = `width:${Math.min(BH, widthPx - 4)}px; height:${BH}px; max-width:${BH}px;${isSC2 ? ' filter:drop-shadow(0 0 5px rgba(9,61,186,0.85));' : ''}`;
       imgEl.src = isSC2 ? getSuperchargeImage(upg.upgrade) : getUpgradeImage(upg.upgrade);
       imgEl.onerror = () => imgEl.src = 'Images/Upgrades/PH.png';
       if (isSC2) {

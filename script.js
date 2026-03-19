@@ -377,7 +377,7 @@ function renderBuilderDetails(details) {
               <div style="position:relative;display:inline-flex;flex-shrink:0;">
                 <img src="${imgSrc}" class="upgrade-icon" alt="${upg.upgrade}"
                      onerror="this.src='Images/Upgrades/PH.png'"
-                     style="box-shadow:0 0 0 1.5px #093DBA;" />
+                     style="filter:drop-shadow(0 0 5px rgba(9,61,186,0.85));" />
                 <div style="position:absolute;inset:0;background:rgba(9,61,186,0.10);border-radius:6px;pointer-events:none;"></div>
               </div>` : `
               <img src="${imgSrc}" class="upgrade-icon" alt="${upg.upgrade}"
