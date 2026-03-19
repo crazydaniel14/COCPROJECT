@@ -73,7 +73,7 @@ const IMAGE_MAP = {
   "Seeking Air Mine": ["Lvl 5&6","Lvl 7&8"],
   "Spring Trap": ["Lvl 7&8", "Lvl 9&10", "Lvl 11&12", "Lvl 13"],
   "Town Hall": ["Lvl 18"],
-  "Wizard Tower": ["Lvl 17"],
+  "Wizard Tower": ["Lvl 6","Lvl 7","Lvl 8","Lvl 9","Lvl 10","Lvl 11","Lvl 12","Lvl 13","Lvl 14","Lvl 15","Lvl 16","Lvl 17"],
   "Firespitter": ["Lvl 3"], 
   "Workshop": ["Lvl 8"],
   "Spell Tower": ["Lvl 4"],
