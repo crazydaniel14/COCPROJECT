@@ -986,12 +986,12 @@ function wireBoostSimulation() {
   const btn = document.getElementById("runBoostSimBtn");
   if (!btn) return;
   btn.addEventListener("click", async () => {
-    btn.disabled = true; btn.textContent = "Running…";
+    btn.disabled = true; btn.classList.add("spinning");
     try {
       await fetch(endpoint("run_boost_simulation"), { redirect: 'follow' });
       await refreshDashboard();
     } catch (e) { console.error("Boost sim failed:", e); }
-    btn.textContent = "Run Boost Simulation"; btn.disabled = false;
+    btn.classList.remove("spinning"); btn.disabled = false;
   });
 }
 

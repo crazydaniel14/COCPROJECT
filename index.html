@@ -86,7 +86,10 @@
     <!-- Builder cards injected here by JS -->
   </section>
 
-  <h4>Boost Plan</h4>
+  <div class="boost-plan-header">
+    <h4>Boost Plan</h4>
+    <button id="runBoostSimBtn" title="Run Boost Simulation">⟳</button>
+  </div>
   <div id="boostFocusWrapper">
     <button class="boost-nav" id="boostPrev" disabled>
       ←
@@ -128,9 +131,6 @@
     </button>
   </div>
 
-  <button id="runBoostSimBtn">
-    Run Boost Simulation
-  </button>
 
   <div id="lastRefreshed" style="margin: 10px 0; font-size: 13px; color: #555;">
     Last refreshed: —
