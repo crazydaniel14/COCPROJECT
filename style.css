@@ -1727,10 +1727,10 @@ button:disabled {
   .next-upgrade-icon { margin-right: 5px; margin-left: 5px; }
 
   .current-upgrade-icon {
-    left: 28% !important;
-    top: 70% !important;
-    width: 55px !important;
-    height: 55px !important;
+    left: 26%;
+    top: 70%;
+    width: 55px;
+    height: 55px;
   }
 
   .builder-card.expanded .current-upgrade-icon {
