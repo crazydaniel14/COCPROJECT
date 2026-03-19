@@ -20,11 +20,15 @@ h1 { margin-bottom: 5px; }
 
 h2 {
   margin: 0;
-  color: #f7faf9;
   font-size: 1.5rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  background: linear-gradient(135deg, #f5d04c 0%, #fff8e1 50%, #e8a020 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 8px rgba(245, 208, 76, 0.35));
 }
 
 h3 { color: #babac0; }
