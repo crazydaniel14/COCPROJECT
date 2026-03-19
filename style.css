@@ -173,7 +173,7 @@ button:disabled {
 .current-upgrade-icon {
   position: absolute;
   left: 33%;
-  top: 60%;
+  top: 55%;
   transform: translateY(-50%);
   width: 70px;
   height: 70px;
