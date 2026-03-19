@@ -13,7 +13,7 @@ h1 { margin-bottom: 5px; }
   align-items: center;
   justify-content: space-between;
   padding: 20px 28px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid rgba(245,208,76,0.5);
   background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%);
   margin-bottom: 8px;
 }
@@ -801,6 +801,7 @@ button:disabled {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  margin-top: 10px;
 }
 
 .boost-plan-header h4 {
@@ -1705,9 +1706,9 @@ button:disabled {
   }
 
   .builder-character {
-    left: 20px;
+    left: 10px;
     bottom: 40px;
-    height: 120px;
+    height: 110px;
     transform: scale(1);
   }
 
@@ -1717,10 +1718,13 @@ button:disabled {
   }
 
   .builder-name   { font-size: 17px; }
-  .builder-upgrade { font-size: 15px; }
-  .builder-time-left { font-size: 17px; }
+  .builder-upgrade { font-size: 14px; margin-top: 10px; }
+  .builder-time-left { font-size: 16px; }
   .builder-finish { font-size: 13px; }
   .builder-next   { font-size: 10px; }
+
+  .editable-card-duration { padding: 0; margin-bottom: 7px; }
+  .next-upgrade-icon { margin-right: 5px; margin-left: 5px; }
 
   .current-upgrade-icon {
     left: 28% !important;
@@ -1872,6 +1876,7 @@ button:disabled {
 
   #boostFocusWrapper { gap: 10px; }
   #boostFocusCard { min-width: 200px; }
+  .boost-finish-text { font-size: 0.83rem; }
 
   .action-button { gap: 16px; margin: 12px 0; }
   .image-button { width: 40px; height: 40px; padding: 4px; }
