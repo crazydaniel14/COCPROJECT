@@ -212,13 +212,12 @@ button:disabled {
   font-size: 22px;
   font-weight: 800;
   color: #f5d04c;
-  margin-bottom: 4px;
+  margin-bottom: 5px;
 }
 
 .editable-card-duration {
   cursor: pointer;
   transition: all 0.2s;
-  padding: 4px 8px;
   border-radius: 6px;
   display: inline-block;
 }
