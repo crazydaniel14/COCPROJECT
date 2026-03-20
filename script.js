@@ -602,23 +602,41 @@ function setupCardDurationEditor(durationEl) {
 
 async function updateCardDuration(builderName, newMinutes, newDurationHr, durationEl) {
   const originalText = durationEl.textContent;
-  durationEl.textContent = 'Saving...';
+  const newFinishDate = new Date(Date.now() + newMinutes * 60 * 1000);
+
+  // Optimistic DOM update
+  durationEl.textContent = newDurationHr;
+  const finishEl = durationEl.closest('.builder-text')?.querySelector('.builder-finish');
+  const originalFinishText = finishEl?.textContent;
+  if (finishEl) finishEl.textContent = 'Finishes: ' + formatFinishTime(newFinishDate);
+
+  // Optimistic currentWorkData update
+  const builderNum = builderName.match(/(\d+)/)?.[1];
+  let originalDataFinish = null;
+  if (builderNum && currentWorkData) {
+    const dataRow = currentWorkData.find(r => r[0]?.toString().includes(`_${builderNum}`) || r[0]?.toString().endsWith(builderNum));
+    if (dataRow) { originalDataFinish = dataRow[2]; dataRow[2] = newFinishDate.toISOString(); }
+  }
+
+  showRefreshIndicator('refreshing');
+  suppressFinishedCheckFor(60 * 1000);
+
   try {
     const res  = await fetch(`${API_BASE}?action=update_active_upgrade_time&username=${window.COC_USERNAME}&builder=${builderName}&remaining_minutes=${newMinutes}`);
     const data = await res.json();
-    if (data.error) { alert('Failed to update: ' + data.error); durationEl.textContent = originalText; return; }
-    durationEl.textContent = '✓ Saved!';
-    suppressFinishedCheckFor(60 * 1000);
-    setTimeout(async () => {
-      const container = document.getElementById("builders-container");
-      container.innerHTML = "";
-      await Promise.all([loadCurrentWork(), loadTodaysBoost(), loadPausedBuilders()]);
-      renderBuilderCards();
-    }, 800);
+    if (data.error) throw new Error(data.error);
+    await refreshDashboard();
   } catch (err) {
     console.error('Update failed:', err);
-    alert('Failed to update duration');
+    // Rollback
     durationEl.textContent = originalText;
+    if (finishEl && originalFinishText) finishEl.textContent = originalFinishText;
+    if (builderNum && currentWorkData && originalDataFinish !== null) {
+      const dataRow = currentWorkData.find(r => r[0]?.toString().includes(`_${builderNum}`) || r[0]?.toString().endsWith(builderNum));
+      if (dataRow) dataRow[2] = originalDataFinish;
+    }
+    showRefreshIndicator('hidden');
+    showBsErrorToast('Failed to update duration — no changes were made');
   }
 }
 
