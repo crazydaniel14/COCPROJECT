@@ -1112,7 +1112,7 @@ function showBuilderSnackModal() {
       ? currentWorkData.map(row => [...row])
       : null;
 
-    // Optimistic: subtract from currentWorkData finish times so live timer updates instantly
+    // Optimistic: subtract from currentWorkData finish times and update DOM immediately
     if (currentWorkData) {
       for (let i = 1; i < currentWorkData.length; i++) {
         const finishMs = new Date(currentWorkData[i][2]).getTime();
@@ -1120,15 +1120,25 @@ function showBuilderSnackModal() {
           currentWorkData[i][2] = new Date(finishMs - reduceMs).toISOString();
         }
       }
-      // Also update .builder-finish text on cards immediately
+      const now = Date.now();
       document.querySelectorAll('.builder-time-left[data-builder]').forEach(el => {
         const builderNum = el.dataset.builder.match(/(\d+)/)?.[1];
         if (!builderNum) return;
         const row = currentWorkData.find(r => r[0]?.toString().includes(`_${builderNum}`) || r[0]?.toString().endsWith(builderNum));
         if (!row) return;
-        const newFinish = new Date(row[2]);
+        const newFinishMs = new Date(row[2]).getTime();
+        const remainingMs = newFinishMs - now;
+        if (remainingMs > 0) {
+          const totalMins = Math.floor(remainingMs / 60000);
+          const days  = Math.floor(totalMins / (24 * 60));
+          const hours = Math.floor((totalMins % (24 * 60)) / 60);
+          const mins  = totalMins % 60;
+          el.textContent = `${days} d ${hours} hr ${mins} min`;
+        } else {
+          el.textContent = '0 d 0 hr 0 min';
+        }
         const finishEl = el.closest('.builder-text')?.querySelector('.builder-finish');
-        if (finishEl) finishEl.textContent = 'Finishes: ' + formatFinishTime(newFinish);
+        if (finishEl) finishEl.textContent = 'Finishes: ' + formatFinishTime(new Date(row[2]));
       });
     }
 
@@ -1138,11 +1148,14 @@ function showBuilderSnackModal() {
       const res = await fetch(`${API_BASE}?action=apply_one_hour_boost&username=${window.COC_USERNAME}&times=${times}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
+      // Detect silent failure: server returned success but updated nothing
+      if (Array.isArray(data.updatedBuilders) && data.updatedBuilders.length === 0) {
+        throw new Error('No builders were updated');
+      }
       await refreshDashboard();
     } catch(e) {
       // Rollback optimistic update
       if (snapshot) currentWorkData = snapshot;
-      // Re-render cards with original data
       renderBuilderCards();
       showBsErrorToast('Failed to apply snacks — no changes were made');
     }
