@@ -1037,27 +1037,31 @@ function showBuilderSnackModal() {
     return builderStr.replace(/^[^_]+_/, '').replace(/_/g, ' ');
   }
 
-  async function fetchPreview() {
+  function fetchPreview() {
     const times = parseInt(countInput.value) || 1;
-    previewList.innerHTML = '<div class="bs-preview-loading">Loading…</div>';
-    applyBtn.disabled = true;
-    try {
-      const res = await fetch(`${API_BASE}?action=preview_one_hour_boost&username=${window.COC_USERNAME}&times=${times}`);
-      const data = await res.json();
-      if (data.error) { previewList.innerHTML = `<div class="bs-preview-loading">${data.error}</div>`; return; }
-      renderPreview(data);
-      applyBtn.disabled = false;
-    } catch(e) {
-      previewList.innerHTML = '<div class="bs-preview-loading">Failed to load preview.</div>';
-    }
-  }
+    const reduceMs = times * 60 * 60 * 1000;
 
-  function renderPreview(data) {
-    if (!data.preview || data.preview.length === 0) {
-      previewList.innerHTML = '<div class="bs-preview-loading">No active upgrades found.</div>';
+    if (!currentWorkData || currentWorkData.length <= 1) {
+      previewList.innerHTML = '<div class="bs-preview-loading">No builder data loaded.</div>';
       return;
     }
-    previewList.innerHTML = data.preview.map(p => `
+
+    const rows = [];
+    for (let i = 1; i < currentWorkData.length; i++) {
+      const row = currentWorkData[i];
+      const builderName = row[0]?.toString();
+      const finishMs = new Date(row[2]).getTime();
+      if (!builderName || isNaN(finishMs)) continue;
+      rows.push({ builder: builderName, oldTime: finishMs, newTime: finishMs - reduceMs });
+    }
+
+    if (rows.length === 0) {
+      previewList.innerHTML = '<div class="bs-preview-loading">No active upgrades found.</div>';
+      applyBtn.disabled = true;
+      return;
+    }
+
+    previewList.innerHTML = rows.map(p => `
       <div class="bs-builder-row">
         <span class="bs-builder-name">${bsBuilderLabel(p.builder)}</span>
         <span class="bs-builder-times">
@@ -1066,6 +1070,7 @@ function showBuilderSnackModal() {
           <span class="bs-new-time">${bsFormatTime(p.newTime)}</span>
         </span>
       </div>`).join('');
+    applyBtn.disabled = false;
   }
 
   function schedulePreview() {
