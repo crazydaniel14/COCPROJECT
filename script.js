@@ -998,22 +998,26 @@ function wireApprenticeBoost() {
 }
 
 function wireImageButtons() {
-  document.getElementById("oneHourBoostBtn")?.addEventListener("click", () => showBuilderSnackModal());
-  document.getElementById("battlePassBtn")?.addEventListener("click",  async () => { await fetch(BATTLE_PASS_URL());  refreshDashboard(); });
+  document.getElementById("oneHourBoostBtn")?.addEventListener("click",  () => showBuilderSnackModal());
+  document.getElementById("builderPotionBtn")?.addEventListener("click", () => showBuilderPotionModal());
+  document.getElementById("battlePassBtn")?.addEventListener("click",    async () => { await fetch(BATTLE_PASS_URL()); refreshDashboard(); });
 }
 
 /* =========================
-   BUILDER SNACK MODAL
+   BUILDER BOOST MODAL (shared)
    ========================= */
-function showBuilderSnackModal() {
+function showBuilderSnackModal()  { showBuilderBoostModal({ title: 'Builder Snack',  image: 'Images/BuilderSnack.png',   desc: 'Each snack reduces all active builders by 1 hour.',   minsPerUse: 60,  apiAction: 'apply_one_hour_boost',   errorMsg: 'Failed to apply snacks — no changes were made'  }); }
+function showBuilderPotionModal() { showBuilderBoostModal({ title: 'Builder Potion', image: 'Images/BuilderPotion.png', desc: 'Each potion reduces all active builders by 9 hours.', minsPerUse: 540, apiAction: 'apply_builder_potion', errorMsg: 'Failed to apply potion — no changes were made' }); }
+
+function showBuilderBoostModal({ title, image, desc, minsPerUse, apiAction, errorMsg }) {
   document.querySelector('.bs-modal-overlay')?.remove();
 
   const overlay = document.createElement('div');
   overlay.className = 'bs-modal-overlay';
   overlay.innerHTML = `
     <div class="bs-modal">
-      <h3><img src="Images/BuilderSnack.png" class="bs-title-icon" alt=""> Builder Snack</h3>
-      <p class="bs-modal-desc">Each snack reduces all active builders by 1 hour.</p>
+      <h3><img src="${image}" class="bs-title-icon" alt=""> ${title}</h3>
+      <p class="bs-modal-desc">${desc}</p>
       <div class="bs-count-row">
         <button class="bs-count-btn" id="bsDecBtn">−</button>
         <input class="bs-count-input" id="bsCountInput" type="number" min="1" max="10" value="1">
@@ -1030,11 +1034,11 @@ function showBuilderSnackModal() {
 
   document.body.appendChild(overlay);
 
-  const countInput = overlay.querySelector('#bsCountInput');
-  const decBtn     = overlay.querySelector('#bsDecBtn');
-  const incBtn     = overlay.querySelector('#bsIncBtn');
-  const applyBtn   = overlay.querySelector('#bsApplyBtn');
-  const cancelBtn  = overlay.querySelector('#bsCancelBtn');
+  const countInput  = overlay.querySelector('#bsCountInput');
+  const decBtn      = overlay.querySelector('#bsDecBtn');
+  const incBtn      = overlay.querySelector('#bsIncBtn');
+  const applyBtn    = overlay.querySelector('#bsApplyBtn');
+  const cancelBtn   = overlay.querySelector('#bsCancelBtn');
   const previewList = overlay.querySelector('#bsPreviewList');
 
   let debounceTimer = null;
@@ -1052,13 +1056,12 @@ function showBuilderSnackModal() {
   }
 
   function bsBuilderLabel(builderStr) {
-    // Strip username prefix, replace underscores → "Builder 3"
     return builderStr.replace(/^[^_]+_/, '').replace(/_/g, ' ');
   }
 
   function fetchPreview() {
     const times = parseInt(countInput.value) || 1;
-    const reduceMs = times * 60 * 60 * 1000;
+    const reduceMs = times * minsPerUse * 60 * 1000;
 
     if (!currentWorkData || currentWorkData.length <= 1) {
       previewList.innerHTML = '<div class="bs-preview-loading">No builder data loaded.</div>';
@@ -1100,7 +1103,6 @@ function showBuilderSnackModal() {
     debounceTimer = setTimeout(fetchPreview, 200);
   }
 
-  // Count controls
   decBtn.addEventListener('click', () => {
     const v = parseInt(countInput.value) || 1;
     if (v > 1) { countInput.value = v - 1; updateCountBtns(); schedulePreview(); }
@@ -1117,21 +1119,15 @@ function showBuilderSnackModal() {
     schedulePreview();
   });
 
-  // Cancel / overlay close
   cancelBtn.addEventListener('click', () => overlay.remove());
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 
-  // Apply — optimistic update
   applyBtn.addEventListener('click', async () => {
     const times = parseInt(countInput.value) || 1;
-    const reduceMs = times * 60 * 60 * 1000;
+    const reduceMs = times * minsPerUse * 60 * 1000;
 
-    // Snapshot currentWorkData finish times for rollback
-    const snapshot = currentWorkData
-      ? currentWorkData.map(row => [...row])
-      : null;
+    const snapshot = currentWorkData ? currentWorkData.map(row => [...row]) : null;
 
-    // Optimistic: subtract from currentWorkData finish times and update DOM immediately
     if (currentWorkData) {
       for (let i = 1; i < currentWorkData.length; i++) {
         const finishMs = new Date(currentWorkData[i][2]).getTime();
@@ -1165,16 +1161,14 @@ function showBuilderSnackModal() {
     showRefreshIndicator('refreshing');
 
     try {
-      const res = await fetch(`${API_BASE}?action=apply_one_hour_boost&username=${window.COC_USERNAME}&times=${times}`);
+      const res = await fetch(`${API_BASE}?action=${apiAction}&username=${window.COC_USERNAME}&times=${times}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      // Detect silent failure: server returned success but updated nothing
       if (Array.isArray(data.updatedBuilders) && data.updatedBuilders.length === 0) {
         throw new Error('No builders were updated');
       }
       await refreshDashboard();
     } catch(e) {
-      // Rollback optimistic update — restore DOM in-place, no re-render
       if (snapshot) {
         currentWorkData = snapshot;
         const now = Date.now();
@@ -1199,7 +1193,7 @@ function showBuilderSnackModal() {
         });
       }
       showRefreshIndicator('hidden');
-      showBsErrorToast('Failed to apply snacks — no changes were made');
+      showBsErrorToast(errorMsg);
     }
   });
 
