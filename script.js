@@ -170,14 +170,26 @@ function formatFinishTime(raw) {
   }).replace(",", " at");
 }
 
+const AUTO_REFRESH_MS = 90 * 1000;
+let _nextRefreshAt = null;
+let _refreshCountdownTimer = null;
+
 function updateLastRefreshed() {
   const el = document.getElementById("lastRefreshed");
   if (!el) return;
-  el.textContent = "Last refreshed: " + new Date().toLocaleString("en-US", {
+  const timeStr = new Date().toLocaleString("en-US", {
     timeZone: "America/New_York",
     month: "short", day: "numeric",
     hour: "numeric", minute: "2-digit", hour12: true
   });
+  _nextRefreshAt = Date.now() + AUTO_REFRESH_MS;
+  clearInterval(_refreshCountdownTimer);
+  _refreshCountdownTimer = setInterval(() => {
+    if (!_nextRefreshAt) return;
+    const secsLeft = Math.max(0, Math.ceil((_nextRefreshAt - Date.now()) / 1000));
+    el.textContent = `Last refreshed: ${timeStr} · next in ${secsLeft}s`;
+    if (secsLeft === 0) clearInterval(_refreshCountdownTimer);
+  }, 1000);
 }
 
 function parseScheduledStart(scheduledStart) {
@@ -271,6 +283,33 @@ async function loadBoostPlan() {
     currentBoostIndex = 0;
     renderBoostFocusCard();
   } catch (e) { console.error("Boost plan failed", e); }
+}
+
+async function refreshDashboardFast() {
+  if (isRefreshing) return;
+  isRefreshing = true;
+  showRefreshIndicator('refreshing');
+  try {
+    updateActiveStatusSmart();
+    await Promise.all([
+      loadCurrentWork(),
+      loadTodaysBoost(),
+      loadPausedBuilders(),
+      loadBoostPlan()
+    ]);
+    if (openBuilders.length === 0) {
+      const container = document.getElementById("builders-container");
+      if (container) container.innerHTML = "";
+      renderBuilderCards();
+    }
+    updateLastRefreshed();
+    showRefreshIndicator('done');
+  } catch (e) {
+    console.error("Fast refresh failed", e);
+    showRefreshIndicator('hidden');
+  } finally {
+    isRefreshing = false;
+  }
 }
 
 async function refreshDashboard() {
@@ -625,7 +664,7 @@ async function updateCardDuration(builderName, newMinutes, newDurationHr, durati
     const res  = await fetch(`${API_BASE}?action=update_active_upgrade_time&username=${window.COC_USERNAME}&builder=${builderName}&remaining_minutes=${newMinutes}`);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-    await refreshDashboard();
+    await refreshDashboardFast();
   } catch (err) {
     console.error('Update failed:', err);
     // Rollback
@@ -1185,7 +1224,7 @@ function showBuilderBoostModal({ title, image, desc, minsPerUse, apiAction, erro
       if (Array.isArray(data.updatedBuilders) && data.updatedBuilders.length === 0) {
         throw new Error('No builders were updated');
       }
-      await refreshDashboard();
+      await refreshDashboardFast();
     } catch(e) {
       if (snapshot) {
         currentWorkData = snapshot;
@@ -1235,7 +1274,7 @@ function wireBoostSimulation() {
     btn.disabled = true; btn.classList.add("spinning");
     try {
       await fetch(endpoint("run_boost_simulation"), { redirect: 'follow' });
-      await refreshDashboard();
+      await refreshDashboardFast();
     } catch (e) { console.error("Boost sim failed:", e); }
     btn.classList.remove("spinning"); btn.disabled = false;
   });
@@ -1320,7 +1359,7 @@ function wireBuilderCardClicks() {
 }
 
 function startAutoRefresh() {
-  setInterval(refreshDashboard, 45 * 1000);
+  setInterval(refreshDashboard, AUTO_REFRESH_MS);
   setInterval(softRefreshBuilderCards, 10 * 60 * 1000);
 }
 
