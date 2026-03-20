@@ -2121,3 +2121,194 @@ button:disabled {
   position: relative;
   z-index: 1;
 }
+
+/* ==================================================
+   BUILDER SNACK MODAL
+   ================================================== */
+.bs-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(5px);
+  padding: 16px;
+}
+
+.bs-modal {
+  background: linear-gradient(160deg, #1e1e24 0%, #28282f 100%);
+  border: 2px solid rgba(245,208,76,0.35);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 400px;
+  padding: 24px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.85);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.bs-modal h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #f5d04c;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.bs-modal-desc {
+  font-size: 13px;
+  color: #9999a8;
+  text-align: center;
+  margin: -8px 0 0;
+}
+
+.bs-count-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.bs-count-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(245,208,76,0.35);
+  background: rgba(245,208,76,0.08);
+  color: #f5d04c;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  line-height: 1;
+  padding: 0;
+  font-family: 'Lexend', sans-serif;
+}
+
+.bs-count-btn:hover { background: rgba(245,208,76,0.18); border-color: #f5d04c; }
+.bs-count-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.bs-count-input {
+  width: 52px;
+  height: 38px;
+  text-align: center;
+  background: rgba(255,255,255,0.05);
+  border: 1.5px solid rgba(245,208,76,0.3);
+  border-radius: 10px;
+  color: #f5d04c;
+  font-size: 20px;
+  font-weight: 800;
+  font-family: 'Lexend', sans-serif;
+  outline: none;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.bs-count-input::-webkit-inner-spin-button,
+.bs-count-input::-webkit-outer-spin-button { display: none; }
+
+.bs-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 60px;
+}
+
+.bs-builder-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.bs-builder-name {
+  color: #e0e0e8;
+}
+
+.bs-builder-times {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #9999a8;
+  font-size: 12px;
+}
+
+.bs-builder-times .bs-arrow { color: #f5d04c; font-size: 11px; }
+.bs-builder-times .bs-new-time { color: #4caf50; font-weight: 700; }
+.bs-builder-no-active { color: #55555f; font-size: 12px; font-style: italic; }
+
+.bs-preview-loading {
+  text-align: center;
+  color: #55555f;
+  font-size: 13px;
+  padding: 12px 0;
+}
+
+.bs-modal-footer {
+  display: flex;
+  gap: 10px;
+}
+
+.bs-apply-btn {
+  flex: 1;
+  padding: 12px;
+  background: rgba(245,208,76,0.15);
+  border: 1.5px solid rgba(245,208,76,0.5);
+  border-radius: 12px;
+  color: #f5d04c;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'Lexend', sans-serif;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.bs-apply-btn:hover { background: rgba(245,208,76,0.26); border-color: #f5d04c; }
+.bs-apply-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.bs-cancel-btn {
+  padding: 12px 18px;
+  background: rgba(255,255,255,0.05);
+  border: 1.5px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  color: #9999a8;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Lexend', sans-serif;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.bs-cancel-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+/* Error toast */
+.bs-error-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2a1515;
+  border: 1.5px solid rgba(255,80,80,0.5);
+  border-radius: 12px;
+  color: #ff6b6b;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Lexend', sans-serif;
+  padding: 12px 20px;
+  z-index: 20000;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  animation: bs-toast-in 0.2s ease;
+}
+
+@keyframes bs-toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}

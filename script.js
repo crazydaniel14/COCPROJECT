@@ -979,8 +979,178 @@ function wireApprenticeBoost() {
 }
 
 function wireImageButtons() {
-  document.getElementById("oneHourBoostBtn")?.addEventListener("click", async () => { await fetch(BUILDER_SNACK_URL()); refreshDashboard(); });
+  document.getElementById("oneHourBoostBtn")?.addEventListener("click", () => showBuilderSnackModal());
   document.getElementById("battlePassBtn")?.addEventListener("click",  async () => { await fetch(BATTLE_PASS_URL());  refreshDashboard(); });
+}
+
+/* =========================
+   BUILDER SNACK MODAL
+   ========================= */
+function showBuilderSnackModal() {
+  document.querySelector('.bs-modal-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'bs-modal-overlay';
+  overlay.innerHTML = `
+    <div class="bs-modal">
+      <h3>Builder Snack</h3>
+      <p class="bs-modal-desc">Each snack reduces all active builders by 1 hour.</p>
+      <div class="bs-count-row">
+        <button class="bs-count-btn" id="bsDecBtn">−</button>
+        <input class="bs-count-input" id="bsCountInput" type="number" min="1" max="10" value="1">
+        <button class="bs-count-btn" id="bsIncBtn">+</button>
+      </div>
+      <div class="bs-preview-list" id="bsPreviewList">
+        <div class="bs-preview-loading">Loading preview…</div>
+      </div>
+      <div class="bs-modal-footer">
+        <button class="bs-cancel-btn" id="bsCancelBtn">Cancel</button>
+        <button class="bs-apply-btn" id="bsApplyBtn" disabled>Apply</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  const countInput = overlay.querySelector('#bsCountInput');
+  const decBtn     = overlay.querySelector('#bsDecBtn');
+  const incBtn     = overlay.querySelector('#bsIncBtn');
+  const applyBtn   = overlay.querySelector('#bsApplyBtn');
+  const cancelBtn  = overlay.querySelector('#bsCancelBtn');
+  const previewList = overlay.querySelector('#bsPreviewList');
+
+  let debounceTimer = null;
+
+  function updateCountBtns() {
+    const v = parseInt(countInput.value) || 1;
+    decBtn.disabled = v <= 1;
+    incBtn.disabled = v >= 10;
+  }
+
+  function bsFormatTime(ms) {
+    if (!ms) return '—';
+    const d = new Date(ms);
+    return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+  }
+
+  function bsBuilderLabel(builderStr) {
+    // Strip username prefix, replace underscores → "Builder 3"
+    return builderStr.replace(/^[^_]+_/, '').replace(/_/g, ' ');
+  }
+
+  async function fetchPreview() {
+    const times = parseInt(countInput.value) || 1;
+    previewList.innerHTML = '<div class="bs-preview-loading">Loading…</div>';
+    applyBtn.disabled = true;
+    try {
+      const res = await fetch(`${API_BASE}?action=preview_one_hour_boost&username=${window.COC_USERNAME}&times=${times}`);
+      const data = await res.json();
+      if (data.error) { previewList.innerHTML = `<div class="bs-preview-loading">${data.error}</div>`; return; }
+      renderPreview(data);
+      applyBtn.disabled = false;
+    } catch(e) {
+      previewList.innerHTML = '<div class="bs-preview-loading">Failed to load preview.</div>';
+    }
+  }
+
+  function renderPreview(data) {
+    if (!data.preview || data.preview.length === 0) {
+      previewList.innerHTML = '<div class="bs-preview-loading">No active upgrades found.</div>';
+      return;
+    }
+    previewList.innerHTML = data.preview.map(p => `
+      <div class="bs-builder-row">
+        <span class="bs-builder-name">${bsBuilderLabel(p.builder)}</span>
+        <span class="bs-builder-times">
+          ${bsFormatTime(p.oldTime)}
+          <span class="bs-arrow">→</span>
+          <span class="bs-new-time">${bsFormatTime(p.newTime)}</span>
+        </span>
+      </div>`).join('');
+  }
+
+  function schedulePreview() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(fetchPreview, 200);
+  }
+
+  // Count controls
+  decBtn.addEventListener('click', () => {
+    const v = parseInt(countInput.value) || 1;
+    if (v > 1) { countInput.value = v - 1; updateCountBtns(); schedulePreview(); }
+  });
+  incBtn.addEventListener('click', () => {
+    const v = parseInt(countInput.value) || 1;
+    if (v < 10) { countInput.value = v + 1; updateCountBtns(); schedulePreview(); }
+  });
+  countInput.addEventListener('input', () => {
+    let v = parseInt(countInput.value) || 1;
+    v = Math.max(1, Math.min(10, v));
+    countInput.value = v;
+    updateCountBtns();
+    schedulePreview();
+  });
+
+  // Cancel / overlay close
+  cancelBtn.addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  // Apply — optimistic update
+  applyBtn.addEventListener('click', async () => {
+    const times = parseInt(countInput.value) || 1;
+    const reduceMs = times * 60 * 60 * 1000;
+
+    // Snapshot currentWorkData finish times for rollback
+    const snapshot = currentWorkData
+      ? currentWorkData.map(row => [...row])
+      : null;
+
+    // Optimistic: subtract from currentWorkData finish times so live timer updates instantly
+    if (currentWorkData) {
+      for (let i = 1; i < currentWorkData.length; i++) {
+        const finishMs = new Date(currentWorkData[i][2]).getTime();
+        if (!isNaN(finishMs)) {
+          currentWorkData[i][2] = new Date(finishMs - reduceMs).toISOString();
+        }
+      }
+      // Also update .builder-finish text on cards immediately
+      document.querySelectorAll('.builder-time-left[data-builder]').forEach(el => {
+        const builderNum = el.dataset.builder.match(/(\d+)/)?.[1];
+        if (!builderNum) return;
+        const row = currentWorkData.find(r => r[0]?.toString().includes(`_${builderNum}`) || r[0]?.toString().endsWith(builderNum));
+        if (!row) return;
+        const newFinish = new Date(row[2]);
+        const finishEl = el.closest('.builder-text')?.querySelector('.builder-finish');
+        if (finishEl) finishEl.textContent = 'Finishes: ' + formatFinishTime(newFinish);
+      });
+    }
+
+    overlay.remove();
+
+    try {
+      const res = await fetch(`${API_BASE}?action=apply_one_hour_boost&username=${window.COC_USERNAME}&times=${times}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      await refreshDashboard();
+    } catch(e) {
+      // Rollback optimistic update
+      if (snapshot) currentWorkData = snapshot;
+      // Re-render cards with original data
+      renderBuilderCards();
+      showBsErrorToast('Failed to apply snacks — no changes were made');
+    }
+  });
+
+  updateCountBtns();
+  fetchPreview();
+}
+
+function showBsErrorToast(msg) {
+  document.querySelector('.bs-error-toast')?.remove();
+  const toast = document.createElement('div');
+  toast.className = 'bs-error-toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
 }
 
 function wireBoostSimulation() {
