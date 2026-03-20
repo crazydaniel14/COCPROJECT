@@ -90,6 +90,22 @@ const IMAGE_MAP = {
   "Multi-Gear Tower":["Lvl 3"]
 };
 
+let _riDoneTimer = null;
+function showRefreshIndicator(state) {
+  const el = document.getElementById('refresh-indicator');
+  if (!el) return;
+  clearTimeout(_riDoneTimer);
+  el.classList.remove('hidden', 'refreshing', 'done');
+  if (state === 'refreshing') {
+    el.classList.add('refreshing');
+  } else if (state === 'done') {
+    el.classList.add('done');
+    _riDoneTimer = setTimeout(() => el.classList.add('hidden'), 1800);
+  } else {
+    el.classList.add('hidden');
+  }
+}
+
 function formatUpgradeName(name) {
   if (!name) return '';
   return name.replace(/\*/g, '<img src="Images/SCicon.png" style="height:1em;vertical-align:middle;margin:0 1px;" alt="SC">');
@@ -260,6 +276,7 @@ async function loadBoostPlan() {
 async function refreshDashboard() {
   if (isRefreshing) return;
   isRefreshing = true;
+  showRefreshIndicator('refreshing');
   try {
     updateActiveStatusSmart();
     await fetch(REFRESH_ENDPOINT);
@@ -275,8 +292,10 @@ async function refreshDashboard() {
       renderBuilderCards();
     }
     updateLastRefreshed();
+    showRefreshIndicator('done');
   } catch (e) {
     console.error("Refresh failed", e);
+    showRefreshIndicator('hidden');
   } finally {
     isRefreshing = false;
   }
@@ -1143,6 +1162,7 @@ function showBuilderSnackModal() {
     }
 
     overlay.remove();
+    showRefreshIndicator('refreshing');
 
     try {
       const res = await fetch(`${API_BASE}?action=apply_one_hour_boost&username=${window.COC_USERNAME}&times=${times}`);
@@ -1154,9 +1174,31 @@ function showBuilderSnackModal() {
       }
       await refreshDashboard();
     } catch(e) {
-      // Rollback optimistic update
-      if (snapshot) currentWorkData = snapshot;
-      renderBuilderCards();
+      // Rollback optimistic update — restore DOM in-place, no re-render
+      if (snapshot) {
+        currentWorkData = snapshot;
+        const now = Date.now();
+        document.querySelectorAll('.builder-time-left[data-builder]').forEach(el => {
+          const builderNum = el.dataset.builder.match(/(\d+)/)?.[1];
+          if (!builderNum) return;
+          const row = currentWorkData.find(r => r[0]?.toString().includes(`_${builderNum}`) || r[0]?.toString().endsWith(builderNum));
+          if (!row) return;
+          const finishMs = new Date(row[2]).getTime();
+          const remainingMs = finishMs - now;
+          if (remainingMs > 0) {
+            const totalMins = Math.floor(remainingMs / 60000);
+            const days  = Math.floor(totalMins / (24 * 60));
+            const hours = Math.floor((totalMins % (24 * 60)) / 60);
+            const mins  = totalMins % 60;
+            el.textContent = `${days} d ${hours} hr ${mins} min`;
+          } else {
+            el.textContent = '0 d 0 hr 0 min';
+          }
+          const finishEl = el.closest('.builder-text')?.querySelector('.builder-finish');
+          if (finishEl) finishEl.textContent = 'Finishes: ' + formatFinishTime(new Date(row[2]));
+        });
+      }
+      showRefreshIndicator('hidden');
       showBsErrorToast('Failed to apply snacks — no changes were made');
     }
   });
