@@ -2245,7 +2245,7 @@ button:disabled {
   padding: 8px 12px;
   background: rgba(255,255,255,0.04);
   border-radius: 10px;
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 600;
 }
 
@@ -2258,17 +2258,17 @@ button:disabled {
   align-items: center;
   gap: 6px;
   color: #9999a8;
-  font-size: 12px;
+  font-size: 10px;
 }
 
-.bs-builder-times .bs-arrow { color: #f5d04c; font-size: 11px; }
+.bs-builder-times .bs-arrow { color: #f5d04c; font-size: 10px; }
 .bs-builder-times .bs-new-time { color: #4caf50; font-weight: 700; }
-.bs-builder-no-active { color: #55555f; font-size: 12px; font-style: italic; }
+.bs-builder-no-active { color: #55555f; font-size: 10px; font-style: italic; }
 
 .bs-preview-loading {
   text-align: center;
   color: #55555f;
-  font-size: 13px;
+  font-size: 10px;
   padding: 12px 0;
 }
 
