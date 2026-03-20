@@ -2157,6 +2157,24 @@ button:disabled {
   color: #f5d04c;
   letter-spacing: 0.04em;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.bs-title-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.bs-upgrade-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 4px rgba(245,208,76,0.3));
 }
 
 .bs-modal-desc {

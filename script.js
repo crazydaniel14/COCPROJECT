@@ -993,7 +993,7 @@ function showBuilderSnackModal() {
   overlay.className = 'bs-modal-overlay';
   overlay.innerHTML = `
     <div class="bs-modal">
-      <h3>Builder Snack</h3>
+      <h3><img src="Images/BuilderSnack.png" class="bs-title-icon" alt=""> Builder Snack</h3>
       <p class="bs-modal-desc">Each snack reduces all active builders by 1 hour.</p>
       <div class="bs-count-row">
         <button class="bs-count-btn" id="bsDecBtn">−</button>
@@ -1050,9 +1050,10 @@ function showBuilderSnackModal() {
     for (let i = 1; i < currentWorkData.length; i++) {
       const row = currentWorkData[i];
       const builderName = row[0]?.toString();
+      const upgradeName = row[1]?.toString() || '';
       const finishMs = new Date(row[2]).getTime();
       if (!builderName || isNaN(finishMs)) continue;
-      rows.push({ builder: builderName, oldTime: finishMs, newTime: finishMs - reduceMs });
+      rows.push({ builder: builderName, upgrade: upgradeName, oldTime: finishMs, newTime: finishMs - reduceMs });
     }
 
     if (rows.length === 0) {
@@ -1063,6 +1064,8 @@ function showBuilderSnackModal() {
 
     previewList.innerHTML = rows.map(p => `
       <div class="bs-builder-row">
+        <img src="${getUpgradeImage(p.upgrade)}" class="bs-upgrade-icon"
+             alt="${p.upgrade}" onerror="this.src='Images/Upgrades/PH.png'">
         <span class="bs-builder-name">${bsBuilderLabel(p.builder)}</span>
         <span class="bs-builder-times">
           ${bsFormatTime(p.oldTime)}
