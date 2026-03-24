@@ -31,6 +31,9 @@ function BOOST_PLAN_URL()         { return endpoint("boost_plan"); }
 function APPLY_TODAYS_BOOST_URL() { return endpoint("apply_todays_boost"); }
 function SET_BOOST_BUILDER_URL(b) { return endpoint("set_todays_boost_builder") + "&builder=" + b; }
 
+function BOOST_LEVEL_URL()        { return endpoint("get_boost_level"); }
+function SET_BOOST_LEVEL_URL(lvl) { return endpoint("set_boost_level") + "&level=" + lvl; }
+
 function BUILDER_SNACK_URL()  { return endpoint("apply_one_hour_boost"); }
 function BATTLE_PASS_URL()    { return endpoint("apply_battle_pass"); }
 function BUILDER_DETAILS_URL(builderName) { return endpoint("builder_details") + "&builder=" + builderName; }
@@ -153,6 +156,8 @@ let reviewedTabs = new Set();
 let finishedUpgradesData = null;
 let boostPlanData = [];
 let currentBoostIndex = 0;
+let currentBoostLevel = 8;
+const MAX_BOOST_LEVEL = 8; // update when a new level is added to the game
 let openBuilders = [];
 let loadingBuilders = new Set();
 let lastActiveStatusUpdate = 0;
@@ -268,17 +273,28 @@ async function loadPausedBuilders() {
   }
 }
 
+async function loadBoostLevel() {
+  try {
+    const res  = await fetch(BOOST_LEVEL_URL());
+    const data = await res.json();
+    currentBoostLevel = data.level ?? 8;
+    const badge = document.getElementById("boostLevelBadge");
+    if (badge) badge.textContent = currentBoostLevel + " Lvl";
+  } catch (e) { console.error("loadBoostLevel failed", e); }
+}
+
 async function loadBoostPlan() {
   try {
     const res = await fetch(BOOST_PLAN_URL());
     const data = await res.json();
     if (!data?.table || data.table.length <= 1) { boostPlanData = []; return; }
     boostPlanData = data.table.slice(1).map((row, i) => ({
-      day: i === 0 ? "TODAY" : row[0],
-      hasBoost: true,
-      builder: row[2].replace("_", " "),
+      day:          i === 0 ? "TODAY" : row[0],
+      hasBoost:     true,
+      upgradeName:  row[1],
+      builder:      row[2].replace("_", " "),
       newFinishTime: row[4],
-      mode: row[5]
+      mode:         row[5]
     }));
     currentBoostIndex = 0;
     renderBoostFocusCard();
@@ -295,7 +311,8 @@ async function refreshDashboardFast() {
       loadCurrentWork(),
       loadTodaysBoost(),
       loadPausedBuilders(),
-      loadBoostPlan()
+      loadBoostPlan(),
+      loadBoostLevel()
     ]);
     if (openBuilders.length === 0) {
       const container = document.getElementById("builders-container");
@@ -323,7 +340,8 @@ async function refreshDashboard() {
       loadCurrentWork(),
       loadTodaysBoost(),
       loadPausedBuilders(),
-      loadBoostPlan()
+      loadBoostPlan(),
+      loadBoostLevel()
     ]);
     if (openBuilders.length === 0) {
       const container = document.getElementById("builders-container");
@@ -360,8 +378,9 @@ function renderBoostFocusCard() {
   if (day.hasBoost) {
     statusEl.textContent = "Boost Planned For";
     statusEl.classList.add("boost-active");
-    builderEl.textContent = day.builder;
-    builderEl.style.display = "block";
+    const thumbSrc = getUpgradeImage(day.upgradeName || '');
+    builderEl.innerHTML = `<img src="${thumbSrc}" class="boost-upgrade-thumb" onerror="this.src='Images/Upgrades/PH.png'" />${day.builder}`;
+    builderEl.style.display = "flex";
     extraEl.style.display = "block";
     finishEl.textContent = day.newFinishTime;
     modeEl.textContent = day.mode;
@@ -388,6 +407,7 @@ function renderBoostFocusCard() {
   } else {
     statusEl.textContent = "No Boost";
     statusEl.classList.remove("boost-active");
+    builderEl.innerHTML = "";
     builderEl.style.display = "none";
     extraEl.style.display = "none";
     if (menuBtn) menuBtn.style.display = "none";
@@ -1268,6 +1288,122 @@ function showBsErrorToast(msg) {
   setTimeout(() => toast.remove(), 4000);
 }
 
+/* =========================
+   BOOST LEVEL MODAL
+   ========================= */
+function showBoostLevelModal() {
+  document.querySelector('.boost-level-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'bs-modal-overlay boost-level-overlay';
+  overlay.style.cssText = 'display:flex;';
+
+  function buildContent() {
+    const atMax = currentBoostLevel >= MAX_BOOST_LEVEL;
+    return `
+      <div class="bs-modal boost-level-modal">
+        <button class="boost-level-close">✕</button>
+        <button class="boost-level-gear" title="Downgrade settings">⚙</button>
+        <img src="Images/Badge/Builder Apprentice Safe.png" class="boost-level-img"
+             onerror="this.src='Images/Upgrades/PH.png'" />
+        <div class="boost-level-title">Builder's Apprentice</div>
+        <div class="boost-level-current">Current Level: <strong>${currentBoostLevel}</strong></div>
+
+        <div class="boost-level-up-section" ${atMax ? 'style="display:none"' : ''}>
+          <div class="boost-level-up-idle">
+            <button class="boost-level-up-btn">Level Up →</button>
+          </div>
+          <div class="boost-level-up-confirm" style="display:none">
+            <div class="boost-level-confirm-text">
+              Confirm level up to <strong>Level ${currentBoostLevel + 1}</strong>?<br>
+              <span class="boost-level-confirm-sub">${currentBoostLevel + 1} hrs reduced per boost</span>
+            </div>
+            <div class="boost-level-confirm-actions">
+              <button class="boost-level-confirm-yes">✓ Confirm</button>
+              <button class="boost-level-confirm-no">Cancel</button>
+            </div>
+          </div>
+        </div>
+        ${atMax ? '<div class="boost-level-maxed">Max level reached</div>' : ''}
+
+        <div class="boost-level-gear-panel" style="display:none">
+          <div class="boost-level-gear-title">Downgrade to:</div>
+          ${Array.from({length: currentBoostLevel - 1}, (_, i) => i + 1).reverse().map(lvl => `
+            <button class="boost-level-down-btn" data-level="${lvl}">Level ${lvl} — ${lvl} hr/boost</button>
+          `).join('')}
+          ${currentBoostLevel <= 1 ? '<div style="color:#9999a8;font-size:12px;text-align:center">Already at minimum</div>' : ''}
+        </div>
+      </div>`;
+  }
+
+  overlay.innerHTML = buildContent();
+  document.body.appendChild(overlay);
+
+  function rebind() {
+    overlay.querySelector('.boost-level-close').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+    // Level up flow
+    overlay.querySelector('.boost-level-up-btn')?.addEventListener('click', () => {
+      overlay.querySelector('.boost-level-up-idle').style.display = 'none';
+      overlay.querySelector('.boost-level-up-confirm').style.display = 'block';
+    });
+    overlay.querySelector('.boost-level-confirm-no')?.addEventListener('click', () => {
+      overlay.querySelector('.boost-level-up-confirm').style.display = 'none';
+      overlay.querySelector('.boost-level-up-idle').style.display = 'block';
+    });
+    overlay.querySelector('.boost-level-confirm-yes')?.addEventListener('click', async () => {
+      const newLevel = currentBoostLevel + 1;
+      overlay.querySelector('.boost-level-confirm-yes').disabled = true;
+      overlay.querySelector('.boost-level-confirm-yes').textContent = '…';
+      try {
+        await fetch(SET_BOOST_LEVEL_URL(newLevel));
+        currentBoostLevel = newLevel;
+        const badge = document.getElementById('boostLevelBadge');
+        if (badge) badge.textContent = currentBoostLevel + ' Lvl';
+        overlay.remove();
+      } catch (e) {
+        console.error('Failed to set boost level', e);
+        overlay.querySelector('.boost-level-confirm-yes').disabled = false;
+        overlay.querySelector('.boost-level-confirm-yes').textContent = '✓ Confirm';
+      }
+    });
+
+    // Gear toggle
+    const gearBtn   = overlay.querySelector('.boost-level-gear');
+    const gearPanel = overlay.querySelector('.boost-level-gear-panel');
+    gearBtn?.addEventListener('click', e => {
+      e.stopPropagation();
+      gearPanel.style.display = gearPanel.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Downgrade buttons
+    overlay.querySelectorAll('.boost-level-down-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const newLevel = parseInt(btn.dataset.level);
+        btn.disabled = true; btn.textContent = '…';
+        try {
+          await fetch(SET_BOOST_LEVEL_URL(newLevel));
+          currentBoostLevel = newLevel;
+          const badge = document.getElementById('boostLevelBadge');
+          if (badge) badge.textContent = currentBoostLevel + ' Lvl';
+          overlay.remove();
+        } catch (e) {
+          console.error('Failed to set boost level', e);
+          btn.disabled = false;
+        }
+      });
+    });
+  }
+
+  rebind();
+}
+
+function wireBoostLevel() {
+  document.getElementById('boostLevelBadge')
+    ?.addEventListener('click', showBoostLevelModal);
+}
+
 function wireBoostSimulation() {
   const btn = document.getElementById("runBoostSimBtn");
   if (!btn) return;
@@ -1880,6 +2016,7 @@ async function bootApp() {
   startLiveCountdown();
   wireApprenticeBoost();
   wireBoostSimulation();
+  wireBoostLevel();
   wireBoostFocusNavigation();
   wireBuilderCardClicks();
   wireImageButtons();
