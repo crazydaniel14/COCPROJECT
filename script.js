@@ -1030,6 +1030,7 @@ function wireApprenticeBoost() {
 
       badge.src = "Images/Badge/Builder Apprentice applied.png";
 
+      await fetch(REFRESH_ENDPOINT);
       await loadCurrentWork();
 
       if (card && currentWorkData && builderNumber) {
