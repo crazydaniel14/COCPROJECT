@@ -1304,32 +1304,35 @@ function showBoostLevelModal() {
       <div class="bs-modal boost-level-modal">
         <button class="boost-level-close">✕</button>
         <button class="boost-level-gear" title="Downgrade settings">⚙</button>
-        <img src="Images/Badge/Builder Apprentice Safe.png" class="boost-level-img"
-             onerror="this.src='Images/Upgrades/PH.png'" />
-        <div class="boost-level-title">Builder's Apprentice</div>
-        <div class="boost-level-current">Current Level: <strong>${currentBoostLevel}</strong></div>
 
-        <div class="boost-level-up-section" ${atMax ? 'style="display:none"' : ''}>
-          <div class="boost-level-up-idle">
-            <button class="boost-level-up-btn">Level Up →</button>
-          </div>
-          <div class="boost-level-up-confirm" style="display:none">
-            <div class="boost-level-confirm-text">
-              Confirm level up to <strong>Level ${currentBoostLevel + 1}</strong>?<br>
-              <span class="boost-level-confirm-sub">${currentBoostLevel + 1} hrs reduced per boost</span>
+        <div class="boost-level-body">
+          <img src="Images/Badge/Builder Apprentice Safe.png" class="boost-level-img"
+               onerror="this.src='Images/Upgrades/PH.png'" />
+          <div class="boost-level-info">
+            <div class="boost-level-title">Builder's Apprentice</div>
+            <div class="boost-level-current">Level <strong>${currentBoostLevel}</strong></div>
+            <div class="boost-level-up-section" ${atMax ? 'style="display:none"' : ''}>
+              <div class="boost-level-up-idle">
+                <button class="boost-level-up-btn">Level Up →</button>
+              </div>
+              <div class="boost-level-up-confirm" style="display:none">
+                <div class="boost-level-confirm-text">
+                  Level up to <strong>Level ${currentBoostLevel + 1}</strong>?
+                </div>
+                <div class="boost-level-confirm-actions">
+                  <button class="boost-level-confirm-yes">✓ Confirm</button>
+                  <button class="boost-level-confirm-no">Cancel</button>
+                </div>
+              </div>
             </div>
-            <div class="boost-level-confirm-actions">
-              <button class="boost-level-confirm-yes">✓ Confirm</button>
-              <button class="boost-level-confirm-no">Cancel</button>
-            </div>
+            ${atMax ? '<div class="boost-level-maxed">Max level</div>' : ''}
           </div>
         </div>
-        ${atMax ? '<div class="boost-level-maxed">Max level reached</div>' : ''}
 
         <div class="boost-level-gear-panel" style="display:none">
           <div class="boost-level-gear-title">Downgrade to:</div>
           ${Array.from({length: currentBoostLevel - 1}, (_, i) => i + 1).reverse().map(lvl => `
-            <button class="boost-level-down-btn" data-level="${lvl}">Level ${lvl} — ${lvl} hr/boost</button>
+            <button class="boost-level-down-btn" data-level="${lvl}">Level ${lvl}</button>
           `).join('')}
           ${currentBoostLevel <= 1 ? '<div style="color:#9999a8;font-size:12px;text-align:center">Already at minimum</div>' : ''}
         </div>
