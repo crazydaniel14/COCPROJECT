@@ -2037,7 +2037,6 @@ function showFinishUpgradeModal(builderNumber, currentUpgrade, nextUpgrade) {
           <img src="${imgSrc}" class="fim-upgrade-img" onerror="this.src='Images/Upgrades/PH.png'" alt="${currentUpgrade}" />
           <div class="fim-upgrade-name">${formatUpgradeName(currentUpgrade)}</div>
         </div>
-        <p class="fim-confirm-text">Mark <strong>Builder ${builderNumber}</strong>'s current upgrade as complete and send it to Completed Upgrades?</p>
         <div class="fim-toggle-row">
           <div class="fim-next-info">
             <img src="${nextImgSrc}" class="fim-next-img" onerror="this.src='Images/Upgrades/PH.png'" alt="${nextUpgrade}" />
@@ -2067,24 +2066,15 @@ function showFinishUpgradeModal(builderNumber, currentUpgrade, nextUpgrade) {
   });
 
   overlay.querySelector('.fim-cancel-btn').addEventListener('click', () => overlay.remove());
-  overlay.querySelector('.fim-confirm-btn').addEventListener('click', async () => {
+  overlay.querySelector('.fim-confirm-btn').addEventListener('click', () => {
     const startNext = toggle.checked;
-    const confirmBtn = overlay.querySelector('.fim-confirm-btn');
-    confirmBtn.disabled = true;
-    confirmBtn.textContent = 'Finishing…';
-    try {
-      const data = await finishUpgradeNow(builderNumber, currentUpgrade, startNext);
-      if (data.error) { alert('Error: ' + data.error); confirmBtn.disabled = false; confirmBtn.textContent = 'Finish Upgrade ✅'; return; }
-      overlay.remove();
-      const container = document.getElementById("builders-container");
-      if (container) container.innerHTML = "";
-      await refreshDashboardFast();
-    } catch (err) {
-      console.error('Finish upgrade failed:', err);
-      alert('Failed to finish upgrade');
-      confirmBtn.disabled = false;
-      confirmBtn.textContent = 'Finish Upgrade ✅';
-    }
+    overlay.remove();
+    // Optimistic: remove the card immediately
+    document.querySelector(`.builder-card[data-builder="${builderNumber}"]`)?.remove();
+    // API + refresh in background
+    finishUpgradeNow(builderNumber, currentUpgrade, startNext)
+      .catch(err => console.error('Finish upgrade API failed:', err))
+      .finally(() => refreshDashboardFast());
   });
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
