@@ -631,7 +631,6 @@ function renderBuilderCards() {
   }
 
   wirePausedBuilderButtons();
-  wireFinishUpgradeButtons();
 }
 
 /* =========================
@@ -1464,7 +1463,8 @@ function wireBuilderCardClicks() {
   document.addEventListener("click", async e => {
     if (e.target.closest("[data-apply-boost]")) { e.stopPropagation(); e.preventDefault(); return; }
     if (e.target.closest(".start-builder-btn")) return;
-    if (e.target.closest(".finish-upgrade-btn")) return;
+    const finishBtn = e.target.closest(".finish-upgrade-btn");
+    if (finishBtn) { showFinishUpgradeModal(finishBtn.dataset.builder, finishBtn.dataset.upgrade, finishBtn.dataset.next); return; }
     const card = e.target.closest(".builder-card");
     if (!card) return;
     const builder = card.dataset.builder;
@@ -2020,15 +2020,6 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
 /* =========================
    FINISH UPGRADE (MANUAL)
    ========================= */
-function wireFinishUpgradeButtons() {
-  document.querySelectorAll('.finish-upgrade-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      showFinishUpgradeModal(btn.dataset.builder, btn.dataset.upgrade, btn.dataset.next);
-    });
-  });
-}
-
 function showFinishUpgradeModal(builderNumber, currentUpgrade, nextUpgrade) {
   document.querySelector('.fim-overlay')?.remove();
   const imgSrc     = getUpgradeImage(currentUpgrade);
