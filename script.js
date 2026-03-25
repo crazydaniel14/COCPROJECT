@@ -2088,26 +2088,21 @@ function showFinishUpgradeModal(builderNumber, currentUpgrade, nextUpgrade) {
     }
     showRefreshIndicator('refreshing');
     finishUpgradeNow(builderNumber, currentUpgrade, startNext)
-      .catch(err => console.error('Finish upgrade API failed:', err))
-      .then(async () => {
-        // Quick update: fetch just currentWork and patch this card's fields
-        await loadCurrentWork();
-        if (card && currentWorkData) {
-          const row = currentWorkData.find(r =>
-            r[0]?.toString().includes(`_${builderNumber}`) || r[0]?.toString().endsWith(builderNumber)
-          );
-          if (row) {
-            const durationEl = card.querySelector('.editable-card-duration');
-            if (durationEl) durationEl.textContent = row[3];
-            const finishEl = card.querySelector('.builder-finish');
-            if (finishEl) finishEl.textContent = 'Finishes: ' + formatFinishTime(row[2]);
-            const nextEl = card.querySelector('.builder-next');
-            if (nextEl) nextEl.innerHTML = `<img src="${getUpgradeImage(row[4])}" class="next-upgrade-icon" alt="${row[4]}" onerror="this.src='Images/Upgrades/PH.png'" /> ▶ Next: ${row[4]}`;
-            const finishBtn = card.querySelector('.finish-upgrade-btn');
-            if (finishBtn) finishBtn.style.display = '';
-          }
+      .then(data => {
+        // Patch card immediately from API response — no extra fetch
+        if (card && data?.newActive) {
+          const { durationHr, finishTime, nextUpgrade: nextInQueue } = data.newActive;
+          const durationEl = card.querySelector('.editable-card-duration');
+          if (durationEl) durationEl.textContent = durationHr;
+          const finishEl = card.querySelector('.builder-finish');
+          if (finishEl) finishEl.textContent = 'Finishes: ' + formatFinishTime(finishTime);
+          const nextEl = card.querySelector('.builder-next');
+          if (nextEl) nextEl.innerHTML = `<img src="${getUpgradeImage(nextInQueue)}" class="next-upgrade-icon" alt="${nextInQueue}" onerror="this.src='Images/Upgrades/PH.png'" /> ▶ Next: ${nextInQueue}`;
+          const finishBtn = card.querySelector('.finish-upgrade-btn');
+          if (finishBtn) finishBtn.style.display = '';
         }
       })
+      .catch(err => console.error('Finish upgrade API failed:', err))
       .finally(() => refreshDashboardFast());
   });
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
