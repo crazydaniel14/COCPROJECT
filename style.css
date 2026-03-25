@@ -1476,6 +1476,20 @@ button:disabled {
 
 .ucm-finished-row strong { color: #81c784; }
 
+.ucm-finished-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.ucm-finished-time {
+  white-space: nowrap;
+  opacity: 0.75;
+}
+
 .ucm-resume-from-btn {
   flex-shrink: 0;
   background: rgba(255,152,0,0.12);

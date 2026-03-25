@@ -1595,7 +1595,7 @@ function buildTabContent(builderData, isActive) {
     <div class="ucm-tab-content ${isActive?'active':''}" data-builder="${b}">
       ${builderData.finished.map((f, i) => `
         <div class="ucm-finished-row">
-          <span>✅ <strong>${f.upgradeName}</strong> finished &nbsp;·&nbsp; ${f.finishedTime}</span>
+          <span class="ucm-finished-text">✅ <strong>${f.upgradeName}</strong> finished <span class="ucm-finished-time">&nbsp;·&nbsp; ${f.finishedTime}</span></span>
           ${i > 0 ? `<button class="ucm-resume-from-btn" data-builder="${b}" data-from-index="${i}" data-upgrade="${f.upgradeName.replace(/"/g,'&quot;')}">↩ Resume from here</button>` : ''}
         </div>
       `).join('')}
@@ -1825,10 +1825,13 @@ async function handleResumeFrom(btn, modal, upgrades) {
   btn.disabled = true; btn.textContent = 'Rewinding…';
   try {
     const params = new URLSearchParams({
-      action: 'rewind_to_upgrade',
+      action: 'confirm_upgrade_start',
       username: window.COC_USERNAME,
       builder: b,
-      rewindToUpgrade: resumeUpgrade,
+      upgradeName: resumeUpgrade,
+      startTime: '',
+      confirmAction: 'rewind',
+      differentUpgrade: '',
       requeueUpgrades: toRequeue.join(',')
     });
     const res  = await fetch(API_BASE + '?' + params.toString());
