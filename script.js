@@ -1593,10 +1593,13 @@ function buildTabContent(builderData, isActive) {
   const defaultDT = scheduledToDatetimeLocal(active.scheduledStart);
   return `
     <div class="ucm-tab-content ${isActive?'active':''}" data-builder="${b}">
-      ${builderData.finished.map(f => `
-        <div class="ucm-finished-row">✅ <strong>${f.upgradeName}</strong> finished &nbsp;·&nbsp; ${f.finishedTime}</div>
+      ${builderData.finished.map((f, i) => `
+        <div class="ucm-finished-row">
+          <span>✅ <strong>${f.upgradeName}</strong> finished &nbsp;·&nbsp; ${f.finishedTime}</span>
+          ${i > 0 ? `<button class="ucm-resume-from-btn" data-builder="${b}" data-from-index="${i}" data-upgrade="${f.upgradeName.replace(/"/g,'&quot;')}">↩ Resume from here</button>` : ''}
+        </div>
       `).join('')}
-      ${builderData.finished.length > 1 ? `<div class="ucm-cascade-warn">⚠️ Multiple upgrades finished — if an earlier one didn't start, later ones couldn't have either.</div>` : ''}
+      ${builderData.finished.length > 1 ? `<div class="ucm-cascade-warn">⚠️ Multiple upgrades finished — if an earlier one didn't start, later ones couldn't have either. Use <strong>↩ Resume from here</strong> on the upgrade that didn't start.</div>` : ''}
       <div class="ucm-active-section">
         <div class="ucm-active-header">
           <img src="${getUpgradeImage(active.upgradeName)}" class="ucm-active-img"
@@ -1712,6 +1715,7 @@ function wireConfirmationModal(modal, upgrades) {
   modal.querySelectorAll('.ucm-show-queue').forEach(btn => btn.addEventListener('click', () => showUpgradeQueueModal(btn.dataset.builder, modal)));
   modal.querySelectorAll('.ucm-confirm-btn').forEach(btn => btn.addEventListener('click', () => handleBuilderConfirmation(btn, modal, upgrades)));
   modal.querySelectorAll('.ucm-pause-btn').forEach(btn => btn.addEventListener('click', () => handleBuilderPause(btn, modal, upgrades)));
+  modal.querySelectorAll('.ucm-resume-from-btn').forEach(btn => btn.addEventListener('click', () => handleResumeFrom(btn, modal, upgrades)));
   modal.querySelector('.ucm-confirm-all').addEventListener('click', async () => {
     modal.remove();
     const container = document.getElementById("builders-container");
@@ -1804,6 +1808,40 @@ async function handleBuilderPause(btn, modal, upgrades) {
   } catch (err) {
     console.error('Pause failed:', err); alert('Failed to pause builder');
     btn.disabled=false; btn.textContent=`⏸️ Not Started — Pause ${bLabel}`;
+  }
+}
+
+async function handleResumeFrom(btn, modal, upgrades) {
+  const b = btn.dataset.builder;
+  const fromIndex = parseInt(btn.dataset.fromIndex);
+  const bd = upgrades.find(u => u.builder === b);
+  if (!bd) return;
+  const resumeUpgrade = bd.finished[fromIndex].upgradeName;
+  const toRequeue = [
+    ...bd.finished.slice(fromIndex).map(f => f.upgradeName),
+    bd.nowActive.upgradeName
+  ];
+  if (!confirm(`"${resumeUpgrade}" didn't start?\n\nThis will requeue "${resumeUpgrade}" and everything after it so you can review from there.`)) return;
+  btn.disabled = true; btn.textContent = 'Rewinding…';
+  try {
+    const params = new URLSearchParams({
+      action: 'rewind_to_upgrade',
+      username: window.COC_USERNAME,
+      builder: b,
+      rewindToUpgrade: resumeUpgrade,
+      requeueUpgrades: toRequeue.join(',')
+    });
+    const res  = await fetch(API_BASE + '?' + params.toString());
+    const data = await res.json();
+    if (data.error) { alert('Error: '+data.error); btn.disabled=false; btn.textContent='↩ Resume from here'; return; }
+    modal.remove();
+    const container = document.getElementById("builders-container");
+    if (container) container.innerHTML = "";
+    await new Promise(resolve => setTimeout(resolve, 500));
+    refreshDashboard();
+  } catch (err) {
+    console.error('Rewind failed:', err); alert('Failed to rewind builder');
+    btn.disabled=false; btn.textContent='↩ Resume from here';
   }
 }
 

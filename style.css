@@ -1468,9 +1468,31 @@ button:disabled {
   margin-bottom: 10px;
   color: #c8e6c9;
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .ucm-finished-row strong { color: #81c784; }
+
+.ucm-resume-from-btn {
+  flex-shrink: 0;
+  background: rgba(255,152,0,0.12);
+  border: 1px solid rgba(255,152,0,0.4);
+  border-radius: 8px;
+  padding: 5px 12px;
+  color: #ffb74d;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.ucm-resume-from-btn:hover { background: rgba(255,152,0,0.25); border-color: rgba(255,152,0,0.7); }
+.ucm-resume-from-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .ucm-cascade-warn {
   background: rgba(255,152,0,0.1);
