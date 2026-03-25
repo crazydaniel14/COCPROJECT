@@ -616,7 +616,7 @@ function renderBuilderCards() {
           <div class="builder-time-left editable-card-duration"
                data-builder="Builder_${builderNumber}" data-upgrade="${row[1]}"
                data-row="2" title="Click to edit duration">${row[3]}</div>
-          <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}</div>
+          <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}<button class="finish-upgrade-btn" data-builder="${builderNumber}" data-upgrade="${row[1]}" data-next="${row[4]}" title="Mark upgrade as finished">✅</button></div>
           <div class="builder-next">
             <img src="${getUpgradeImage(row[4])}" class="next-upgrade-icon"
                  alt="${row[4]}" onerror="this.src='Images/Upgrades/PH.png'" />
@@ -631,6 +631,7 @@ function renderBuilderCards() {
   }
 
   wirePausedBuilderButtons();
+  wireFinishUpgradeButtons();
 }
 
 /* =========================
@@ -1588,7 +1589,7 @@ function showUpgradeConfirmationModal(upgrades) {
 
 function buildTabContent(builderData, isActive) {
   const b = builderData.builder, bLabel = b.replace('_',' '), active = builderData.nowActive;
-  const m = active.totalDuration.match(/(\d+)\s*d\s*(\d+)\s*hr\s*(\d+)\s*min/);
+  const m = (active.totalDuration || '').match(/(\d+)\s*d\s*(\d+)\s*hr\s*(\d+)\s*min/);
   const prefillDays = m?m[1]:'0', prefillHours = m?m[2]:'0', prefillMins = m?m[3]:'0';
   const defaultDT = scheduledToDatetimeLocal(active.scheduledStart);
   return `
@@ -1837,11 +1838,14 @@ async function handleResumeFrom(btn, modal, upgrades) {
     const res  = await fetch(API_BASE + '?' + params.toString());
     const data = await res.json();
     if (data.error) { alert('Error: '+data.error); btn.disabled=false; btn.textContent='↩ Resume from here'; return; }
+    // Re-fetch only the finished upgrades state and rebuild the modal — no full page refresh
+    const res2 = await fetch(endpoint("check_finished_upgrades"));
+    const data2 = await res2.json();
+    console.log('[rewind] check_finished_upgrades response:', JSON.stringify(data2));
     modal.remove();
-    const container = document.getElementById("builders-container");
-    if (container) container.innerHTML = "";
-    await new Promise(resolve => setTimeout(resolve, 500));
-    refreshDashboard();
+    if (data2.finishedUpgrades && data2.finishedUpgrades.length > 0) {
+      showUpgradeConfirmationModal(data2.finishedUpgrades);
+    }
   } catch (err) {
     console.error('Rewind failed:', err); alert('Failed to rewind builder');
     btn.disabled=false; btn.textContent='↩ Resume from here';
@@ -2010,6 +2014,98 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
       startBtn.disabled=false; startBtn.textContent='▶️ Start Now';
     }
   });
+}
+
+/* =========================
+   FINISH UPGRADE (MANUAL)
+   ========================= */
+function wireFinishUpgradeButtons() {
+  document.querySelectorAll('.finish-upgrade-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      showFinishUpgradeModal(btn.dataset.builder, btn.dataset.upgrade, btn.dataset.next);
+    });
+  });
+}
+
+function showFinishUpgradeModal(builderNumber, currentUpgrade, nextUpgrade) {
+  document.querySelector('.fim-overlay')?.remove();
+  const imgSrc     = getUpgradeImage(currentUpgrade);
+  const nextImgSrc = getUpgradeImage(nextUpgrade);
+  const overlay = document.createElement('div');
+  overlay.className = 'fim-overlay';
+  overlay.innerHTML = `
+    <div class="fim-modal">
+      <div class="fim-header">
+        <h3>Finish Upgrade?</h3>
+      </div>
+      <div class="fim-body">
+        <div class="fim-upgrade-row">
+          <img src="${imgSrc}" class="fim-upgrade-img" onerror="this.src='Images/Upgrades/PH.png'" alt="${currentUpgrade}" />
+          <div class="fim-upgrade-name">${formatUpgradeName(currentUpgrade)}</div>
+        </div>
+        <p class="fim-confirm-text">Mark <strong>Builder ${builderNumber}</strong>'s current upgrade as complete and send it to Completed Upgrades?</p>
+        <div class="fim-toggle-row">
+          <div class="fim-next-info">
+            <img src="${nextImgSrc}" class="fim-next-img" onerror="this.src='Images/Upgrades/PH.png'" alt="${nextUpgrade}" />
+            <span>Start <strong>${formatUpgradeName(nextUpgrade)}</strong> immediately?</span>
+          </div>
+          <label class="fim-toggle-switch">
+            <input type="checkbox" id="fim-start-next" checked />
+            <span class="fim-toggle-slider"></span>
+          </label>
+        </div>
+        <div class="fim-toggle-label" id="fim-toggle-label">Next upgrade will start immediately ✓</div>
+      </div>
+      <div class="fim-footer">
+        <button class="fim-cancel-btn">Cancel</button>
+        <button class="fim-confirm-btn">Finish Upgrade ✅</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const toggle = overlay.querySelector('#fim-start-next');
+  const label  = overlay.querySelector('#fim-toggle-label');
+  toggle.addEventListener('change', () => {
+    label.textContent = toggle.checked
+      ? 'Next upgrade will start immediately ✓'
+      : 'Next upgrade will be paused ⏸';
+    label.style.color = toggle.checked ? '#81c784' : '#ffb74d';
+  });
+
+  overlay.querySelector('.fim-cancel-btn').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('.fim-confirm-btn').addEventListener('click', async () => {
+    const startNext = toggle.checked;
+    const confirmBtn = overlay.querySelector('.fim-confirm-btn');
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Finishing…';
+    try {
+      const data = await finishUpgradeNow(builderNumber, currentUpgrade, startNext);
+      if (data.error) { alert('Error: ' + data.error); confirmBtn.disabled = false; confirmBtn.textContent = 'Finish Upgrade ✅'; return; }
+      overlay.remove();
+      const container = document.getElementById("builders-container");
+      if (container) container.innerHTML = "";
+      await refreshDashboardFast();
+    } catch (err) {
+      console.error('Finish upgrade failed:', err);
+      alert('Failed to finish upgrade');
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Finish Upgrade ✅';
+    }
+  });
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+async function finishUpgradeNow(builderNumber, currentUpgrade, startNext) {
+  const params = new URLSearchParams({
+    action:      'finish_upgrade',
+    username:    window.COC_USERNAME,
+    builder:     `Builder_${builderNumber}`,
+    upgradeName: currentUpgrade,
+    startNext:   startNext ? 'true' : 'false'
+  });
+  const res  = await fetch(API_BASE + '?' + params.toString());
+  return await res.json();
 }
 
 function wirePausedBuilderButtons() {
