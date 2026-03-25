@@ -2124,7 +2124,8 @@ button:disabled {
 
   .builder-card .apprentice-badge,
   .builder-card .editable-card-duration,
-  .builder-card .start-builder-btn {
+  .builder-card .start-builder-btn,
+  .builder-card .finish-upgrade-btn {
     pointer-events: auto !important;
   }
 
