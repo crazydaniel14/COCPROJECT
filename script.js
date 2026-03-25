@@ -2069,9 +2069,6 @@ function showFinishUpgradeModal(builderNumber, currentUpgrade, nextUpgrade) {
   overlay.querySelector('.fim-confirm-btn').addEventListener('click', () => {
     const startNext = toggle.checked;
     overlay.remove();
-    // Optimistic: remove the card immediately
-    document.querySelector(`.builder-card[data-builder="${builderNumber}"]`)?.remove();
-    // API + refresh in background
     finishUpgradeNow(builderNumber, currentUpgrade, startNext)
       .catch(err => console.error('Finish upgrade API failed:', err))
       .finally(() => refreshDashboardFast());
