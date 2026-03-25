@@ -2069,8 +2069,45 @@ function showFinishUpgradeModal(builderNumber, currentUpgrade, nextUpgrade) {
   overlay.querySelector('.fim-confirm-btn').addEventListener('click', () => {
     const startNext = toggle.checked;
     overlay.remove();
+    // Instant DOM feedback — swap card to show next upgrade immediately
+    const card = document.querySelector(`.builder-card[data-builder="${builderNumber}"]`);
+    if (card) {
+      const nextImg = getUpgradeImage(nextUpgrade);
+      const iconEl = card.querySelector('.current-upgrade-icon');
+      if (iconEl) { iconEl.src = nextImg; iconEl.alt = nextUpgrade; }
+      const upgradeEl = card.querySelector('.builder-upgrade');
+      if (upgradeEl) upgradeEl.innerHTML = formatUpgradeName(nextUpgrade);
+      const durationEl = card.querySelector('.editable-card-duration');
+      if (durationEl) durationEl.textContent = 'Syncing…';
+      const finishEl = card.querySelector('.builder-finish');
+      if (finishEl) finishEl.textContent = 'Syncing…';
+      const nextEl = card.querySelector('.builder-next');
+      if (nextEl) nextEl.textContent = 'Syncing…';
+      const finishBtn = card.querySelector('.finish-upgrade-btn');
+      if (finishBtn) finishBtn.style.display = 'none';
+    }
+    showRefreshIndicator('refreshing');
     finishUpgradeNow(builderNumber, currentUpgrade, startNext)
       .catch(err => console.error('Finish upgrade API failed:', err))
+      .then(async () => {
+        // Quick update: fetch just currentWork and patch this card's fields
+        await loadCurrentWork();
+        if (card && currentWorkData) {
+          const row = currentWorkData.find(r =>
+            r[0]?.toString().includes(`_${builderNumber}`) || r[0]?.toString().endsWith(builderNumber)
+          );
+          if (row) {
+            const durationEl = card.querySelector('.editable-card-duration');
+            if (durationEl) durationEl.textContent = row[3];
+            const finishEl = card.querySelector('.builder-finish');
+            if (finishEl) finishEl.textContent = 'Finishes: ' + formatFinishTime(row[2]);
+            const nextEl = card.querySelector('.builder-next');
+            if (nextEl) nextEl.innerHTML = `<img src="${getUpgradeImage(row[4])}" class="next-upgrade-icon" alt="${row[4]}" onerror="this.src='Images/Upgrades/PH.png'" /> ▶ Next: ${row[4]}`;
+            const finishBtn = card.querySelector('.finish-upgrade-btn');
+            if (finishBtn) finishBtn.style.display = '';
+          }
+        }
+      })
       .finally(() => refreshDashboardFast());
   });
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
