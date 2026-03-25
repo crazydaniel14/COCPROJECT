@@ -240,12 +240,19 @@ button:disabled {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
   padding: 0 2px;
   opacity: 0.65;
   transition: opacity 0.15s, transform 0.15s;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+.finish-upgrade-btn img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
 }
 .finish-upgrade-btn:hover {
   opacity: 1;

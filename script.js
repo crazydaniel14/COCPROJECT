@@ -616,7 +616,7 @@ function renderBuilderCards() {
           <div class="builder-time-left editable-card-duration"
                data-builder="Builder_${builderNumber}" data-upgrade="${row[1]}"
                data-row="2" title="Click to edit duration">${row[3]}</div>
-          <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}<button class="finish-upgrade-btn" data-builder="${builderNumber}" data-upgrade="${row[1]}" data-next="${row[4]}" title="Mark upgrade as finished">✅</button></div>
+          <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}<button class="finish-upgrade-btn" data-builder="${builderNumber}" data-upgrade="${row[1]}" data-next="${row[4]}" title="Mark upgrade as finished"><img src="Images/Finished.png" alt="Finish" /></button></div>
           <div class="builder-next">
             <img src="${getUpgradeImage(row[4])}" class="next-upgrade-icon"
                  alt="${row[4]}" onerror="this.src='Images/Upgrades/PH.png'" />
@@ -1464,6 +1464,7 @@ function wireBuilderCardClicks() {
   document.addEventListener("click", async e => {
     if (e.target.closest("[data-apply-boost]")) { e.stopPropagation(); e.preventDefault(); return; }
     if (e.target.closest(".start-builder-btn")) return;
+    if (e.target.closest(".finish-upgrade-btn")) return;
     const card = e.target.closest(".builder-card");
     if (!card) return;
     const builder = card.dataset.builder;
