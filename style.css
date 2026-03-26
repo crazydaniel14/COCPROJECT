@@ -233,22 +233,30 @@ button:disabled {
   margin-bottom: 8px;
 }
 
+.builder-finish-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.builder-finish-row .builder-finish {
+  margin-bottom: 0;
+}
 .finish-upgrade-btn {
-  position: absolute;
-  bottom: 38px;
-  right: 8px;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 2px;
+  padding: 0;
   opacity: 0.7;
-  z-index: 10;
+  flex-shrink: 0;
   transition: opacity 0.15s, transform 0.15s;
   pointer-events: auto !important;
+  display: inline-flex;
+  align-items: center;
 }
 .finish-upgrade-btn img {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   object-fit: contain;
   display: block;
   pointer-events: none;

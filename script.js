@@ -606,7 +606,6 @@ function renderBuilderCards() {
 
       card.innerHTML = `
         ${badgeHTML}
-        <button class="finish-upgrade-btn" data-builder="${builderNumber}" data-upgrade="${row[1]}" data-next="${row[4]}" title="Mark upgrade as finished"><img src="Images/Finished.png" alt="Finish" /></button>
         <img src="Images/Builders/Builder ${builderNumber}.png"
              class="builder-character" alt="Builder ${builderNumber}" />
         <img src="${currentUpgradeImg}" class="current-upgrade-icon"
@@ -617,7 +616,10 @@ function renderBuilderCards() {
           <div class="builder-time-left editable-card-duration"
                data-builder="Builder_${builderNumber}" data-upgrade="${row[1]}"
                data-row="2" title="Click to edit duration">${row[3]}</div>
-          <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}</div>
+          <div class="builder-finish-row">
+            <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}</div>
+            <button class="finish-upgrade-btn" data-builder="${builderNumber}" data-upgrade="${row[1]}" data-next="${row[4]}" title="Mark upgrade as finished"><img src="Images/Finished.png" alt="Finish" /></button>
+          </div>
           <div class="builder-next">
             <img src="${getUpgradeImage(row[4])}" class="next-upgrade-icon"
                  alt="${row[4]}" onerror="this.src='Images/Upgrades/PH.png'" />
