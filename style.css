@@ -834,6 +834,7 @@ button:disabled {
   font-family: 'Lexend', sans-serif;
   transition: all 0.2s;
   -moz-appearance: textfield;
+  appearance: textfield;
   box-sizing: border-box;
 }
 
