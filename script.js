@@ -463,6 +463,7 @@ function renderBuilderDetails(details) {
               <img src="${imgSrc}" class="upgrade-icon" alt="${upg.upgrade}"
                    onerror="this.src='Images/Upgrades/PH.png'" />`}
               <span${isSC ? ' style="color:#093DBA"' : ''}>${formatUpgradeName(upg.upgrade)}</span>
+              ${upg.cost ? `<span class="upgrade-cost">${upg.cost}</span>` : ''}
             </div>
             <div class="upgrade-duration editable-duration" data-index="${idx}">${upg.duration}</div>
             <div class="upgrade-time">
