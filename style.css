@@ -2152,6 +2152,7 @@ button:disabled {
   .builder-upgrade { font-size: 14px; margin-top: 10px; }
   .builder-time-left { font-size: 16px; }
   .builder-finish { font-size: 13px; }
+  .builder-finish-row { margin-top: -5px; margin-bottom: -5px; }
   .builder-next   { font-size: 10px; }
 
   .editable-card-duration { padding: 0; margin-bottom: 7px; }
