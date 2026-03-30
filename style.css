@@ -2736,6 +2736,16 @@ button:disabled {
 
 .bs-builder-name {
   color: #e0e0e8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bs-saved-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #f5d04c;
+  opacity: 0.85;
 }
 
 .bs-builder-times {

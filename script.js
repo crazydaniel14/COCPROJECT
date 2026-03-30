@@ -1179,11 +1179,16 @@ function showBuilderBoostModal({ title, image, desc, minsPerUse, apiAction, erro
       return;
     }
 
+    const savedMins = reduceMs / 60000;
+    const savedLabel = savedMins >= 60
+      ? `(${savedMins / 60} hr${savedMins / 60 !== 1 ? 's' : ''}.)`
+      : `(${savedMins} min.)`;
+
     previewList.innerHTML = rows.map(p => `
       <div class="bs-builder-row">
         <img src="${getUpgradeImage(p.upgrade)}" class="bs-upgrade-icon"
              alt="${p.upgrade}" onerror="this.src='Images/Upgrades/PH.png'">
-        <span class="bs-builder-name">${bsBuilderLabel(p.builder)}</span>
+        <span class="bs-builder-name">${bsBuilderLabel(p.builder)}<span class="bs-saved-label">${savedLabel}</span></span>
         <span class="bs-builder-times">
           ${bsFormatTime(p.oldTime)}
           <span class="bs-arrow">→</span>
