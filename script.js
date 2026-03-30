@@ -1054,20 +1054,22 @@ function wireApprenticeBoost() {
 
       badge.src = "Images/Badge/Builder Apprentice applied.png";
 
-      await fetch(REFRESH_ENDPOINT);
-      await loadCurrentWork();
-
-      if (card && currentWorkData && builderNumber) {
-        const bd = currentWorkData.find(r => r[0]?.toString().includes(builderNumber));
-        if (bd) {
-          const tl = card.querySelector(".builder-time-left");
-          const ft = card.querySelector(".builder-finish");
-          if (tl) tl.textContent = bd[3];
-          if (ft) ft.textContent = "Finishes: " + formatFinishTime(bd[2]);
+      // Instant card update from the API response — no extra fetch needed
+      if (card && data.newEndTime && data.newDuration != null) {
+        const newEnd = new Date(data.newEndTime);
+        const tl = card.querySelector(".builder-time-left");
+        const ft = card.querySelector(".builder-finish");
+        if (tl) {
+          const d = Math.floor(data.newDuration / (24 * 60));
+          const h = Math.floor((data.newDuration % (24 * 60)) / 60);
+          const m = data.newDuration % 60;
+          tl.textContent = `${d} d ${h} hr ${m} min`;
         }
+        if (ft) ft.textContent = "Finishes: " + formatFinishTime(newEnd);
       }
 
-      await loadBoostPlan();
+      // Refresh remaining data in parallel
+      await Promise.all([loadCurrentWork(), loadBoostPlan()]);
       updateLastRefreshed();
       const container = document.getElementById("builders-container");
       container.innerHTML = "";
