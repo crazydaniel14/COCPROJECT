@@ -518,6 +518,51 @@ button:disabled {
   box-sizing: border-box;
 }
 
+.builder-stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 10px 14px;
+  margin: 8px 0 4px 0;
+  background: #1e1e25;
+  border-radius: 10px;
+  border: 1px solid rgba(245,208,76,0.12);
+}
+
+.builder-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  flex: 1;
+}
+
+.builder-stat:last-child {
+  justify-content: flex-end;
+}
+
+.builder-stat-sep {
+  width: 1px;
+  height: 24px;
+  background: rgba(255,255,255,0.1);
+  margin: 0 14px;
+  flex-shrink: 0;
+}
+
+.builder-stat-value {
+  font-size: 15px;
+  font-weight: 800;
+  color: #f5d04c;
+  line-height: 1;
+}
+
+.builder-stat-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim, rgba(255,255,255,0.45));
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 /* Desktop grid: icon col | name | duration | dates | controls */
 .upgrade-headers {
   display: grid;

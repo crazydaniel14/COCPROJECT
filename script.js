@@ -437,6 +437,17 @@ function renderBuilderDetails(details) {
     <div class="builder-details-header">
       <button class="builder-refresh-btn" title="Refresh builder data">🔄</button>
     </div>
+    <div class="builder-stats-bar">
+      <div class="builder-stat">
+        <span class="builder-stat-value">${details.upgrades.length}</span>
+        <span class="builder-stat-label">upgrade${details.upgrades.length !== 1 ? 's' : ''} queued</span>
+      </div>
+      <div class="builder-stat-sep"></div>
+      <div class="builder-stat">
+        <span class="builder-stat-label">Expected finish</span>
+        <span class="builder-stat-value">${details.upgrades.length > 0 ? details.upgrades[details.upgrades.length - 1].end : '—'}</span>
+      </div>
+    </div>
     <div class="upgrade-headers">
       <span></span><span>Future Upgrades</span><span>Duration</span>
       <span>Start and End dates</span><span></span>
