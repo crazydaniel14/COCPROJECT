@@ -1181,7 +1181,7 @@ function showBuilderBoostModal({ title, image, desc, minsPerUse, apiAction, erro
 
     const savedMins = reduceMs / 60000;
     const savedLabel = savedMins >= 60
-      ? `(${savedMins / 60} hr${savedMins / 60 !== 1 ? 's' : ''}.)`
+      ? `(${savedMins / 60} hr${savedMins / 60 !== 1 ? 's' : ''})`
       : `(${savedMins} min.)`;
 
     previewList.innerHTML = rows.map(p => `
