@@ -49,7 +49,8 @@ const HERO_NAMES = [
   "Minion Prince",
   "Dragon Duke",
   "Royal Champion",
-  "Longshot"
+  "Longshot",
+  "Air Bombs"
 ];
 
 const IMAGE_MAP = {
