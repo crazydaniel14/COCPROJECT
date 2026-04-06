@@ -38,6 +38,7 @@ function BUILDER_SNACK_URL()  { return endpoint("apply_one_hour_boost"); }
 function BATTLE_PASS_URL()    { return endpoint("apply_battle_pass"); }
 function BUILDER_DETAILS_URL(builderName) { return endpoint("builder_details") + "&builder=" + builderName; }
 function PAUSED_BUILDERS_URL() { return endpoint("get_paused_builders"); }
+function TOWN_HALL_LEVEL_URL() { return endpoint("get_town_hall_level"); }
 
 /* =========================
    IMAGE MATCHING
@@ -151,6 +152,7 @@ function getUpgradeImage(upgradeName) {
    GLOBAL STATE
    ========================= */
 let currentWorkData = null;
+let townHallLevel = null;
 let todaysBoostInfo = null;
 let isRefreshing = false;
 let reviewedTabs = new Set();
@@ -240,6 +242,7 @@ async function softRefreshBuilderCards() {
       container.innerHTML = "";
       renderBuilderCards();
     }
+    renderTownHallSection();
   } catch (e) { console.error("Soft refresh failed:", e); }
 }
 
@@ -272,6 +275,48 @@ async function loadPausedBuilders() {
     console.error("Failed to load paused builders:", e);
     window._pausedBuilders = {};
   }
+}
+
+async function loadTownHallLevel() {
+  try {
+    const res  = await fetch(TOWN_HALL_LEVEL_URL());
+    const data = await res.json();
+    townHallLevel = data.level ?? null;
+  } catch (e) {
+    console.error("loadTownHallLevel failed", e);
+    townHallLevel = null;
+  }
+}
+
+function getLatestBuilderFinish() {
+  if (!currentWorkData || currentWorkData.length < 2) return null;
+  let latest = null;
+  for (let i = 1; i < currentWorkData.length; i++) {
+    const t = new Date(currentWorkData[i][2]);
+    if (!isNaN(t) && (latest === null || t > latest)) latest = t;
+  }
+  return latest;
+}
+
+function renderTownHallSection() {
+  const section = document.getElementById("th-info-section");
+  if (!section) return;
+  if (!townHallLevel) { section.innerHTML = ""; return; }
+
+  const imgSrc = `Images/Upgrades/Town Hall Lvl ${townHallLevel}.png`;
+  const latestFinish = getLatestBuilderFinish();
+  const finishStr = latestFinish ? formatFinishTime(latestFinish) : "—";
+
+  section.innerHTML = `
+    <img class="th-info-img" src="${imgSrc}" alt="Town Hall ${townHallLevel}"
+         onerror="this.src='Images/Upgrades/PH.png'" />
+    <div class="th-info-details">
+      <div class="th-info-title">Town Hall ${townHallLevel}</div>
+      <div class="th-info-finish">
+        <span class="th-info-finish-label">Est. Finish</span>
+        <span class="th-info-finish-date">${finishStr}</span>
+      </div>
+    </div>`;
 }
 
 async function loadBoostLevel() {
@@ -313,13 +358,15 @@ async function refreshDashboardFast() {
       loadTodaysBoost(),
       loadPausedBuilders(),
       loadBoostPlan(),
-      loadBoostLevel()
+      loadBoostLevel(),
+      loadTownHallLevel()
     ]);
     if (openBuilders.length === 0) {
       const container = document.getElementById("builders-container");
       if (container) container.innerHTML = "";
       renderBuilderCards();
     }
+    renderTownHallSection();
     updateLastRefreshed();
     showRefreshIndicator('done');
   } catch (e) {
@@ -342,13 +389,15 @@ async function refreshDashboard() {
       loadTodaysBoost(),
       loadPausedBuilders(),
       loadBoostPlan(),
-      loadBoostLevel()
+      loadBoostLevel(),
+      loadTownHallLevel()
     ]);
     if (openBuilders.length === 0) {
       const container = document.getElementById("builders-container");
       if (container) container.innerHTML = "";
       renderBuilderCards();
     }
+    renderTownHallSection();
     updateLastRefreshed();
     showRefreshIndicator('done');
   } catch (e) {
