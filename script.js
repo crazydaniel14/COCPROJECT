@@ -40,6 +40,132 @@ function BUILDER_DETAILS_URL(builderName) { return endpoint("builder_details") +
 function PAUSED_BUILDERS_URL() { return endpoint("get_paused_builders"); }
 function TOWN_HALL_LEVEL_URL()        { return endpoint("get_town_hall_level"); }
 function ALL_BUILDERS_LAST_FINISH_URL() { return endpoint("get_all_builders_last_finish"); }
+function REGISTER_USER_URL()          { return `${API_BASE}?action=register_user`; }
+
+/* =========================
+   BUILDING ID MAP
+   Maps Clash of Clans building data IDs to human-readable names.
+   Used for parsing village JSON exports.
+   ========================= */
+const BUILDING_ID_MAP = {
+  1000000: "Army Camp",
+  1000001: "Town Hall",
+  1000002: "Elixir Collector",
+  1000003: "Elixir Storage",
+  1000004: "Gold Mine",
+  1000005: "Gold Storage",
+  1000006: "Barracks",
+  1000007: "Laboratory",
+  1000008: "Cannon",
+  1000009: "Archer Tower",
+  1000010: "Wall",
+  1000011: "Wizard Tower",
+  1000012: "Air Defense",
+  1000013: "Mortar",
+  1000014: "Clan Castle",
+  1000015: "Builders Hut",
+  1000019: "Hidden Tesla",
+  1000020: "Spell Factory",
+  1000021: "X-Bow",
+  1000023: "Dark Elixir Drill",
+  1000024: "Dark Elixir Storage",
+  1000026: "Dark Barracks",
+  1000027: "Inferno Tower",
+  1000028: "Air Sweeper",
+  1000029: "Dark Spell Factory",
+  1000031: "Eagle Artillery",
+  1000032: "Bomb Tower",
+  1000059: "Workshop",
+  1000067: "Scattershot",
+  1000068: "Pet House",
+  1000070: "Blacksmith",
+  1000071: "Hero Hall",
+  1000072: "Spell Tower",
+  1000077: "Monolith",
+  1000079: "Multi-Gear Tower",
+  1000084: "Multi-Archer Tower",
+  1000085: "Ricochet Cannon",
+  1000089: "Firespitter",
+  1000097: "Crafted Defense",
+  4000000: "Barbarian",
+  4000001: "Archer",
+  4000002: "Goblin",
+  4000003: "Giant",
+  4000004: "Wall Breaker",
+  4000005: "Balloon",
+  4000006: "Wizard",
+  4000007: "Healer",
+  4000008: "Dragon",
+  4000009: "P.E.K.K.A",
+  4000010: "Minion",
+  4000011: "Hog Rider",
+  4000012: "Valkyrie",
+  4000013: "Golem",
+  4000015: "Witch",
+  4000017: "Lava Hound",
+  4000022: "Bowler",
+  4000023: "Baby Dragon",
+  4000024: "Miner",
+  4000051: "Wall Wrecker",
+  4000052: "Battle Blimp",
+  4000053: "Yeti",
+  4000058: "Ice Golem",
+  4000059: "Electro Dragon",
+  4000062: "Stone Slammer",
+  4000065: "Dragon Rider",
+  4000075: "Siege Barracks",
+  4000082: "Headhunter",
+  4000087: "Log Launcher",
+  4000091: "Flame Flinger",
+  4000092: "Battle Drill",
+  4000095: "Electro Titan",
+  4000097: "Apprentice Warden",
+  4000110: "Root Rider",
+  4000123: "Druid",
+  4000132: "Thrower",
+  4000135: "Troop Launcher",
+  4000150: "Furnace",
+  12000000: "Bomb",
+  12000001: "Spring Trap",
+  12000002: "Giant Bomb",
+  12000005: "Air Bomb",
+  12000006: "Seeking Air Mine",
+  12000008: "Skeleton Trap",
+  12000016: "Tornado Trap",
+  12000020: "Giga Bomb",
+  26000000: "Lightning Spell",
+  26000001: "Healing Spell",
+  26000002: "Rage Spell",
+  26000003: "Jump Spell",
+  26000005: "Freeze Spell",
+  26000009: "Poison Spell",
+  26000010: "Earthquake Spell",
+  26000011: "Haste Spell",
+  26000016: "Clone Spell",
+  26000017: "Skeleton Spell",
+  26000028: "Bat Spell",
+  26000035: "Invisibility Spell",
+  26000053: "Recall Spell",
+  26000070: "Overgrowth Spell",
+  26000098: "Revive Spell",
+  26000109: "Ice Block Spell",
+  28000000: "Barbarian King",
+  28000001: "Archer Queen",
+  28000002: "Grand Warden",
+  28000004: "Royal Champion",
+  28000006: "Minion Prince",
+  73000000: "L.A.S.S.I",
+  73000001: "Electro Owl",
+  73000002: "Mighty Yak",
+  73000003: "Unicorn",
+  73000004: "Phoenix",
+  73000007: "Poison Lizard",
+  73000008: "Diggy",
+  73000009: "Frosty",
+  73000010: "Spirit Fox",
+  73000011: "Angry Jelly",
+  73000016: "Sneezy",
+};
 
 /* =========================
    IMAGE MATCHING
@@ -2268,16 +2394,75 @@ async function bootApp() {
 }
 
 function switchUser() {
-  localStorage.removeItem("coc_username");
-  window.COC_USERNAME = null;
-  // Clear the page then show login — avoids reload race condition
-  document.getElementById("builders-container").innerHTML = "";
-  document.querySelector('.upgrade-confirmation-modal-overlay')?.remove();
-  showLoginScreen(async (confirmedUsername) => {
-    window.COC_USERNAME = confirmedUsername;
-    location.reload(); // reload fresh with new username now stored
+  // Remove any existing profile popup first (toggle behaviour)
+  const existing = document.getElementById("profile-popup");
+  if (existing) { existing.remove(); return; }
+
+  const username = window.COC_USERNAME || localStorage.getItem("coc_username") || "—";
+  const tag      = localStorage.getItem("coc_tag");
+  const thLevel  = localStorage.getItem("coc_th_level");
+
+  const popup = document.createElement("div");
+  popup.id = "profile-popup";
+  popup.style.cssText = [
+    "position:fixed", "top:64px", "right:16px", "z-index:99990",
+    "background:#1e1e2e", "border:1px solid #333", "border-radius:12px",
+    "padding:20px 22px", "min-width:200px", "max-width:260px",
+    "box-shadow:0 8px 24px rgba(0,0,0,0.6)", "font-family:sans-serif",
+    "color:#fff", "text-align:left"
+  ].join(";");
+
+  const tagLine    = tag      ? `<div style="color:#aaa;font-size:0.8rem;margin-top:4px">${tag}</div>` : "";
+  const thLine     = thLevel  ? `<div style="color:#f5c842;font-size:0.8rem;margin-top:2px">Town Hall ${thLevel}</div>` : "";
+
+  popup.innerHTML = `
+    <div style="font-weight:700;font-size:1rem;margin-bottom:2px">${username}</div>
+    ${tagLine}
+    ${thLine}
+    <hr style="border:none;border-top:1px solid #333;margin:14px 0;">
+    <button id="profile-logout-btn" style="
+      width:100%;padding:10px;border-radius:8px;border:none;
+      background:#ef4444;color:#fff;font-size:0.9rem;
+      font-weight:600;cursor:pointer;font-family:sans-serif;
+    ">Log Out</button>
+  `;
+
+  document.body.appendChild(popup);
+
+  popup.querySelector("#profile-logout-btn").addEventListener("click", () => {
+    popup.remove();
+    localStorage.removeItem("coc_username");
+    localStorage.removeItem("coc_tag");
+    localStorage.removeItem("coc_th_level");
+    window.COC_USERNAME = null;
+    document.getElementById("builders-container").innerHTML = "";
+    document.querySelector('.upgrade-confirmation-modal-overlay')?.remove();
+    showLoginScreen(async (confirmedUsername) => {
+      window.COC_USERNAME = confirmedUsername;
+      location.reload();
+    });
   });
-} 
+
+  // Close when clicking outside
+  function onOutsideClick(e) {
+    const switchBtn = document.querySelector('[onclick="switchUser()"]');
+    if (!popup.contains(e.target) && e.target !== switchBtn) {
+      popup.remove();
+      document.removeEventListener("click", onOutsideClick, true);
+    }
+  }
+  // Defer listener to avoid catching the current click
+  setTimeout(() => document.addEventListener("click", onOutsideClick, true), 0);
+
+  // Close on Escape
+  function onEsc(e) {
+    if (e.key === "Escape") {
+      popup.remove();
+      document.removeEventListener("keydown", onEsc);
+    }
+  }
+  document.addEventListener("keydown", onEsc);
+}
 /* =========================
    SEARCH FEATURE
    ========================= */
@@ -2469,9 +2654,94 @@ function wireSearchFeature() {
 }
 
 /* =========================
+   REGISTRATION
+   Called from the "New User" tab in showLoginScreen().
+   Parses village JSON, extracts tag + TH level, POSTs to register_user.
+   ========================= */
+async function doRegister(nameInput, jsonInput, errEl, loadingEl, btn, overlay, onConfirm) {
+  const name = nameInput.value.replace(/[^a-zA-Z0-9_ ]/g, "").trim();
+  if (!name) {
+    errEl.textContent = "Please enter your in-game name.";
+    errEl.style.display = "block";
+    nameInput.focus();
+    return;
+  }
+
+  const rawJson = jsonInput.value.trim();
+  if (!rawJson) {
+    errEl.textContent = "Please paste your village JSON or upload a file.";
+    errEl.style.display = "block";
+    return;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(rawJson);
+  } catch (e) {
+    errEl.textContent = "Invalid JSON — make sure you copied it fully.";
+    errEl.style.display = "block";
+    return;
+  }
+
+  if (!parsed.tag) {
+    errEl.textContent = "JSON does not contain a player tag. Is this a village export?";
+    errEl.style.display = "block";
+    return;
+  }
+
+  // Extract TH level: Town Hall is dataId 1000001
+  let thLevel = null;
+  if (Array.isArray(parsed.buildings)) {
+    const thBuilding = parsed.buildings.find(b => b.data === 1000001);
+    if (thBuilding) thLevel = thBuilding.lvl;
+  }
+
+  errEl.style.display = "none";
+  loadingEl.style.display = "block";
+  btn.disabled = true;
+  btn.style.opacity = "0.6";
+
+  try {
+    const body = new URLSearchParams({
+      action: "register_user",
+      username: name,
+      tag: parsed.tag,
+      th_level: thLevel !== null ? String(thLevel) : "",
+      raw_json: rawJson,
+    });
+
+    const res = await fetch(REGISTER_USER_URL(), { method: "POST", body });
+    const data = await res.json();
+
+    if (data.error) {
+      loadingEl.style.display = "none";
+      btn.disabled = false;
+      btn.style.opacity = "1";
+      errEl.textContent = data.error;
+      errEl.style.display = "block";
+      return;
+    }
+
+    // Success — store session data
+    localStorage.setItem("coc_username", name);
+    if (parsed.tag)    localStorage.setItem("coc_tag", parsed.tag);
+    if (thLevel !== null) localStorage.setItem("coc_th_level", String(thLevel));
+
+    overlay.remove();
+    onConfirm(name);
+  } catch (e) {
+    loadingEl.style.display = "none";
+    btn.disabled = false;
+    btn.style.opacity = "1";
+    errEl.textContent = "Network error — please try again.";
+    errEl.style.display = "block";
+  }
+}
+
+/* =========================
    LOGIN SCREEN
-   — Shows password field only for usernames that have
-     a password set in USER_PASSWORDS above.
+   — Two tabs: "Existing User" (username + optional password)
+               "New User"      (in-game name + village JSON upload)
    ========================= */
 function showLoginScreen(onConfirm) {
   const overlay = document.createElement("div");
@@ -2482,7 +2752,7 @@ function showLoginScreen(onConfirm) {
     "display:flex", "align-items:center", "justify-content:center",
     "padding:24px", "box-sizing:border-box"
   ].join(";");
-   
+
   const sharedInputStyle = `
     width:100%; box-sizing:border-box;
     padding:14px 16px; border-radius:10px;
@@ -2494,51 +2764,137 @@ function showLoginScreen(onConfirm) {
   overlay.innerHTML = `
     <div style="
       background:#1e1e2e; border-radius:16px; padding:32px 28px;
-      width:100%; max-width:360px; box-shadow:0 8px 32px rgba(0,0,0,0.6);
+      width:100%; max-width:380px; box-shadow:0 8px 32px rgba(0,0,0,0.6);
       font-family:sans-serif; color:#fff; text-align:center;
     ">
       <div style="font-size:48px; margin-bottom:8px">⚒️</div>
-      <h2 style="margin:0 0 6px; font-size:1.3rem">Builder Tracker</h2>
-      <p style="margin:0 0 24px; color:#aaa; font-size:0.9rem">Enter your credentials to continue</p>
-      <input
-        id="login-username-input"
-        type="text"
-        placeholder="Username"
-        autocomplete="username"
-        autocapitalize="off"
-        style="${sharedInputStyle} margin-bottom:10px;"
-      />
-      <div id="login-password-wrap" style="margin-bottom:10px;">
-        <input
-          id="login-password-input"
-          type="password"
-          placeholder="Password"
-          autocomplete="current-password"
-          style="${sharedInputStyle}"
-        />
+      <h2 style="margin:0 0 20px; font-size:1.3rem">Builder Tracker</h2>
+
+      <!-- Tabs -->
+      <div style="display:flex; gap:8px; margin-bottom:24px; background:#2a2a3e; border-radius:10px; padding:4px;">
+        <button id="tab-existing" style="
+          flex:1; padding:10px; border-radius:8px; border:none; cursor:pointer;
+          font-size:0.9rem; font-weight:600; font-family:sans-serif;
+          background:#f5c842; color:#1e1e2e; transition:all 0.2s;
+        ">Existing User</button>
+        <button id="tab-new" style="
+          flex:1; padding:10px; border-radius:8px; border:none; cursor:pointer;
+          font-size:0.9rem; font-weight:600; font-family:sans-serif;
+          background:transparent; color:#aaa; transition:all 0.2s;
+        ">New User</button>
       </div>
-      <button id="login-confirm-btn" style="
-        width:100%; padding:14px; border-radius:10px;
-        border:none; background:#5865f2; color:#fff;
-        font-size:1rem; font-weight:600; cursor:pointer;
-        transition:background 0.2s; font-family:sans-serif;
-        margin-top:6px;
-      ">Continue →</button>
-      <p id="login-error" style="color:#f87171; font-size:0.85rem; margin:12px 0 0; display:none">
-        Please enter a username.
-      </p>
+
+      <!-- Existing User Panel -->
+      <div id="panel-existing">
+        <p style="margin:0 0 16px; color:#aaa; font-size:0.9rem">Enter your credentials to continue</p>
+        <input
+          id="login-username-input"
+          type="text"
+          placeholder="Username"
+          autocomplete="username"
+          autocapitalize="off"
+          style="${sharedInputStyle} margin-bottom:10px;"
+        />
+        <div id="login-password-wrap" style="margin-bottom:10px;">
+          <input
+            id="login-password-input"
+            type="password"
+            placeholder="Password"
+            autocomplete="current-password"
+            style="${sharedInputStyle}"
+          />
+        </div>
+        <button id="login-confirm-btn" style="
+          width:100%; padding:14px; border-radius:10px;
+          border:none; background:#5865f2; color:#fff;
+          font-size:1rem; font-weight:600; cursor:pointer;
+          transition:background 0.2s; font-family:sans-serif;
+          margin-top:6px;
+        ">Continue →</button>
+        <p id="login-error" style="color:#f87171; font-size:0.85rem; margin:12px 0 0; display:none">
+          Please enter a username.
+        </p>
+      </div>
+
+      <!-- New User Panel -->
+      <div id="panel-new" style="display:none;">
+        <p style="margin:0 0 16px; color:#aaa; font-size:0.9rem">
+          Upload your village data to create an account
+        </p>
+        <input
+          id="reg-name-input"
+          type="text"
+          placeholder="Your in-game name"
+          autocapitalize="words"
+          style="${sharedInputStyle} margin-bottom:10px;"
+        />
+        <textarea
+          id="reg-json-input"
+          placeholder="Paste your village JSON here..."
+          rows="6"
+          style="${sharedInputStyle} margin-bottom:6px; resize:vertical; font-family:monospace; font-size:0.8rem; line-height:1.4;"
+        ></textarea>
+        <label id="reg-file-label" style="
+          display:block; padding:10px; border-radius:8px; border:2px dashed #444;
+          color:#aaa; font-size:0.85rem; cursor:pointer; margin-bottom:12px;
+          transition:border-color 0.2s; box-sizing:border-box;
+        ">
+          Or upload a .json file
+          <input id="reg-file-input" type="file" accept=".json,application/json" style="display:none;" />
+        </label>
+        <button id="reg-confirm-btn" style="
+          width:100%; padding:14px; border-radius:10px;
+          border:none; background:#f5c842; color:#1e1e2e;
+          font-size:1rem; font-weight:600; cursor:pointer;
+          transition:background 0.2s; font-family:sans-serif;
+        ">Create Account</button>
+        <p id="reg-error" style="color:#f87171; font-size:0.85rem; margin:12px 0 0; display:none">
+          Please fill in all fields.
+        </p>
+        <p id="reg-loading" style="color:#aaa; font-size:0.85rem; margin:12px 0 0; display:none">
+          Registering...
+        </p>
+      </div>
     </div>
   `;
 
   document.body.appendChild(overlay);
 
+  // --- Tab switching ---
+  const tabExisting   = overlay.querySelector("#tab-existing");
+  const tabNew        = overlay.querySelector("#tab-new");
+  const panelExisting = overlay.querySelector("#panel-existing");
+  const panelNew      = overlay.querySelector("#panel-new");
+
+  function activateTab(tab) {
+    if (tab === "existing") {
+      tabExisting.style.background = "#f5c842";
+      tabExisting.style.color = "#1e1e2e";
+      tabNew.style.background = "transparent";
+      tabNew.style.color = "#aaa";
+      panelExisting.style.display = "block";
+      panelNew.style.display = "none";
+      setTimeout(() => overlay.querySelector("#login-username-input")?.focus(), 50);
+    } else {
+      tabNew.style.background = "#f5c842";
+      tabNew.style.color = "#1e1e2e";
+      tabExisting.style.background = "transparent";
+      tabExisting.style.color = "#aaa";
+      panelNew.style.display = "block";
+      panelExisting.style.display = "none";
+      setTimeout(() => overlay.querySelector("#reg-name-input")?.focus(), 50);
+    }
+  }
+
+  tabExisting.addEventListener("click", () => activateTab("existing"));
+  tabNew.addEventListener("click", () => activateTab("new"));
+
+  // --- Existing user login ---
   const usernameInput = overlay.querySelector("#login-username-input");
   const passwordWrap  = overlay.querySelector("#login-password-wrap");
   const passwordInput = overlay.querySelector("#login-password-input");
   const btn           = overlay.querySelector("#login-confirm-btn");
   const err           = overlay.querySelector("#login-error");
-
-  // Password field is always visible
 
   setTimeout(() => usernameInput.focus(), 100);
 
@@ -2549,7 +2905,6 @@ function showLoginScreen(onConfirm) {
       err.style.display = "block";
       return;
     }
-    // Check password if this username has one configured
     if (USER_PASSWORDS[val] !== undefined) {
       passwordWrap.style.display = "block";
       if (passwordInput.value !== USER_PASSWORDS[val]) {
@@ -2572,4 +2927,54 @@ function showLoginScreen(onConfirm) {
   passwordInput.addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
   btn.addEventListener("mouseenter", () => btn.style.background = "#4752c4");
   btn.addEventListener("mouseleave", () => btn.style.background = "#5865f2");
+
+  // --- New user registration ---
+  const regNameInput  = overlay.querySelector("#reg-name-input");
+  const regJsonInput  = overlay.querySelector("#reg-json-input");
+  const regFileInput  = overlay.querySelector("#reg-file-input");
+  const regFileLabel  = overlay.querySelector("#reg-file-label");
+  const regBtn        = overlay.querySelector("#reg-confirm-btn");
+  const regErr        = overlay.querySelector("#reg-error");
+  const regLoading    = overlay.querySelector("#reg-loading");
+
+  // File upload → fill textarea
+  regFileInput.addEventListener("change", () => {
+    const file = regFileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      regJsonInput.value = e.target.result;
+      regFileLabel.style.borderColor = "#f5c842";
+      regFileLabel.style.color = "#f5c842";
+    };
+    reader.onerror = () => {
+      regErr.textContent = "Could not read file.";
+      regErr.style.display = "block";
+    };
+    reader.readAsText(file);
+  });
+
+  regFileLabel.addEventListener("dragover", e => {
+    e.preventDefault();
+    regFileLabel.style.borderColor = "#f5c842";
+  });
+  regFileLabel.addEventListener("dragleave", () => {
+    regFileLabel.style.borderColor = "#444";
+  });
+  regFileLabel.addEventListener("drop", e => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      regJsonInput.value = ev.target.result;
+      regFileLabel.style.borderColor = "#f5c842";
+      regFileLabel.style.color = "#f5c842";
+    };
+    reader.readAsText(file);
+  });
+
+  regBtn.addEventListener("click", () => doRegister(regNameInput, regJsonInput, regErr, regLoading, regBtn, overlay, onConfirm));
+  regBtn.addEventListener("mouseenter", () => regBtn.style.background = "#d4a800");
+  regBtn.addEventListener("mouseleave", () => regBtn.style.background = "#f5c842");
 }
