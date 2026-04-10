@@ -18,277 +18,252 @@
       --border:   rgba(255,255,255,0.08);
       --text:     #ffffff;
       --text-dim: #9999a8;
-      --b1: #A9B7A9;
-      --b2: #B18EA9;
-      --b3: #508B8B;
-      --b4: #CC7A6F;
-      --b5: #A899E6;
-      --b6: #C5A86E;
     }
 
-    html, body {
-      height: 100%;
-      background: var(--bg);
-      font-family: 'Lexend', sans-serif;
-      color: var(--text);
-      overflow-x: hidden;
-    }
+    html, body { height: 100%; background: var(--bg); font-family: 'Lexend', sans-serif; color: var(--text); overflow-x: hidden; }
 
     /* ── HEADER ── */
     .bldg-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 20px;
-      background: var(--surface);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; background: var(--surface);
       border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 0;
-      z-index: 200;
-      gap: 12px;
+      position: sticky; top: 0; z-index: 200; gap: 12px;
     }
-    .bldg-title {
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--gold);
-      letter-spacing: .5px;
-      white-space: nowrap;
-    }
+    .bldg-title { font-size: 18px; font-weight: 800; color: var(--gold); letter-spacing: .5px; white-space: nowrap; flex: 1; }
     .back-btn {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 8px 14px;
-      color: var(--text-dim);
-      font-family: 'Lexend', sans-serif;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all .18s;
-      white-space: nowrap;
-      text-decoration: none;
+      display: flex; align-items: center; gap: 6px;
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+      padding: 8px 14px; color: var(--text-dim); font-family: 'Lexend', sans-serif;
+      font-size: 13px; font-weight: 600; cursor: pointer; transition: all .18s;
+      white-space: nowrap; text-decoration: none;
     }
     .back-btn:hover { color: var(--text); border-color: var(--gold); }
-
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+    .icon-action-btn {
+      display: flex; align-items: center; justify-content: center;
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+      padding: 8px 10px; cursor: pointer; transition: all .18s;
+    }
+    .icon-action-btn:hover { border-color: var(--gold); }
+    .icon-action-btn img { width: 22px; height: 22px; object-fit: contain; display: block; }
     .refresh-btn {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--gold);
-      border: none;
-      border-radius: 10px;
-      padding: 8px 14px;
-      color: #000;
-      font-family: 'Lexend', sans-serif;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all .18s;
-      white-space: nowrap;
+      display: flex; align-items: center; gap: 6px;
+      background: var(--gold); border: none; border-radius: 10px;
+      padding: 8px 14px; color: #000; font-family: 'Lexend', sans-serif;
+      font-size: 13px; font-weight: 700; cursor: pointer; transition: all .18s; white-space: nowrap;
     }
     .refresh-btn:hover { background: #ffd700; }
     .refresh-btn.loading { opacity: .7; pointer-events: none; }
 
-    /* ── CATEGORY TABS ── */
+    /* ── CATEGORY TABS (bigger) ── */
     .cat-tabs {
-      display: flex;
-      gap: 8px;
-      padding: 10px 20px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      overflow-x: auto;
-      position: sticky;
-      top: 57px;
-      z-index: 190;
-      justify-content: flex-start;
+      display: flex; gap: 10px; padding: 12px 20px;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      overflow-x: auto; position: sticky; top: 57px; z-index: 190;
     }
     .cat-tabs::-webkit-scrollbar { display: none; }
     .cat-tab {
-      flex-shrink: 0;
-      padding: 7px 14px;
-      border-radius: 10px;
-      border: 1.5px solid var(--border);
-      background: var(--surface2);
-      color: var(--text-dim);
-      font-family: 'Lexend', sans-serif;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all .18s;
-      white-space: nowrap;
+      flex-shrink: 0; padding: 10px 20px; border-radius: 12px;
+      border: 1.5px solid var(--border); background: var(--surface2);
+      color: var(--text-dim); font-family: 'Lexend', sans-serif;
+      font-size: 14px; font-weight: 700; cursor: pointer; transition: all .18s; white-space: nowrap;
+      line-height: 1;
     }
     .cat-tab:hover { color: var(--text); border-color: rgba(245,208,76,0.5); }
-    .cat-tab.active {
-      background: rgba(245,208,76,0.15);
-      border-color: var(--gold);
-      color: var(--gold);
+    .cat-tab.active { background: rgba(245,208,76,0.15); border-color: var(--gold); color: var(--gold); }
+    .cat-count {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: rgba(245,208,76,0.2); color: var(--gold); border-radius: 6px;
+      font-size: 11px; font-weight: 800; padding: 2px 6px; margin-left: 6px; min-width: 20px;
     }
+
+    /* ── SORT BAR ── */
+    .sort-bar {
+      display: flex; align-items: center; gap: 8px; padding: 10px 20px;
+      background: var(--bg); border-bottom: 1px solid var(--border);
+    }
+    .sort-label { font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: .5px; margin-right: 4px; white-space: nowrap; }
+    .sort-btn {
+      padding: 6px 14px; border-radius: 8px; border: 1.5px solid var(--border);
+      background: var(--surface2); color: var(--text-dim); font-family: 'Lexend', sans-serif;
+      font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .sort-btn:hover { border-color: rgba(245,208,76,0.4); color: var(--text); }
+    .sort-btn.active { background: rgba(245,208,76,0.1); border-color: rgba(245,208,76,0.6); color: var(--gold); }
 
     /* ── MAIN CONTENT ── */
-    .bldg-content {
-      padding: 20px;
-      min-height: calc(100vh - 120px);
-    }
+    .bldg-content { padding: 18px 20px 80px; }
 
-    /* ── LOADING / ERROR / EMPTY ── */
+    /* ── LOADING / ERROR ── */
     .bldg-status {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 60px 20px;
-      color: var(--text-dim);
-      font-size: 14px;
-      font-weight: 500;
-      gap: 12px;
-      text-align: center;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 60px 20px; color: var(--text-dim); font-size: 14px; font-weight: 500; gap: 12px; text-align: center;
     }
     .bldg-spinner {
-      width: 32px;
-      height: 32px;
-      border: 3px solid var(--border);
-      border-top-color: var(--gold);
-      border-radius: 50%;
-      animation: spin .7s linear infinite;
+      width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--gold);
+      border-radius: 50%; animation: spin .7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── CARD GRID ── */
-    .bldg-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 12px;
-    }
+    .bldg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
 
     /* ── INDIVIDUAL CARD ── */
     .bldg-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 14px 12px 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      transition: border-color .18s;
-      position: relative;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      padding: 14px 12px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+      transition: border-color .18s, transform .12s; position: relative; cursor: pointer;
     }
-    .bldg-card:hover { border-color: rgba(245,208,76,0.35); }
+    .bldg-card:hover { border-color: rgba(245,208,76,0.4); transform: translateY(-1px); }
+    .bldg-card.next-up { border-color: rgba(245,208,76,0.5); background: rgba(245,208,76,0.04); }
+    .bldg-card.selected { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(245,208,76,0.2); }
+    .bldg-card-img { width: 64px; height: 64px; object-fit: contain; border-radius: 8px; }
+    .bldg-card-name { font-size: 11px; font-weight: 700; color: var(--text); text-align: center; line-height: 1.35; word-break: break-word; }
+    .bldg-card-footer { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 6px; }
 
-    .bldg-card.active-upgrade {
-      border-color: rgba(245,208,76,0.55);
-      background: rgba(245,208,76,0.04);
-    }
-
-    .bldg-card-img {
-      width: 64px;
-      height: 64px;
-      object-fit: contain;
-      border-radius: 8px;
-    }
-
-    .bldg-card-name {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--text);
-      text-align: center;
-      line-height: 1.3;
-      word-break: break-word;
-    }
-
-    .bldg-card-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      gap: 6px;
-    }
-
+    /* ── BUILDER DOTS ── */
     .bldg-builder-dot {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 9px;
-      font-weight: 800;
-      color: #fff;
-      flex-shrink: 0;
+      width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; font-size: 9px; font-weight: 800; flex-shrink: 0;
     }
-    .bldg-builder-dot[data-b="1"] { background: rgba(169,183,169,0.7); color: #A9B7A9; border: 1.5px solid #A9B7A9; }
-    .bldg-builder-dot[data-b="2"] { background: rgba(177,142,169,0.7); color: #B18EA9; border: 1.5px solid #B18EA9; }
-    .bldg-builder-dot[data-b="3"] { background: rgba(80,139,139,0.7);  color: #508B8B; border: 1.5px solid #508B8B; }
-    .bldg-builder-dot[data-b="4"] { background: rgba(204,122,111,0.7); color: #CC7A6F; border: 1.5px solid #CC7A6F; }
-    .bldg-builder-dot[data-b="5"] { background: rgba(168,153,230,0.7); color: #A899E6; border: 1.5px solid #A899E6; }
-    .bldg-builder-dot[data-b="6"] { background: rgba(197,168,110,0.7); color: #C5A86E; border: 1.5px solid #C5A86E; }
+    .bldg-builder-dot[data-b="1"] { background: rgba(169,183,169,0.25); color: #A9B7A9; border: 1.5px solid #A9B7A9; }
+    .bldg-builder-dot[data-b="2"] { background: rgba(177,142,169,0.25); color: #B18EA9; border: 1.5px solid #B18EA9; }
+    .bldg-builder-dot[data-b="3"] { background: rgba(80,139,139,0.25);  color: #508B8B; border: 1.5px solid #508B8B; }
+    .bldg-builder-dot[data-b="4"] { background: rgba(204,122,111,0.25); color: #CC7A6F; border: 1.5px solid #CC7A6F; }
+    .bldg-builder-dot[data-b="5"] { background: rgba(168,153,230,0.25); color: #A899E6; border: 1.5px solid #A899E6; }
+    .bldg-builder-dot[data-b="6"] { background: rgba(197,168,110,0.25); color: #C5A86E; border: 1.5px solid #C5A86E; }
 
+    /* ── STATUS BADGES ── */
     .bldg-status-badge {
-      font-size: 9px;
-      font-weight: 800;
-      padding: 3px 7px;
-      border-radius: 6px;
-      text-transform: uppercase;
-      letter-spacing: .4px;
+      font-size: 9px; font-weight: 800; padding: 3px 7px; border-radius: 6px;
+      text-transform: uppercase; letter-spacing: .4px;
     }
-    .bldg-status-badge.active {
-      background: rgba(245,208,76,0.2);
-      color: var(--gold);
-    }
-    .bldg-status-badge.queued {
-      background: rgba(255,255,255,0.06);
-      color: var(--text-dim);
-    }
-
-    .bldg-sc-badge {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: rgba(9,61,186,0.85);
-      border-radius: 5px;
-      padding: 2px 5px;
-      font-size: 8px;
-      font-weight: 800;
-      color: #fff;
-      letter-spacing: .3px;
-    }
+    .bldg-status-badge.next    { background: rgba(245,208,76,0.2); color: var(--gold); }
+    .bldg-status-badge.queued  { background: rgba(255,255,255,0.06); color: var(--text-dim); }
 
     /* ── EMPTY STATE ── */
     .bldg-empty {
-      grid-column: 1 / -1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 48px 20px;
-      color: var(--text-dim);
-      font-size: 13px;
-      font-weight: 500;
-      gap: 8px;
+      grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center;
+      padding: 48px 20px; color: var(--text-dim); font-size: 13px; font-weight: 500; gap: 8px;
     }
     .bldg-empty-icon { font-size: 32px; opacity: .4; }
 
-    /* ── COUNT CHIP ── */
-    .cat-count {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(245,208,76,0.18);
-      color: var(--gold);
-      border-radius: 6px;
-      font-size: 10px;
-      font-weight: 800;
-      padding: 1px 5px;
-      margin-left: 4px;
-      min-width: 18px;
+    /* ── DETAIL MODAL ── */
+    .detail-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 500;
+      display: flex; align-items: flex-end; justify-content: center;
     }
+    .detail-sheet {
+      background: var(--surface); border-radius: 20px 20px 0 0; width: 100%; max-width: 520px;
+      padding: 20px 20px 32px; max-height: 85vh; overflow-y: auto; position: relative;
+      animation: slideUp .22s ease-out;
+    }
+    @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .detail-close {
+      position: absolute; top: 16px; right: 16px;
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text-dim); font-size: 14px; width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .15s;
+    }
+    .detail-close:hover { color: var(--text); border-color: var(--gold); }
+    .detail-drag-handle {
+      width: 40px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+    .detail-top { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+    .detail-big-img { width: 72px; height: 72px; object-fit: contain; border-radius: 10px; flex-shrink: 0; }
+    .detail-header-info { flex: 1; min-width: 0; }
+    .detail-name { font-size: 15px; font-weight: 800; color: var(--text); line-height: 1.3; margin-bottom: 8px; }
+    .detail-badges { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .detail-cat-badge {
+      font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px;
+      background: rgba(255,255,255,0.06); color: var(--text-dim); text-transform: uppercase; letter-spacing: .3px;
+    }
+    .detail-divider { height: 1px; background: var(--border); margin: 14px 0; }
+    .detail-section-label { font-size: 10px; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 10px; }
+    .detail-prev {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
+    }
+    .detail-prev-img { width: 38px; height: 38px; object-fit: contain; border-radius: 6px; flex-shrink: 0; }
+    .detail-prev-name { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.3; }
+    .detail-prev-time { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+    .detail-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-row-label { font-size: 12px; color: var(--text-dim); font-weight: 600; }
+    .detail-row-val { font-size: 12px; color: var(--text); font-weight: 700; text-align: right; }
+    .detail-row-val.gold { color: var(--gold); }
+    .detail-jump-btn {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      width: 100%; margin-top: 16px; padding: 13px 20px;
+      background: var(--gold); border: none; border-radius: 12px;
+      color: #000; font-family: 'Lexend', sans-serif; font-size: 14px; font-weight: 800;
+      cursor: pointer; transition: background .15s;
+    }
+    .detail-jump-btn:hover { background: #ffd700; }
+
+    /* ── SEARCH MODAL ── */
+    .search-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 500;
+      display: flex; align-items: flex-start; justify-content: center; padding-top: 60px;
+    }
+    .search-sheet {
+      background: var(--surface); border-radius: 16px; width: calc(100% - 32px);
+      max-width: 500px; max-height: 75vh; display: flex; flex-direction: column; overflow: hidden;
+      animation: slideDown .2s ease-out;
+    }
+    @keyframes slideDown { from { transform: translateY(-16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .search-sheet-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px 12px; border-bottom: 1px solid var(--border);
+    }
+    .search-sheet-header h3 { font-size: 15px; font-weight: 800; color: var(--text); }
+    .search-close-x {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text-dim); font-size: 14px; width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .15s;
+    }
+    .search-close-x:hover { color: var(--text); border-color: var(--gold); }
+    .search-input-wrap { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    .bldg-search-input {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+      padding: 10px 14px; color: var(--text); font-family: 'Lexend', sans-serif; font-size: 14px;
+      outline: none; transition: border-color .15s;
+    }
+    .bldg-search-input:focus { border-color: rgba(245,208,76,0.5); }
+    .bldg-search-input::placeholder { color: var(--text-dim); }
+    .search-results-list { overflow-y: auto; flex: 1; }
+    .search-hint-msg { padding: 20px; color: var(--text-dim); font-size: 13px; text-align: center; }
+    .bldg-search-result {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s;
+    }
+    .bldg-search-result:hover { background: rgba(255,255,255,0.03); }
+    .bsr-icon { width: 36px; height: 36px; object-fit: contain; border-radius: 6px; flex-shrink: 0; }
+    .bsr-info { flex: 1; min-width: 0; }
+    .bsr-name { font-size: 12px; font-weight: 700; color: var(--text); }
+    .bsr-meta { display: flex; gap: 8px; margin-top: 2px; }
+    .bsr-meta span { font-size: 11px; color: var(--text-dim); font-weight: 600; }
+    .search-builder-tag {
+      font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 5px;
+      background: rgba(255,255,255,0.07); color: var(--text-dim);
+    }
+    .bsr-open-btn {
+      flex-shrink: 0; padding: 6px 12px; border-radius: 8px;
+      border: 1.5px solid rgba(245,208,76,0.4); background: rgba(245,208,76,0.08);
+      color: var(--gold); font-family: 'Lexend', sans-serif; font-size: 11px; font-weight: 800;
+      cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .bsr-open-btn:hover { background: rgba(245,208,76,0.2); border-color: var(--gold); }
 
     @media (max-width: 480px) {
       .bldg-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
-      .bldg-content { padding: 14px; }
-      .cat-tabs { padding: 8px 14px; }
+      .bldg-content { padding: 14px 14px 80px; }
+      .cat-tabs { padding: 10px 14px; }
+      .sort-bar { padding: 8px 14px; }
     }
   </style>
 </head>
@@ -298,7 +273,12 @@
   <header class="bldg-header">
     <a href="index.html" class="back-btn">← Back</a>
     <span class="bldg-title">Buildings</span>
-    <button class="refresh-btn" id="refreshBtn">⟳ Refresh</button>
+    <div class="header-actions">
+      <button class="icon-action-btn" id="searchBtn" title="Search upgrades">
+        <img src="Images/search.png" alt="Search">
+      </button>
+      <button class="refresh-btn" id="refreshBtn">⟳ Refresh</button>
+    </div>
   </header>
 
   <!-- CATEGORY TABS -->
@@ -306,13 +286,21 @@
     <button class="cat-tab active" data-cat="all">All</button>
     <button class="cat-tab" data-cat="1">Defenses</button>
     <button class="cat-tab" data-cat="2">Resources</button>
-    <button class="cat-tab" data-cat="3">Craft. Defenses</button>
+    <button class="cat-tab" data-cat="3">Craft. Def</button>
     <button class="cat-tab" data-cat="4">Traps</button>
     <button class="cat-tab" data-cat="5">Supercharged</button>
     <button class="cat-tab" data-cat="6">Guardians</button>
     <button class="cat-tab" data-cat="7">Heroes</button>
     <button class="cat-tab" data-cat="8">Army</button>
   </nav>
+
+  <!-- SORT BAR -->
+  <div class="sort-bar">
+    <span class="sort-label">Sort</span>
+    <button class="sort-btn active" data-sort="builder">Builder</button>
+    <button class="sort-btn" data-sort="az">A → Z</button>
+    <button class="sort-btn" data-sort="next">Next First</button>
+  </div>
 
   <!-- MAIN CONTENT -->
   <main class="bldg-content">
@@ -323,10 +311,35 @@
     <div class="bldg-grid" id="bldgGrid" style="display:none;"></div>
   </main>
 
+  <!-- DETAIL MODAL -->
+  <div id="detailModal" class="detail-overlay" style="display:none;">
+    <div class="detail-sheet" id="detailSheet">
+      <div class="detail-drag-handle"></div>
+      <button class="detail-close" id="detailClose">✕</button>
+      <div id="detailContent"></div>
+    </div>
+  </div>
+
+  <!-- SEARCH MODAL -->
+  <div id="searchModal" class="search-overlay" style="display:none;">
+    <div class="search-sheet">
+      <div class="search-sheet-header">
+        <h3>Search Upgrades</h3>
+        <button class="search-close-x" id="searchClose">✕</button>
+      </div>
+      <div class="search-input-wrap">
+        <input type="text" id="bldgSearchInput" class="bldg-search-input"
+               placeholder="e.g. Archer Tower, X-Bow…" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="search-results-list" id="bldgSearchResults">
+        <div class="search-hint-msg">Type to search across all builders</div>
+      </div>
+    </div>
+  </div>
+
   <script>
     /* ── CONFIG ── */
     const API_BASE = "https://script.google.com/macros/s/AKfycbzaxmuwpTD9cUzrz4e4k75caCpQrTjEDefs-B5nuEaqlFoMrBHjrhDun3Iy7kPkc9j2/exec";
-
     function endpoint(action) {
       return `${API_BASE}?action=${action}&username=${encodeURIComponent(window.COC_USERNAME)}`;
     }
@@ -334,47 +347,24 @@
     /* ── HERO NAMES ── */
     const HERO_NAMES = ["Barbarian King","Archer Queen","Grand Warden","Royal Champion","Minion Prince","Dragon Duke","Longshot"];
 
-    /* ── IMAGE MAP (mirrors script.js) ── */
+    /* ── IMAGE MAP ── */
     const IMAGE_MAP = {
-      "Air Bomb":          ["Lvl 11&12","Lvl 13"],
-      "Air Defense":       ["Lvl 16"],
-      "Pet House":         ["Lvl 12"],
-      "Archer Tower":      ["Lvl 21"],
-      "Blacksmith":        ["Lvl 9"],
-      "Bomb":              ["Lvl 11&12","Lvl 13&14"],
-      "Bomb Tower":        ["Lvl 13"],
-      "Builder Hut":       ["Level 7&8&9"],
-      "Dark Elixir Drill": ["Lvl 10","Lvl 11"],
-      "Dark Elixir Storage":["Lvl 12","Lvl 13"],
-      "Elixir Collector":  ["Lvl 17"],
-      "Elixir Storage":    ["Lvl 18","Lvl 19"],
-      "Giant Bomb":        ["Lvl 6","Lvl 7&8","Lvl 9&10","Lvl 11"],
-      "Giga Bomb":         ["Lvl 2","Lvl 3","Lvl 4"],
-      "Gold Mine":         ["Lvl 17"],
-      "Gold Storage":      ["Lvl 18","Lvl 19"],
-      "Hidden Tesla":      ["Lvl 16","Lvl 17"],
-      "Monolith":          ["Lvl 2&3&4"],
-      "Mortar":            ["Lvl 17","Lvl 18"],
-      "Scattershot":       ["Lvl 6&7&8"],
-      "Seeking Air Mine":  ["Lvl 5&6","Lvl 7&8"],
-      "Spring Trap":       ["Lvl 7&8","Lvl 9&10","Lvl 11&12","Lvl 13"],
-      "Town Hall":         ["Lvl 18"],
-      "Wizard Tower":      ["Lvl 6","Lvl 7","Lvl 8","Lvl 9","Lvl 10","Lvl 11","Lvl 12","Lvl 13","Lvl 14","Lvl 15","Lvl 16","Lvl 17"],
-      "Firespitter":       ["Lvl 3"],
-      "Workshop":          ["Lvl 8"],
-      "Spell Tower":       ["Lvl 4"],
-      "Skeleton Trap":     ["Lvl 5"],
-      "Inferno Tower":     ["Lvl 12"],
-      "X-Bow":             ["Lvl 12&13&14"],
-      "Hero Hall":         ["Lvl 11&12"],
-      "Laboratory":        ["Lvl 16"],
-      "Clan Castle":       ["Lvl 14"],
-      "Revenge Tower":     ["Lvl 1","Lvl 2"],
-      "Super Wizard Tower":["Lvl 1","Lvl 2"],
-      "Ricochet Cannon":   ["Lvl 4"],
-      "Multi-Archer Tower":["Lvl 4"],
-      "Multi-Gear Tower":  ["Lvl 3"],
-      "Air Bombs":         [""]
+      "Air Bomb":["Lvl 11&12","Lvl 13"],"Air Defense":["Lvl 16"],"Pet House":["Lvl 12"],
+      "Archer Tower":["Lvl 21"],"Blacksmith":["Lvl 9"],"Bomb":["Lvl 11&12","Lvl 13&14"],
+      "Bomb Tower":["Lvl 13"],"Builder Hut":["Level 7&8&9"],"Dark Elixir Drill":["Lvl 10","Lvl 11"],
+      "Dark Elixir Storage":["Lvl 12","Lvl 13"],"Elixir Collector":["Lvl 17"],
+      "Elixir Storage":["Lvl 18","Lvl 19"],"Giant Bomb":["Lvl 6","Lvl 7&8","Lvl 9&10","Lvl 11"],
+      "Giga Bomb":["Lvl 2","Lvl 3","Lvl 4"],"Gold Mine":["Lvl 17"],
+      "Gold Storage":["Lvl 18","Lvl 19"],"Hidden Tesla":["Lvl 16","Lvl 17"],
+      "Monolith":["Lvl 2&3&4"],"Mortar":["Lvl 17","Lvl 18"],"Scattershot":["Lvl 6&7&8"],
+      "Seeking Air Mine":["Lvl 5&6","Lvl 7&8"],"Spring Trap":["Lvl 7&8","Lvl 9&10","Lvl 11&12","Lvl 13"],
+      "Town Hall":["Lvl 18"],
+      "Wizard Tower":["Lvl 6","Lvl 7","Lvl 8","Lvl 9","Lvl 10","Lvl 11","Lvl 12","Lvl 13","Lvl 14","Lvl 15","Lvl 16","Lvl 17"],
+      "Firespitter":["Lvl 3"],"Workshop":["Lvl 8"],"Spell Tower":["Lvl 4"],
+      "Skeleton Trap":["Lvl 5"],"Inferno Tower":["Lvl 12"],"X-Bow":["Lvl 12&13&14"],
+      "Hero Hall":["Lvl 11&12"],"Laboratory":["Lvl 16"],"Clan Castle":["Lvl 14"],
+      "Revenge Tower":["Lvl 1","Lvl 2"],"Super Wizard Tower":["Lvl 1","Lvl 2"],
+      "Ricochet Cannon":["Lvl 4"],"Multi-Archer Tower":["Lvl 4"],"Multi-Gear Tower":["Lvl 3"]
     };
 
     function getSuperchargeImage(name) {
@@ -393,8 +383,7 @@
       }
       const m = name.match(/^(.+?)\s*(?:#\d+)?\s+(?:Level|Lvl)\s+(\d+)/i);
       if (!m) return "Images/Upgrades/PH.png";
-      const bn = m[1].trim();
-      const lvl = parseInt(m[2]);
+      const bn = m[1].trim(); const lvl = parseInt(m[2]);
       if (!IMAGE_MAP[bn]) return "Images/Upgrades/PH.png";
       for (const ls of IMAGE_MAP[bn]) {
         const nums = ls.match(/\d+/g)?.map(Number) || [];
@@ -403,21 +392,62 @@
       return "Images/Upgrades/PH.png";
     }
 
-    /* ── STATE ── */
-    let allUpgrades = [];
-    let activeTab   = "all";
+    /* ── FORMAT NAME: replace * with SC icon ── */
+    function formatName(rawHtml) {
+      return rawHtml.replace(/\*/g,
+        '<img src="Images/SCicon.png" style="height:1em;vertical-align:middle;margin:0 1px;" alt="SC">');
+    }
+
+    /* ── ESCAPE ── */
+    function esc(str) {
+      return String(str || '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    /* ── PARSE SHEET DATE: "Apr 10 2:30 PM" → Date ── */
+    function parseSheetDate(str) {
+      if (!str || str === '—') return null;
+      const m = str.match(/^(\w+)\s+(\d+)\s+(\d+):(\d+)\s*(AM|PM)$/i);
+      if (!m) return null;
+      const MONTHS = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+      const monIdx = MONTHS[m[1]];
+      if (monIdx === undefined) return null;
+      let hr = parseInt(m[3]);
+      const min = parseInt(m[4]);
+      if (m[5].toUpperCase() === 'PM' && hr !== 12) hr += 12;
+      if (m[5].toUpperCase() === 'AM' && hr === 12) hr = 0;
+      const year = new Date().getFullYear();
+      const d = new Date(year, monIdx, parseInt(m[2]), hr, min, 0);
+      // If it's in the past by more than 6 hours, assume next year
+      if (d.getTime() < Date.now() - 6 * 3600000) {
+        return new Date(year + 1, monIdx, parseInt(m[2]), hr, min, 0);
+      }
+      return d;
+    }
+
+    /* ── TIME UNTIL START ── */
+    function formatTimeUntil(dateStr) {
+      const d = parseSheetDate(dateStr);
+      if (!d) return null;
+      const diff = d.getTime() - Date.now();
+      if (diff <= 0) return null; // already started
+      const days = Math.floor(diff / 86400000);
+      const hrs  = Math.floor((diff % 86400000) / 3600000);
+      const mins = Math.floor((diff % 3600000) / 60000);
+      if (days > 0) return `${days}d ${hrs}h ${mins}m`;
+      if (hrs > 0)  return `${hrs}h ${mins}m`;
+      return `${mins}m`;
+    }
 
     /* ── CATEGORIES ── */
-    const CATEGORIES = {
-      "1": "Defenses",
-      "2": "Resources",
-      "3": "Craft. Defenses",
-      "4": "Traps",
-      "5": "Supercharged",
-      "6": "Guardians",
-      "7": "Heroes",
-      "8": "Army"
-    };
+    const CATEGORIES = {"1":"Defenses","2":"Resources","3":"Craft. Defenses","4":"Traps","5":"Supercharged","6":"Guardians","7":"Heroes","8":"Army"};
+
+    /* ── STATE ── */
+    let allUpgrades   = [];
+    let currentWorkMap = {}; // builderNum(int) → { upgrade, finishTimeStr }
+    let activeTab     = 'all';
+    let sortMode      = 'builder';
+    let renderedList  = []; // the sorted+filtered list currently shown
 
     /* ── FETCH ── */
     async function fetchBuilderQueue(num) {
@@ -430,48 +460,70 @@
     async function fetchCurrentWork() {
       try {
         const res  = await fetch(endpoint("current_work_table"));
-        const data = await res.json();
-        return data || {};
+        const rows = await res.json();
+        if (!Array.isArray(rows)) return {};
+        const map = {};
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          if (!row || !row[0]) continue;
+          const m = String(row[0]).match(/(\d+)/);
+          if (!m) continue;
+          const bNum = parseInt(m[1]);
+          const finishDate = row[2] ? new Date(row[2]) : null;
+          let finishStr = '—';
+          if (finishDate && !isNaN(finishDate.getTime())) {
+            finishStr = finishDate.toLocaleString('en-US', {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+          }
+          map[bNum] = { upgrade: String(row[1] || ''), finishTimeStr: finishStr };
+        }
+        return map;
       } catch { return {}; }
     }
 
     async function loadBuildings() {
       showLoading(true);
       try {
-        const [queues, currentWork] = await Promise.all([
+        const [queues, cwMap] = await Promise.all([
           Promise.all([1,2,3,4,5,6].map(fetchBuilderQueue)),
           fetchCurrentWork()
         ]);
-
+        currentWorkMap = cwMap;
         allUpgrades = [];
         queues.forEach(builderUpgrades => {
           builderUpgrades.forEach(u => {
-            // TypeB_ID can come under various casing from the sheet
-            const typeB = u.TypeB_ID ?? u.typeB_ID ?? u.TypeBID ?? u.typeb_id ?? u.type_b_id ?? null;
-            const isActive = u.queueIdx === 0 && !!currentWork[u.builderNum];
-            allUpgrades.push({ ...u, typeB: typeB ? String(typeB) : null, isActive });
+            const typeB = u.TypeB_ID ?? u.typeB_ID ?? u.TypeBID ?? u.typeb_id ?? null;
+            allUpgrades.push({ ...u, typeB: typeB ? String(typeB) : null });
           });
         });
-
         updateTabCounts();
         renderGrid();
         showLoading(false);
       } catch (err) {
-        showError(err.message || "Failed to load data");
+        showError(err.message || 'Failed to load data');
       }
+    }
+
+    /* ── SORT ── */
+    function getSorted(list) {
+      const copy = [...list];
+      if (sortMode === 'az') {
+        copy.sort((a, b) => (a.upgrade || '').localeCompare(b.upgrade || ''));
+      } else if (sortMode === 'next') {
+        copy.sort((a, b) => a.queueIdx - b.queueIdx || a.builderNum - b.builderNum);
+      } else {
+        copy.sort((a, b) => a.builderNum - b.builderNum || a.queueIdx - b.queueIdx);
+      }
+      return copy;
     }
 
     /* ── TAB COUNTS ── */
     function updateTabCounts() {
       document.querySelectorAll('.cat-tab[data-cat]').forEach(tab => {
         const cat = tab.dataset.cat;
-        const existing = tab.querySelector('.cat-count');
-        if (existing) existing.remove();
-
+        tab.querySelector('.cat-count')?.remove();
         const count = cat === 'all'
           ? allUpgrades.length
           : allUpgrades.filter(u => u.typeB === cat).length;
-
         if (count > 0) {
           const chip = document.createElement('span');
           chip.className = 'cat-count';
@@ -481,58 +533,198 @@
       });
     }
 
-    /* ── RENDER ── */
+    /* ── RENDER GRID ── */
     function renderGrid() {
       const grid = document.getElementById('bldgGrid');
       const filtered = activeTab === 'all'
         ? allUpgrades
         : allUpgrades.filter(u => u.typeB === activeTab);
+      renderedList = getSorted(filtered);
 
-      if (filtered.length === 0) {
-        grid.innerHTML = `<div class="bldg-empty">
-          <div class="bldg-empty-icon">🏗️</div>
-          <span>No upgrades in this category</span>
-        </div>`;
+      if (renderedList.length === 0) {
+        grid.innerHTML = `<div class="bldg-empty"><div class="bldg-empty-icon">🏗️</div><span>No upgrades in this category</span></div>`;
       } else {
-        grid.innerHTML = filtered.map(u => buildCard(u)).join('');
+        grid.innerHTML = renderedList.map((u, idx) => buildCard(u, idx)).join('');
       }
       grid.style.display = '';
     }
 
-    function buildCard(u) {
-      const name    = u.upgrade || '';
-      const isSC    = name.includes('*');
-      const imgSrc  = isSC ? getSuperchargeImage(name) : getUpgradeImage(name);
-      const bNum    = u.builderNum;
-      const status  = u.isActive ? 'active' : 'queued';
-      const label   = u.isActive ? 'In Progress' : 'Queued';
-
-      // Strip builder number and 'Lvl X' into two lines if possible
-      const cleanName = name.replace(/\*/g, '★');
+    /* ── BUILD CARD ── */
+    function buildCard(u, idx) {
+      const name   = u.upgrade || '';
+      const isSC   = name.includes('*');
+      const imgSrc = isSC ? getSuperchargeImage(name) : getUpgradeImage(name);
+      const bNum   = u.builderNum;
+      const isNext = u.queueIdx === 0;
+      const statusCls   = isNext ? 'next' : 'queued';
+      const statusLabel = isNext ? 'Next Up' : 'Queued';
 
       return `
-        <div class="bldg-card ${status === 'active' ? 'active-upgrade' : ''}">
-          ${isSC ? '<span class="bldg-sc-badge">SC</span>' : ''}
-          <img
-            src="${escHtml(imgSrc)}"
-            alt="${escHtml(cleanName)}"
-            class="bldg-card-img"
-            onerror="this.src='Images/Upgrades/PH.png'"
-          />
-          <div class="bldg-card-name">${escHtml(cleanName)}</div>
+        <div class="bldg-card${isNext ? ' next-up' : ''}" data-idx="${idx}" role="button" tabindex="0">
+          <img src="${esc(imgSrc)}" alt="" class="bldg-card-img" onerror="this.src='Images/Upgrades/PH.png'" />
+          <div class="bldg-card-name">${formatName(esc(name))}</div>
           <div class="bldg-card-footer">
-            <div class="bldg-builder-dot" data-b="${bNum}" title="Builder ${bNum}">B${bNum}</div>
-            <span class="bldg-status-badge ${status}">${label}</span>
+            <div class="bldg-builder-dot" data-b="${bNum}">B${bNum}</div>
+            <span class="bldg-status-badge ${statusCls}">${statusLabel}</span>
           </div>
         </div>`;
     }
 
-    function escHtml(str) {
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+    /* ── DETAIL MODAL ── */
+    function openDetail(u) {
+      const name   = u.upgrade || '';
+      const isSC   = name.includes('*');
+      const imgSrc = isSC ? getSuperchargeImage(name) : getUpgradeImage(name);
+      const bNum   = u.builderNum;
+      const isNext = u.queueIdx === 0;
+      const catLabel = u.typeB ? (CATEGORIES[u.typeB] || 'Other') : 'Uncategorized';
+
+      /* Previous upgrade */
+      let prevHtml = '';
+      if (u.queueIdx === 0) {
+        const active = currentWorkMap[bNum];
+        if (active && active.upgrade) {
+          const aImg = getUpgradeImage(active.upgrade);
+          prevHtml = `
+            <div class="detail-divider"></div>
+            <div class="detail-section-label">Finishes before this starts</div>
+            <div class="detail-prev">
+              <img src="${esc(aImg)}" class="detail-prev-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
+              <div>
+                <div class="detail-prev-name">${formatName(esc(active.upgrade))}</div>
+                <div class="detail-prev-time">Ends: ${esc(active.finishTimeStr)}</div>
+              </div>
+            </div>`;
+        }
+      } else {
+        const prev = allUpgrades.find(x => x.builderNum === bNum && x.queueIdx === u.queueIdx - 1);
+        if (prev) {
+          const pImg = prev.upgrade?.includes('*') ? getSuperchargeImage(prev.upgrade) : getUpgradeImage(prev.upgrade || '');
+          prevHtml = `
+            <div class="detail-divider"></div>
+            <div class="detail-section-label">Finishes before this starts</div>
+            <div class="detail-prev">
+              <img src="${esc(pImg)}" class="detail-prev-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
+              <div>
+                <div class="detail-prev-name">${formatName(esc(prev.upgrade || ''))}</div>
+                <div class="detail-prev-time">Ends: ${esc(prev.end || '—')}</div>
+              </div>
+            </div>`;
+        }
+      }
+
+      /* Time until start */
+      const timeUntil = formatTimeUntil(u.start);
+
+      document.getElementById('detailContent').innerHTML = `
+        <div class="detail-top">
+          <img src="${esc(imgSrc)}" class="detail-big-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
+          <div class="detail-header-info">
+            <div class="detail-name">${formatName(esc(name))}</div>
+            <div class="detail-badges">
+              <div class="bldg-builder-dot" data-b="${bNum}">B${bNum}</div>
+              <span class="bldg-status-badge ${isNext ? 'next' : 'queued'}">${isNext ? 'Next Up' : 'Queued'}</span>
+              <span class="detail-cat-badge">${esc(catLabel)}</span>
+            </div>
+          </div>
+        </div>
+
+        ${prevHtml}
+
+        <div class="detail-divider"></div>
+        <div class="detail-section-label">Schedule</div>
+        <div class="detail-row">
+          <span class="detail-row-label">Starts</span>
+          <span class="detail-row-val">${esc(u.start || '—')}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row-label">Ends</span>
+          <span class="detail-row-val">${esc(u.end || '—')}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-row-label">Duration</span>
+          <span class="detail-row-val">${esc(u.duration || '—')}</span>
+        </div>
+        ${timeUntil ? `
+        <div class="detail-row">
+          <span class="detail-row-label">Starts in</span>
+          <span class="detail-row-val gold">${esc(timeUntil)}</span>
+        </div>` : ''}
+
+        <button class="detail-jump-btn" id="detailJumpBtn"
+                data-builder="${bNum}" data-upgrade="${esc(name)}">
+          Jump to Builder ${bNum} ↗
+        </button>`;
+
+      document.getElementById('detailModal').style.display = 'flex';
+
+      document.getElementById('detailJumpBtn').addEventListener('click', () => {
+        const btn = document.getElementById('detailJumpBtn');
+        jumpToBuilder(btn.dataset.builder, btn.dataset.upgrade);
+      });
+    }
+
+    function closeDetail() {
+      document.getElementById('detailModal').style.display = 'none';
+      document.querySelectorAll('.bldg-card.selected').forEach(c => c.classList.remove('selected'));
+    }
+
+    /* ── JUMP TO BUILDER (cross-page) ── */
+    function jumpToBuilder(builderNum, upgradeName) {
+      localStorage.setItem('bldg_jump', JSON.stringify({
+        builder: String(builderNum),
+        upgrade: upgradeName
+      }));
+      window.location.href = 'index.html';
+    }
+
+    /* ── SEARCH ── */
+    let searchTimer = null;
+
+    function openSearch() {
+      document.getElementById('searchModal').style.display = 'flex';
+      setTimeout(() => document.getElementById('bldgSearchInput')?.focus(), 60);
+    }
+
+    function closeSearch() {
+      document.getElementById('searchModal').style.display = 'none';
+      document.getElementById('bldgSearchInput').value = '';
+      document.getElementById('bldgSearchResults').innerHTML = '<div class="search-hint-msg">Type to search across all builders</div>';
+    }
+
+    function performSearch(query) {
+      const resultsEl = document.getElementById('bldgSearchResults');
+      if (!query || query.trim().length < 2) {
+        resultsEl.innerHTML = '<div class="search-hint-msg">Type at least 2 characters</div>';
+        return;
+      }
+      const q = query.trim().toLowerCase();
+      const matches = allUpgrades.filter(u => (u.upgrade || '').toLowerCase().includes(q));
+
+      if (matches.length === 0) {
+        resultsEl.innerHTML = `<div class="search-hint-msg">No results for "<strong style="color:#ccc">${esc(query)}</strong>"</div>`;
+        return;
+      }
+
+      resultsEl.innerHTML = matches.map((u, i) => {
+        const isSC  = u.upgrade?.includes('*');
+        const img   = isSC ? getSuperchargeImage(u.upgrade) : getUpgradeImage(u.upgrade || '');
+        return `
+          <div class="bldg-search-result" data-result-idx="${i}">
+            <img src="${esc(img)}" class="bsr-icon" onerror="this.src='Images/Upgrades/PH.png'" alt="">
+            <div class="bsr-info">
+              <div class="bsr-name">${formatName(esc(u.upgrade || ''))}</div>
+              <div class="bsr-meta">
+                <span class="search-builder-tag">Builder ${u.builderNum}</span>
+                <span>${esc(u.duration || '')}</span>
+              </div>
+            </div>
+            <button class="bsr-open-btn" data-result-idx="${i}">Open ↗</button>
+          </div>`;
+      }).join('');
+
+      // Store matches for click lookup
+      resultsEl._matches = matches;
     }
 
     /* ── UI HELPERS ── */
@@ -542,30 +734,90 @@
     }
 
     function showError(msg) {
-      const status = document.getElementById('bldgStatus');
-      status.style.display = '';
-      status.innerHTML = `<div style="font-size:24px;opacity:.5">⚠️</div><span>${escHtml(msg)}</span>`;
+      const el = document.getElementById('bldgStatus');
+      el.style.display = '';
+      el.innerHTML = `<div style="font-size:24px;opacity:.5">⚠️</div><span>${esc(msg)}</span>`;
       document.getElementById('bldgGrid').style.display = 'none';
     }
 
-    /* ── TABS ── */
+    /* ── EVENT WIRING ── */
+
+    // Tabs
     document.getElementById('catTabs').addEventListener('click', e => {
       const tab = e.target.closest('.cat-tab');
       if (!tab) return;
       document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       activeTab = tab.dataset.cat;
+      closeDetail();
       renderGrid();
     });
 
-    /* ── REFRESH ── */
-    const refreshBtn = document.getElementById('refreshBtn');
-    refreshBtn.addEventListener('click', async () => {
-      refreshBtn.classList.add('loading');
-      refreshBtn.textContent = '…';
+    // Sort
+    document.querySelector('.sort-bar').addEventListener('click', e => {
+      const btn = e.target.closest('.sort-btn');
+      if (!btn) return;
+      document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      sortMode = btn.dataset.sort;
+      renderGrid();
+    });
+
+    // Card click → detail
+    document.getElementById('bldgGrid').addEventListener('click', e => {
+      const card = e.target.closest('.bldg-card');
+      if (!card) return;
+      const idx = parseInt(card.dataset.idx);
+      const u   = renderedList[idx];
+      if (!u) return;
+      document.querySelectorAll('.bldg-card.selected').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      openDetail(u);
+    });
+
+    // Detail modal close
+    document.getElementById('detailClose').addEventListener('click', closeDetail);
+    document.getElementById('detailModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('detailModal')) closeDetail();
+    });
+
+    // Search button
+    document.getElementById('searchBtn').addEventListener('click', openSearch);
+    document.getElementById('searchClose').addEventListener('click', closeSearch);
+    document.getElementById('searchModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('searchModal')) closeSearch();
+    });
+
+    // Search input
+    document.getElementById('bldgSearchInput').addEventListener('input', e => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => performSearch(e.target.value), 250);
+    });
+
+    // Search result click
+    document.getElementById('bldgSearchResults').addEventListener('click', e => {
+      const btn = e.target.closest('.bsr-open-btn');
+      if (!btn) return;
+      const idx     = parseInt(btn.dataset.resultIdx);
+      const matches = document.getElementById('bldgSearchResults')._matches;
+      if (!matches || !matches[idx]) return;
+      closeSearch();
+      openDetail(matches[idx]);
+    });
+
+    // Refresh
+    document.getElementById('refreshBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('refreshBtn');
+      btn.classList.add('loading'); btn.textContent = '…';
       await loadBuildings();
-      refreshBtn.classList.remove('loading');
-      refreshBtn.textContent = '⟳ Refresh';
+      btn.classList.remove('loading'); btn.textContent = '⟳ Refresh';
+    });
+
+    // ESC to close modals
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      if (document.getElementById('detailModal').style.display !== 'none') { closeDetail(); return; }
+      if (document.getElementById('searchModal').style.display !== 'none') { closeSearch(); return; }
     });
 
     /* ── INIT ── */

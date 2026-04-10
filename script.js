@@ -2392,6 +2392,16 @@ async function bootApp() {
   wireImageButtons();
   wireSearchFeature();
   setTimeout(() => checkForFinishedUpgrades(true), 1500);
+
+  // Jump to a specific upgrade if navigated here from the Buildings page
+  const pendingJump = localStorage.getItem('bldg_jump');
+  if (pendingJump) {
+    localStorage.removeItem('bldg_jump');
+    try {
+      const { builder, upgrade } = JSON.parse(pendingJump);
+      setTimeout(() => jumpToUpgrade(builder, upgrade), 2000);
+    } catch(e) {}
+  }
 }
 
 function switchUser() {
