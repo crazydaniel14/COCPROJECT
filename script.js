@@ -1292,6 +1292,7 @@ function wireImageButtons() {
   document.getElementById("oneHourBoostBtn")?.addEventListener("click",  () => showBuilderSnackModal());
   document.getElementById("builderPotionBtn")?.addEventListener("click", () => showBuilderPotionModal());
   document.getElementById("battlePassBtn")?.addEventListener("click",    async () => { await fetch(BATTLE_PASS_URL()); refreshDashboard(); });
+  document.getElementById("buildingBtn")?.addEventListener("click",      () => { window.location.href = "building.html"; });
 }
 
 /* =========================

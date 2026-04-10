@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>COC Planner — Buildings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold:     #f5d04c;
+      --bg:       #101013;
+      --surface:  #19191e;
+      --surface2: #23232b;
+      --border:   rgba(255,255,255,0.08);
+      --text:     #ffffff;
+      --text-dim: #9999a8;
+      --b1: #A9B7A9;
+      --b2: #B18EA9;
+      --b3: #508B8B;
+      --b4: #CC7A6F;
+      --b5: #A899E6;
+      --b6: #C5A86E;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      font-family: 'Lexend', sans-serif;
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ── HEADER ── */
+    .bldg-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      gap: 12px;
+    }
+    .bldg-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--gold);
+      letter-spacing: .5px;
+      white-space: nowrap;
+    }
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 14px;
+      color: var(--text-dim);
+      font-family: 'Lexend', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .18s;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .back-btn:hover { color: var(--text); border-color: var(--gold); }
+
+    .refresh-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--gold);
+      border: none;
+      border-radius: 10px;
+      padding: 8px 14px;
+      color: #000;
+      font-family: 'Lexend', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .18s;
+      white-space: nowrap;
+    }
+    .refresh-btn:hover { background: #ffd700; }
+    .refresh-btn.loading { opacity: .7; pointer-events: none; }
+
+    /* ── CATEGORY TABS ── */
+    .cat-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 10px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      position: sticky;
+      top: 57px;
+      z-index: 190;
+      justify-content: flex-start;
+    }
+    .cat-tabs::-webkit-scrollbar { display: none; }
+    .cat-tab {
+      flex-shrink: 0;
+      padding: 7px 14px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--surface2);
+      color: var(--text-dim);
+      font-family: 'Lexend', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .18s;
+      white-space: nowrap;
+    }
+    .cat-tab:hover { color: var(--text); border-color: rgba(245,208,76,0.5); }
+    .cat-tab.active {
+      background: rgba(245,208,76,0.15);
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* ── MAIN CONTENT ── */
+    .bldg-content {
+      padding: 20px;
+      min-height: calc(100vh - 120px);
+    }
+
+    /* ── LOADING / ERROR / EMPTY ── */
+    .bldg-status {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      color: var(--text-dim);
+      font-size: 14px;
+      font-weight: 500;
+      gap: 12px;
+      text-align: center;
+    }
+    .bldg-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── CARD GRID ── */
+    .bldg-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+    }
+
+    /* ── INDIVIDUAL CARD ── */
+    .bldg-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 12px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      transition: border-color .18s;
+      position: relative;
+    }
+    .bldg-card:hover { border-color: rgba(245,208,76,0.35); }
+
+    .bldg-card.active-upgrade {
+      border-color: rgba(245,208,76,0.55);
+      background: rgba(245,208,76,0.04);
+    }
+
+    .bldg-card-img {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    .bldg-card-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text);
+      text-align: center;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+
+    .bldg-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 6px;
+    }
+
+    .bldg-builder-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 800;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .bldg-builder-dot[data-b="1"] { background: rgba(169,183,169,0.7); color: #A9B7A9; border: 1.5px solid #A9B7A9; }
+    .bldg-builder-dot[data-b="2"] { background: rgba(177,142,169,0.7); color: #B18EA9; border: 1.5px solid #B18EA9; }
+    .bldg-builder-dot[data-b="3"] { background: rgba(80,139,139,0.7);  color: #508B8B; border: 1.5px solid #508B8B; }
+    .bldg-builder-dot[data-b="4"] { background: rgba(204,122,111,0.7); color: #CC7A6F; border: 1.5px solid #CC7A6F; }
+    .bldg-builder-dot[data-b="5"] { background: rgba(168,153,230,0.7); color: #A899E6; border: 1.5px solid #A899E6; }
+    .bldg-builder-dot[data-b="6"] { background: rgba(197,168,110,0.7); color: #C5A86E; border: 1.5px solid #C5A86E; }
+
+    .bldg-status-badge {
+      font-size: 9px;
+      font-weight: 800;
+      padding: 3px 7px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    .bldg-status-badge.active {
+      background: rgba(245,208,76,0.2);
+      color: var(--gold);
+    }
+    .bldg-status-badge.queued {
+      background: rgba(255,255,255,0.06);
+      color: var(--text-dim);
+    }
+
+    .bldg-sc-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(9,61,186,0.85);
+      border-radius: 5px;
+      padding: 2px 5px;
+      font-size: 8px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: .3px;
+    }
+
+    /* ── EMPTY STATE ── */
+    .bldg-empty {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 20px;
+      color: var(--text-dim);
+      font-size: 13px;
+      font-weight: 500;
+      gap: 8px;
+    }
+    .bldg-empty-icon { font-size: 32px; opacity: .4; }
+
+    /* ── COUNT CHIP ── */
+    .cat-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(245,208,76,0.18);
+      color: var(--gold);
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 1px 5px;
+      margin-left: 4px;
+      min-width: 18px;
+    }
+
+    @media (max-width: 480px) {
+      .bldg-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+      .bldg-content { padding: 14px; }
+      .cat-tabs { padding: 8px 14px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="bldg-header">
+    <a href="index.html" class="back-btn">← Back</a>
+    <span class="bldg-title">Buildings</span>
+    <button class="refresh-btn" id="refreshBtn">⟳ Refresh</button>
+  </header>
+
+  <!-- CATEGORY TABS -->
+  <nav class="cat-tabs" id="catTabs">
+    <button class="cat-tab active" data-cat="all">All</button>
+    <button class="cat-tab" data-cat="1">Defenses</button>
+    <button class="cat-tab" data-cat="2">Resources</button>
+    <button class="cat-tab" data-cat="3">Craft. Defenses</button>
+    <button class="cat-tab" data-cat="4">Traps</button>
+    <button class="cat-tab" data-cat="5">Supercharged</button>
+    <button class="cat-tab" data-cat="6">Guardians</button>
+    <button class="cat-tab" data-cat="7">Heroes</button>
+    <button class="cat-tab" data-cat="8">Army</button>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="bldg-content">
+    <div id="bldgStatus" class="bldg-status">
+      <div class="bldg-spinner"></div>
+      <span>Loading buildings…</span>
+    </div>
+    <div class="bldg-grid" id="bldgGrid" style="display:none;"></div>
+  </main>
+
+  <script>
+    /* ── CONFIG ── */
+    const API_BASE = "https://script.google.com/macros/s/AKfycbzaxmuwpTD9cUzrz4e4k75caCpQrTjEDefs-B5nuEaqlFoMrBHjrhDun3Iy7kPkc9j2/exec";
+
+    function endpoint(action) {
+      return `${API_BASE}?action=${action}&username=${encodeURIComponent(window.COC_USERNAME)}`;
+    }
+
+    /* ── HERO NAMES ── */
+    const HERO_NAMES = ["Barbarian King","Archer Queen","Grand Warden","Royal Champion","Minion Prince","Dragon Duke","Longshot"];
+
+    /* ── IMAGE MAP (mirrors script.js) ── */
+    const IMAGE_MAP = {
+      "Air Bomb":          ["Lvl 11&12","Lvl 13"],
+      "Air Defense":       ["Lvl 16"],
+      "Pet House":         ["Lvl 12"],
+      "Archer Tower":      ["Lvl 21"],
+      "Blacksmith":        ["Lvl 9"],
+      "Bomb":              ["Lvl 11&12","Lvl 13&14"],
+      "Bomb Tower":        ["Lvl 13"],
+      "Builder Hut":       ["Level 7&8&9"],
+      "Dark Elixir Drill": ["Lvl 10","Lvl 11"],
+      "Dark Elixir Storage":["Lvl 12","Lvl 13"],
+      "Elixir Collector":  ["Lvl 17"],
+      "Elixir Storage":    ["Lvl 18","Lvl 19"],
+      "Giant Bomb":        ["Lvl 6","Lvl 7&8","Lvl 9&10","Lvl 11"],
+      "Giga Bomb":         ["Lvl 2","Lvl 3","Lvl 4"],
+      "Gold Mine":         ["Lvl 17"],
+      "Gold Storage":      ["Lvl 18","Lvl 19"],
+      "Hidden Tesla":      ["Lvl 16","Lvl 17"],
+      "Monolith":          ["Lvl 2&3&4"],
+      "Mortar":            ["Lvl 17","Lvl 18"],
+      "Scattershot":       ["Lvl 6&7&8"],
+      "Seeking Air Mine":  ["Lvl 5&6","Lvl 7&8"],
+      "Spring Trap":       ["Lvl 7&8","Lvl 9&10","Lvl 11&12","Lvl 13"],
+      "Town Hall":         ["Lvl 18"],
+      "Wizard Tower":      ["Lvl 6","Lvl 7","Lvl 8","Lvl 9","Lvl 10","Lvl 11","Lvl 12","Lvl 13","Lvl 14","Lvl 15","Lvl 16","Lvl 17"],
+      "Firespitter":       ["Lvl 3"],
+      "Workshop":          ["Lvl 8"],
+      "Spell Tower":       ["Lvl 4"],
+      "Skeleton Trap":     ["Lvl 5"],
+      "Inferno Tower":     ["Lvl 12"],
+      "X-Bow":             ["Lvl 12&13&14"],
+      "Hero Hall":         ["Lvl 11&12"],
+      "Laboratory":        ["Lvl 16"],
+      "Clan Castle":       ["Lvl 14"],
+      "Revenge Tower":     ["Lvl 1","Lvl 2"],
+      "Super Wizard Tower":["Lvl 1","Lvl 2"],
+      "Ricochet Cannon":   ["Lvl 4"],
+      "Multi-Archer Tower":["Lvl 4"],
+      "Multi-Gear Tower":  ["Lvl 3"],
+      "Air Bombs":         [""]
+    };
+
+    function getSuperchargeImage(name) {
+      const base = name.match(/^(.+?)\s*(?:#\d+)?\s+Lvl\s+\*+$/i);
+      if (!base) return "Images/Upgrades/PH.png";
+      const bn = base[1].trim();
+      if (!IMAGE_MAP[bn]) return "Images/Upgrades/PH.png";
+      const entries = IMAGE_MAP[bn];
+      return "Images/Upgrades/" + bn + " " + entries[entries.length - 1] + ".png";
+    }
+
+    function getUpgradeImage(name) {
+      if (!name) return "Images/Upgrades/PH.png";
+      for (const hero of HERO_NAMES) {
+        if (name.includes(hero)) return "Images/Upgrades/" + hero + ".png";
+      }
+      const m = name.match(/^(.+?)\s*(?:#\d+)?\s+(?:Level|Lvl)\s+(\d+)/i);
+      if (!m) return "Images/Upgrades/PH.png";
+      const bn = m[1].trim();
+      const lvl = parseInt(m[2]);
+      if (!IMAGE_MAP[bn]) return "Images/Upgrades/PH.png";
+      for (const ls of IMAGE_MAP[bn]) {
+        const nums = ls.match(/\d+/g)?.map(Number) || [];
+        if (nums.includes(lvl)) return "Images/Upgrades/" + bn + " " + ls + ".png";
+      }
+      return "Images/Upgrades/PH.png";
+    }
+
+    /* ── STATE ── */
+    let allUpgrades = [];
+    let activeTab   = "all";
+
+    /* ── CATEGORIES ── */
+    const CATEGORIES = {
+      "1": "Defenses",
+      "2": "Resources",
+      "3": "Craft. Defenses",
+      "4": "Traps",
+      "5": "Supercharged",
+      "6": "Guardians",
+      "7": "Heroes",
+      "8": "Army"
+    };
+
+    /* ── FETCH ── */
+    async function fetchBuilderQueue(num) {
+      const res  = await fetch(endpoint("builder_details") + "&builder=Builder_" + num);
+      const data = await res.json();
+      if (data.error || !data.upgrades) return [];
+      return data.upgrades.map((u, idx) => ({ ...u, builderNum: num, queueIdx: idx }));
+    }
+
+    async function fetchCurrentWork() {
+      try {
+        const res  = await fetch(endpoint("current_work_table"));
+        const data = await res.json();
+        return data || {};
+      } catch { return {}; }
+    }
+
+    async function loadBuildings() {
+      showLoading(true);
+      try {
+        const [queues, currentWork] = await Promise.all([
+          Promise.all([1,2,3,4,5,6].map(fetchBuilderQueue)),
+          fetchCurrentWork()
+        ]);
+
+        allUpgrades = [];
+        queues.forEach(builderUpgrades => {
+          builderUpgrades.forEach(u => {
+            // TypeB_ID can come under various casing from the sheet
+            const typeB = u.TypeB_ID ?? u.typeB_ID ?? u.TypeBID ?? u.typeb_id ?? u.type_b_id ?? null;
+            const isActive = u.queueIdx === 0 && !!currentWork[u.builderNum];
+            allUpgrades.push({ ...u, typeB: typeB ? String(typeB) : null, isActive });
+          });
+        });
+
+        updateTabCounts();
+        renderGrid();
+        showLoading(false);
+      } catch (err) {
+        showError(err.message || "Failed to load data");
+      }
+    }
+
+    /* ── TAB COUNTS ── */
+    function updateTabCounts() {
+      document.querySelectorAll('.cat-tab[data-cat]').forEach(tab => {
+        const cat = tab.dataset.cat;
+        const existing = tab.querySelector('.cat-count');
+        if (existing) existing.remove();
+
+        const count = cat === 'all'
+          ? allUpgrades.length
+          : allUpgrades.filter(u => u.typeB === cat).length;
+
+        if (count > 0) {
+          const chip = document.createElement('span');
+          chip.className = 'cat-count';
+          chip.textContent = count;
+          tab.appendChild(chip);
+        }
+      });
+    }
+
+    /* ── RENDER ── */
+    function renderGrid() {
+      const grid = document.getElementById('bldgGrid');
+      const filtered = activeTab === 'all'
+        ? allUpgrades
+        : allUpgrades.filter(u => u.typeB === activeTab);
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="bldg-empty">
+          <div class="bldg-empty-icon">🏗️</div>
+          <span>No upgrades in this category</span>
+        </div>`;
+      } else {
+        grid.innerHTML = filtered.map(u => buildCard(u)).join('');
+      }
+      grid.style.display = '';
+    }
+
+    function buildCard(u) {
+      const name    = u.upgrade || '';
+      const isSC    = name.includes('*');
+      const imgSrc  = isSC ? getSuperchargeImage(name) : getUpgradeImage(name);
+      const bNum    = u.builderNum;
+      const status  = u.isActive ? 'active' : 'queued';
+      const label   = u.isActive ? 'In Progress' : 'Queued';
+
+      // Strip builder number and 'Lvl X' into two lines if possible
+      const cleanName = name.replace(/\*/g, '★');
+
+      return `
+        <div class="bldg-card ${status === 'active' ? 'active-upgrade' : ''}">
+          ${isSC ? '<span class="bldg-sc-badge">SC</span>' : ''}
+          <img
+            src="${escHtml(imgSrc)}"
+            alt="${escHtml(cleanName)}"
+            class="bldg-card-img"
+            onerror="this.src='Images/Upgrades/PH.png'"
+          />
+          <div class="bldg-card-name">${escHtml(cleanName)}</div>
+          <div class="bldg-card-footer">
+            <div class="bldg-builder-dot" data-b="${bNum}" title="Builder ${bNum}">B${bNum}</div>
+            <span class="bldg-status-badge ${status}">${label}</span>
+          </div>
+        </div>`;
+    }
+
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    /* ── UI HELPERS ── */
+    function showLoading(on) {
+      document.getElementById('bldgStatus').style.display = on ? '' : 'none';
+      document.getElementById('bldgGrid').style.display   = on ? 'none' : '';
+    }
+
+    function showError(msg) {
+      const status = document.getElementById('bldgStatus');
+      status.style.display = '';
+      status.innerHTML = `<div style="font-size:24px;opacity:.5">⚠️</div><span>${escHtml(msg)}</span>`;
+      document.getElementById('bldgGrid').style.display = 'none';
+    }
+
+    /* ── TABS ── */
+    document.getElementById('catTabs').addEventListener('click', e => {
+      const tab = e.target.closest('.cat-tab');
+      if (!tab) return;
+      document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeTab = tab.dataset.cat;
+      renderGrid();
+    });
+
+    /* ── REFRESH ── */
+    const refreshBtn = document.getElementById('refreshBtn');
+    refreshBtn.addEventListener('click', async () => {
+      refreshBtn.classList.add('loading');
+      refreshBtn.textContent = '…';
+      await loadBuildings();
+      refreshBtn.classList.remove('loading');
+      refreshBtn.textContent = '⟳ Refresh';
+    });
+
+    /* ── INIT ── */
+    document.addEventListener('DOMContentLoaded', () => {
+      const username = localStorage.getItem('coc_username');
+      if (!username) { window.location.href = 'index.html'; return; }
+      window.COC_USERNAME = username;
+      loadBuildings();
+    });
+  </script>
+</body>
+</html>
