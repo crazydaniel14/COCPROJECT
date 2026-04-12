@@ -704,7 +704,19 @@
     }
 
     /* ── DETAIL MODAL ── */
+    function prefetchIndexResources() {
+      if (document.querySelector('link[data-prefetch-index]')) return;
+      ['index.html', 'script.js', 'style.css'].forEach(href => {
+        const link = document.createElement('link');
+        link.rel = 'prefetch';
+        link.href = href;
+        link.dataset.prefetchIndex = '1';
+        document.head.appendChild(link);
+      });
+    }
+
     function openDetail(u) {
+      prefetchIndexResources();
       const name   = u.upgrade || '';
       const isSC   = name.includes('*');
       const imgSrc = isSC ? getSuperchargeImage(name) : getUpgradeImage(name);
