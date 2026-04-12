@@ -1781,22 +1781,17 @@ function setupPullToRefresh(onRefresh) {
   bar.className = 'ptr-bar';
   document.body.prepend(bar);
 
-  document.addEventListener('touchstart', e => {
+  function onStart(clientY) {
     if (window.scrollY !== 0) return;
-    startY = e.touches[0].clientY;
-    dist = 0;
-    active = true;
-  }, { passive: true });
-
-  document.addEventListener('touchmove', e => {
+    startY = clientY; dist = 0; active = true;
+  }
+  function onMove(clientY) {
     if (!active) return;
-    dist = Math.max(0, e.touches[0].clientY - startY);
-    const progress = Math.min(dist / THRESHOLD, 1);
-    bar.style.setProperty('--ptr-p', progress);
+    dist = Math.max(0, clientY - startY);
+    bar.style.setProperty('--ptr-p', Math.min(dist / THRESHOLD, 1));
     bar.classList.toggle('ptr-ready', dist >= THRESHOLD);
-  }, { passive: true });
-
-  document.addEventListener('touchend', async () => {
+  }
+  async function onEnd() {
     if (!active) return;
     active = false;
     if (dist < THRESHOLD) {
@@ -1810,7 +1805,15 @@ function setupPullToRefresh(onRefresh) {
     bar.classList.remove('ptr-loading');
     bar.style.setProperty('--ptr-p', 0);
     dist = 0;
-  });
+  }
+
+  document.addEventListener('touchstart', e => onStart(e.touches[0].clientY), { passive: true });
+  document.addEventListener('touchmove',  e => onMove(e.touches[0].clientY),  { passive: true });
+  document.addEventListener('touchend',   onEnd);
+
+  document.addEventListener('mousedown', e => onStart(e.clientY));
+  document.addEventListener('mousemove', e => { if (active) onMove(e.clientY); });
+  document.addEventListener('mouseup',   onEnd);
 }
 
 function startAutoRefresh() {
