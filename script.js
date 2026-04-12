@@ -11,6 +11,58 @@ function endpoint(action) {
 }
 
 /* =========================
+   GAME DOMAIN RULES
+   — These constants define how the COC building system works.
+     All pages and logic should respect these rules.
+   =========================
+
+   BUILDING LEVEL STRUCTURE
+   ─────────────────────────
+   Levels progress as integers: 1, 2, 3, … up to the building's current max.
+   After reaching numeric max, some buildings gain supercharge levels: *, **, ***.
+   In upgrade names these appear as "Lvl *", "Lvl **", "Lvl ***".
+   Numeric levels always sort before supercharge levels.
+
+   UPGRADE NAME FORMAT
+   ────────────────────
+   "{Building Name} #{instance} Lvl {level}"
+   - #{instance} is only present when multiple copies exist (e.g. #1, #2).
+     Unique buildings omit it entirely.
+   - {level} is either a number (1, 2, …) or stars (*, **, ***).
+   Examples:
+     "Super Wizard Tower #1 Lvl 2"   → instance 1, upgrading to Lvl 2 (current = Lvl 1)
+     "Archer Tower Lvl 21"           → unique building, upgrading to Lvl 21
+     "Inferno Tower #2 Lvl *"        → supercharging instance 2 (already at numeric max)
+
+   CATEGORY PERMANENCE
+   ────────────────────
+   TypeB_ID | Name               | Permanent | Notes
+   ---------|--------------------|-----------|-----------------------------------------
+   1        | Defenses           | YES       | Standard defenses
+   2        | Resources          | YES       | Mines, drills, storages
+   3        | Craft. Defenses    | NO        | Temporary — added for a developer-set
+            |                    |           | cycle, then removed from the game
+   4        | Traps              | YES       | Spring Traps, Bombs, etc.
+   5        | Supercharged       | NO        | Temporary boost on fully-upgraded
+            |                    |           | defenses/collectors; disappears when
+            |                    |           | the game releases the next real level
+   6        | Guardians          | YES       |
+   7        | Heroes             | YES       |
+   8        | Army               | YES       |
+   ========================= */
+
+const CATEGORY_META = {
+  "1": { name: "Defenses",        permanent: true  },
+  "2": { name: "Resources",       permanent: true  },
+  "3": { name: "Craft. Defenses", permanent: false },
+  "4": { name: "Traps",           permanent: true  },
+  "5": { name: "Supercharged",    permanent: false },
+  "6": { name: "Guardians",       permanent: true  },
+  "7": { name: "Heroes",          permanent: true  },
+  "8": { name: "Army",            permanent: true  },
+};
+
+/* =========================
    USER PASSWORDS
    Add passwords here for users that need protection.
    Users NOT listed can log in with no password at all.
