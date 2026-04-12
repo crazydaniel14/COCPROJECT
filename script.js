@@ -2451,7 +2451,7 @@ async function bootApp() {
     localStorage.removeItem('bldg_jump');
     try {
       const { builder, upgrade } = JSON.parse(pendingJump);
-      setTimeout(() => jumpToUpgrade(builder, upgrade), 2000);
+      waitForBuilderCard(builder).then(() => jumpToUpgrade(builder, upgrade)).catch(() => {});
     } catch(e) {}
   }
 }
@@ -2650,6 +2650,25 @@ function waitForUpgradeItem(upgradeName, timeout = 6000) {
     const timer = setTimeout(() => {
       observer.disconnect();
       reject(new Error('Upgrade item not found: ' + upgradeName));
+    }, timeout);
+  });
+}
+
+function waitForBuilderCard(builderNumber, timeout = 10000) {
+  return new Promise((resolve, reject) => {
+    const container = document.getElementById('builders-container');
+    const existing = container?.querySelector(`.builder-card[data-builder="${builderNumber}"]`);
+    if (existing) { resolve(existing); return; }
+
+    const observer = new MutationObserver(() => {
+      const el = container?.querySelector(`.builder-card[data-builder="${builderNumber}"]`);
+      if (el) { observer.disconnect(); clearTimeout(timer); resolve(el); }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    const timer = setTimeout(() => {
+      observer.disconnect();
+      reject(new Error('Builder card not found: ' + builderNumber));
     }, timeout);
   });
 }
