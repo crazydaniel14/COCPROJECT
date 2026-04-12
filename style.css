@@ -2933,3 +2933,31 @@ button:disabled {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
+
+/* ── PULL TO REFRESH ── */
+.ptr-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  z-index: 99999;
+  pointer-events: none;
+  background: transparent;
+}
+.ptr-bar::after {
+  content: '';
+  display: block;
+  height: 100%;
+  width: calc(var(--ptr-p, 0) * 100%);
+  background: var(--gold, #f5d04c);
+  transition: width 0.06s linear, background 0.2s;
+  border-radius: 0 2px 2px 0;
+}
+.ptr-bar.ptr-ready::after  { background: #6fcf6f; width: 100%; }
+.ptr-bar.ptr-loading::after {
+  width: 100%;
+  animation: ptr-pulse 0.7s ease-in-out infinite;
+}
+@keyframes ptr-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}

@@ -1773,6 +1773,46 @@ function wireBuilderCardClicks() {
   });
 }
 
+function setupPullToRefresh(onRefresh) {
+  const THRESHOLD = 80;
+  let startY = 0, dist = 0, active = false;
+
+  const bar = document.createElement('div');
+  bar.className = 'ptr-bar';
+  document.body.prepend(bar);
+
+  document.addEventListener('touchstart', e => {
+    if (window.scrollY !== 0) return;
+    startY = e.touches[0].clientY;
+    dist = 0;
+    active = true;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (!active) return;
+    dist = Math.max(0, e.touches[0].clientY - startY);
+    const progress = Math.min(dist / THRESHOLD, 1);
+    bar.style.setProperty('--ptr-p', progress);
+    bar.classList.toggle('ptr-ready', dist >= THRESHOLD);
+  }, { passive: true });
+
+  document.addEventListener('touchend', async () => {
+    if (!active) return;
+    active = false;
+    if (dist < THRESHOLD) {
+      bar.style.setProperty('--ptr-p', 0);
+      bar.classList.remove('ptr-ready');
+      return;
+    }
+    bar.classList.remove('ptr-ready');
+    bar.classList.add('ptr-loading');
+    await onRefresh();
+    bar.classList.remove('ptr-loading');
+    bar.style.setProperty('--ptr-p', 0);
+    dist = 0;
+  });
+}
+
 function startAutoRefresh() {
   setInterval(refreshDashboard, AUTO_REFRESH_MS);
   setInterval(softRefreshBuilderCards, 10 * 60 * 1000);
@@ -2437,6 +2477,7 @@ async function bootApp() {
   renderSkeletonCards(6);
   await refreshDashboard();
   startAutoRefresh();
+  setupPullToRefresh(refreshDashboard);
   startLiveCountdown();
   wireApprenticeBoost();
   wireBoostSimulation();
