@@ -663,7 +663,13 @@
 
       const hasNext = entries.some(e => e.u.queueIdx === 0);
 
-      const upgradeRows = entries.map(({ u, idx }) => {
+      const upgradeRows = [...entries].sort((a, b) => {
+        const aI = parseBuildingInfo(a.u.upgrade || '');
+        const bI = parseBuildingInfo(b.u.upgrade || '');
+        if (aI?.isSC && !bI?.isSC) return 1;
+        if (!aI?.isSC && bI?.isSC) return -1;
+        return (aI?.level ?? 0) - (bI?.level ?? 0);
+      }).map(({ u, idx }) => {
         const uInfo  = parseBuildingInfo(u.upgrade || '');
         const uIsSC  = u.upgrade?.includes('*');
         const isNext = u.queueIdx === 0;
@@ -671,7 +677,7 @@
         let lvlDisplay;
         if (uIsSC) {
           const scStars = ((u.upgrade || '').match(/Lvl\s+(\*+)/i) || [])[1] || '*';
-          const scIcons = scStars.split('').map(() => `<img src="Images/SCicon.png" style="height:1em;vertical-align:middle;margin:0 2px;" alt="SC">`).join('');
+          const scIcons = scStars.split('').map(() => `<img src="Images/SCicon.png" style="height:1em;vertical-align:middle;margin:0 1px;" alt="SC">`).join('');
           lvlDisplay = `${scIcons} Supercharge`;
         } else if (uInfo && uInfo.level !== null) {
           lvlDisplay = `Lvl ${uInfo.level}`;
