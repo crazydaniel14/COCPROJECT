@@ -111,6 +111,20 @@
     /* ── CARD GRID ── */
     .bldg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
 
+    /* ── BUILDING TYPE SECTION HEADER ── */
+    .bldg-section-header {
+      grid-column: 1 / -1; display: flex; align-items: center; gap: 10px;
+      margin-top: 10px; padding-bottom: 4px;
+    }
+    .bldg-section-header.first { margin-top: 0; }
+    .bldg-section-header span {
+      font-size: 10px; font-weight: 800; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: .8px; white-space: nowrap;
+    }
+    .bldg-section-header::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
     /* ── BUILDING GROUP CARD ── */
     .bldg-building-group {
       background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
@@ -582,7 +596,7 @@
       return { base, instance, level, isSC, key };
     }
 
-    /* ── RENDER GRID (grouped by building instance) ── */
+    /* ── RENDER GRID (section per building type, cards per instance) ── */
     function renderGrid() {
       const grid = document.getElementById('bldgGrid');
       const filtered = activeTab === 'all'
@@ -596,17 +610,26 @@
         return;
       }
 
-      // Group by building key, preserving encounter order for group ordering
-      const groupOrder = [];
-      const groupMap   = new Map(); // key → [{u, idx}]
+      // Two-level grouping: base building name → instance key → upgrades
+      const baseOrder = [];
+      const baseMap   = new Map(); // baseName → { keyOrder: [], keyMap: Map }
+
       renderedList.forEach((u, idx) => {
         const info = parseBuildingInfo(u.upgrade || '');
-        const key  = info ? info.key : (u.upgrade || 'Unknown');
-        if (!groupMap.has(key)) { groupMap.set(key, []); groupOrder.push(key); }
-        groupMap.get(key).push({ u, idx });
+        const base = info ? info.base : (u.upgrade || 'Unknown');
+        const key  = info ? info.key  : (u.upgrade || 'Unknown');
+        if (!baseMap.has(base)) { baseMap.set(base, { keyOrder: [], keyMap: new Map() }); baseOrder.push(base); }
+        const section = baseMap.get(base);
+        if (!section.keyMap.has(key)) { section.keyMap.set(key, []); section.keyOrder.push(key); }
+        section.keyMap.get(key).push({ u, idx });
       });
 
-      grid.innerHTML = groupOrder.map(key => buildBuildingGroup(key, groupMap.get(key))).join('');
+      grid.innerHTML = baseOrder.map((base, si) => {
+        const { keyOrder, keyMap } = baseMap.get(base);
+        const cards = keyOrder.map(key => buildBuildingGroup(key, keyMap.get(key))).join('');
+        return `<div class="bldg-section-header${si === 0 ? ' first' : ''}"><span>${esc(base)}</span></div>${cards}`;
+      }).join('');
+
       grid.style.display = '';
     }
 
