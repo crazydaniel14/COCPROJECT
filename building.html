@@ -63,18 +63,21 @@
     }
     .cat-tabs::-webkit-scrollbar { display: none; }
     .cat-tab {
-      flex-shrink: 0; padding: 10px 20px; border-radius: 12px;
+      flex-shrink: 0; padding: 8px 16px; border-radius: 12px;
       border: 1.5px solid var(--border); background: var(--surface2);
       color: var(--text-dim); font-family: 'Lexend', sans-serif;
-      font-size: 14px; font-weight: 700; cursor: pointer; transition: all .18s; white-space: nowrap;
-      line-height: 1;
+      font-size: 13px; font-weight: 700; cursor: pointer; transition: all .18s; white-space: nowrap;
+      line-height: 1; display: flex; align-items: center; gap: 7px;
     }
     .cat-tab:hover { color: var(--text); border-color: rgba(245,208,76,0.5); }
     .cat-tab.active { background: rgba(245,208,76,0.15); border-color: var(--gold); color: var(--gold); }
+    .tab-icon {
+      width: 20px; height: 20px; object-fit: contain; border-radius: 4px; flex-shrink: 0;
+    }
     .cat-count {
       display: inline-flex; align-items: center; justify-content: center;
       background: rgba(245,208,76,0.2); color: var(--gold); border-radius: 6px;
-      font-size: 11px; font-weight: 800; padding: 2px 6px; margin-left: 6px; min-width: 20px;
+      font-size: 11px; font-weight: 800; padding: 2px 6px; margin-left: 2px; min-width: 20px;
     }
 
     /* ── SORT BAR ── */
@@ -106,9 +109,40 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── CARD GRID ── */
-    .bldg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+    .bldg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
 
-    /* ── INDIVIDUAL CARD ── */
+    /* ── BUILDING GROUP CARD ── */
+    .bldg-building-group {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      overflow: hidden; transition: border-color .18s;
+    }
+    .bldg-building-group:hover { border-color: rgba(245,208,76,0.3); }
+    .bldg-building-group.has-next { border-color: rgba(245,208,76,0.45); background: rgba(245,208,76,0.03); }
+    .bbg-header {
+      display: flex; align-items: center; gap: 12px; padding: 14px 14px 12px;
+    }
+    .bbg-img { width: 56px; height: 56px; object-fit: contain; border-radius: 8px; flex-shrink: 0; }
+    .bbg-info { flex: 1; min-width: 0; }
+    .bbg-title { font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.3; }
+    .bbg-cur-level { font-size: 11px; color: var(--text-dim); font-weight: 600; margin-top: 4px; }
+    .bbg-upgrades { border-top: 1px solid var(--border); }
+    .bbg-upgrade-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 14px; border-bottom: 1px solid rgba(255,255,255,0.04);
+      cursor: pointer; transition: background .12s; gap: 8px;
+    }
+    .bbg-upgrade-row:last-child { border-bottom: none; }
+    .bbg-upgrade-row:hover { background: rgba(255,255,255,0.04); }
+    .bbg-upgrade-row.next-row { background: rgba(245,208,76,0.05); }
+    .bbg-upgrade-row.selected { background: rgba(245,208,76,0.12); }
+    .bbg-lvl-label {
+      font-size: 12px; font-weight: 700; color: var(--text);
+      display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0;
+    }
+    .bbg-lvl-arrow { color: var(--gold); font-size: 12px; flex-shrink: 0; }
+    .bbg-row-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+    /* ── INDIVIDUAL CARD (kept for any fallback) ── */
     .bldg-card {
       background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
       padding: 14px 12px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px;
@@ -260,7 +294,7 @@
     .bsr-open-btn:hover { background: rgba(245,208,76,0.2); border-color: var(--gold); }
 
     @media (max-width: 480px) {
-      .bldg-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+      .bldg-grid { grid-template-columns: 1fr; gap: 10px; }
       .bldg-content { padding: 14px 14px 80px; }
       .cat-tabs { padding: 10px 14px; }
       .sort-bar { padding: 8px 14px; }
@@ -284,14 +318,14 @@
   <!-- CATEGORY TABS -->
   <nav class="cat-tabs" id="catTabs">
     <button class="cat-tab active" data-cat="all">All</button>
-    <button class="cat-tab" data-cat="1">Defenses</button>
-    <button class="cat-tab" data-cat="2">Resources</button>
-    <button class="cat-tab" data-cat="3">Craft. Def</button>
-    <button class="cat-tab" data-cat="4">Traps</button>
-    <button class="cat-tab" data-cat="5">Supercharged</button>
-    <button class="cat-tab" data-cat="6">Guardians</button>
-    <button class="cat-tab" data-cat="7">Heroes</button>
-    <button class="cat-tab" data-cat="8">Army</button>
+    <button class="cat-tab" data-cat="1"><img class="tab-icon" src="Images/Upgrades/Cannon Lvl 1.png" alt="">Defenses</button>
+    <button class="cat-tab" data-cat="2"><img class="tab-icon" src="Images/ged.png" alt="">Resources</button>
+    <button class="cat-tab" data-cat="3"><img class="tab-icon" src="Images/CraftingStation.png" alt="">Craft. Def</button>
+    <button class="cat-tab" data-cat="4"><img class="tab-icon" src="Images/Upgrades/Spring Trap Lvl 1&2.png" alt="">Traps</button>
+    <button class="cat-tab" data-cat="5"><img class="tab-icon" src="Images/SCicon.png" alt="">Supercharged</button>
+    <button class="cat-tab" data-cat="6"><img class="tab-icon" src="Images/Upgrades/Longshot.png" alt="">Guardians</button>
+    <button class="cat-tab" data-cat="7"><img class="tab-icon" src="Images/Upgrades/Hero Hall Lvl 1.png" alt="">Heroes</button>
+    <button class="cat-tab" data-cat="8"><img class="tab-icon" src="Images/Army.png" alt="">Army</button>
   </nav>
 
   <!-- SORT BAR -->
@@ -533,7 +567,22 @@
       });
     }
 
-    /* ── RENDER GRID ── */
+    /* ── PARSE BUILDING FROM UPGRADE NAME ── */
+    function parseBuildingInfo(upgradeName) {
+      if (!upgradeName) return null;
+      // Match "Base Name #N Lvl X" or "Base Name Lvl X" (level can be digits or * for SC)
+      const m = upgradeName.match(/^(.+?)\s*(?:#(\d+))?\s+(?:Lvl|Level)\s+(.+)$/i);
+      if (!m) return null;
+      const base     = m[1].trim();
+      const instance = m[2] || null;
+      const levelStr = m[3].replace(/\*/g, '').trim();
+      const level    = parseInt(levelStr) || null;
+      const isSC     = m[3].includes('*');
+      const key      = instance ? `${base} #${instance}` : base;
+      return { base, instance, level, isSC, key };
+    }
+
+    /* ── RENDER GRID (grouped by building instance) ── */
     function renderGrid() {
       const grid = document.getElementById('bldgGrid');
       const filtered = activeTab === 'all'
@@ -543,30 +592,91 @@
 
       if (renderedList.length === 0) {
         grid.innerHTML = `<div class="bldg-empty"><div class="bldg-empty-icon">🏗️</div><span>No upgrades in this category</span></div>`;
-      } else {
-        grid.innerHTML = renderedList.map((u, idx) => buildCard(u, idx)).join('');
+        grid.style.display = '';
+        return;
       }
+
+      // Group by building key, preserving encounter order for group ordering
+      const groupOrder = [];
+      const groupMap   = new Map(); // key → [{u, idx}]
+      renderedList.forEach((u, idx) => {
+        const info = parseBuildingInfo(u.upgrade || '');
+        const key  = info ? info.key : (u.upgrade || 'Unknown');
+        if (!groupMap.has(key)) { groupMap.set(key, []); groupOrder.push(key); }
+        groupMap.get(key).push({ u, idx });
+      });
+
+      grid.innerHTML = groupOrder.map(key => buildBuildingGroup(key, groupMap.get(key))).join('');
       grid.style.display = '';
     }
 
-    /* ── BUILD CARD ── */
-    function buildCard(u, idx) {
-      const name   = u.upgrade || '';
-      const isSC   = name.includes('*');
-      const imgSrc = isSC ? getSuperchargeImage(name) : getUpgradeImage(name);
-      const bNum   = u.builderNum;
-      const isNext = u.queueIdx === 0;
-      const statusCls   = isNext ? 'next' : 'queued';
-      const statusLabel = isNext ? 'Next Up' : 'Queued';
+    /* ── BUILD BUILDING GROUP CARD ── */
+    function buildBuildingGroup(buildingKey, entries) {
+      const firstEntry = entries[0];
+      const firstName  = firstEntry.u.upgrade || '';
+
+      // Determine current level from the lowest-level upgrade in this group
+      const sorted = [...entries].sort((a, b) => {
+        const aI = parseBuildingInfo(a.u.upgrade || '');
+        const bI = parseBuildingInfo(b.u.upgrade || '');
+        return (aI?.level ?? 999) - (bI?.level ?? 999);
+      });
+      const lowestInfo = parseBuildingInfo(sorted[0].u.upgrade || '');
+      let currentLevelStr = '—';
+      if (lowestInfo) {
+        if (lowestInfo.isSC) {
+          currentLevelStr = 'Max level';
+        } else if (lowestInfo.level !== null) {
+          const cur = lowestInfo.level - 1;
+          currentLevelStr = cur <= 0 ? 'New' : `Lvl ${cur}`;
+        }
+      }
+
+      // Image: use the next-up upgrade if possible, otherwise first
+      const nextEntry = entries.find(e => e.u.queueIdx === 0) || firstEntry;
+      const nextName  = nextEntry.u.upgrade || '';
+      const isSCFirst = nextName.includes('*');
+      const imgSrc    = isSCFirst ? getSuperchargeImage(nextName) : getUpgradeImage(nextName);
+
+      const hasNext = entries.some(e => e.u.queueIdx === 0);
+
+      const upgradeRows = entries.map(({ u, idx }) => {
+        const uInfo  = parseBuildingInfo(u.upgrade || '');
+        const uIsSC  = u.upgrade?.includes('*');
+        const isNext = u.queueIdx === 0;
+
+        let lvlDisplay;
+        if (uIsSC) {
+          lvlDisplay = `<img src="Images/SCicon.png" style="height:1em;vertical-align:middle;margin:0 2px;" alt="SC"> Supercharge`;
+        } else if (uInfo && uInfo.level !== null) {
+          lvlDisplay = `Lvl ${uInfo.level}`;
+        } else {
+          lvlDisplay = esc(u.upgrade || '');
+        }
+
+        return `
+          <div class="bbg-upgrade-row${isNext ? ' next-row' : ''}" data-idx="${idx}">
+            <div class="bbg-lvl-label">
+              <span class="bbg-lvl-arrow">→</span>
+              ${lvlDisplay}
+            </div>
+            <div class="bbg-row-meta">
+              <div class="bldg-builder-dot" data-b="${u.builderNum}">B${u.builderNum}</div>
+              <span class="bldg-status-badge ${isNext ? 'next' : 'queued'}">${isNext ? 'Next Up' : 'Queued'}</span>
+            </div>
+          </div>`;
+      }).join('');
 
       return `
-        <div class="bldg-card${isNext ? ' next-up' : ''}" data-idx="${idx}" role="button" tabindex="0">
-          <img src="${esc(imgSrc)}" alt="" class="bldg-card-img" onerror="this.src='Images/Upgrades/PH.png'" />
-          <div class="bldg-card-name">${formatName(esc(name))}</div>
-          <div class="bldg-card-footer">
-            <div class="bldg-builder-dot" data-b="${bNum}">B${bNum}</div>
-            <span class="bldg-status-badge ${statusCls}">${statusLabel}</span>
+        <div class="bldg-building-group${hasNext ? ' has-next' : ''}">
+          <div class="bbg-header">
+            <img src="${esc(imgSrc)}" alt="" class="bbg-img" onerror="this.src='Images/Upgrades/PH.png'" />
+            <div class="bbg-info">
+              <div class="bbg-title">${esc(buildingKey)}</div>
+              <div class="bbg-cur-level">Current: ${currentLevelStr}</div>
+            </div>
           </div>
+          <div class="bbg-upgrades">${upgradeRows}</div>
         </div>`;
     }
 
@@ -666,7 +776,7 @@
 
     function closeDetail() {
       document.getElementById('detailModal').style.display = 'none';
-      document.querySelectorAll('.bldg-card.selected').forEach(c => c.classList.remove('selected'));
+      document.querySelectorAll('.bbg-upgrade-row.selected').forEach(r => r.classList.remove('selected'));
     }
 
     /* ── JUMP TO BUILDER (cross-page) ── */
@@ -763,15 +873,15 @@
       renderGrid();
     });
 
-    // Card click → detail
+    // Upgrade row click → detail
     document.getElementById('bldgGrid').addEventListener('click', e => {
-      const card = e.target.closest('.bldg-card');
-      if (!card) return;
-      const idx = parseInt(card.dataset.idx);
+      const row = e.target.closest('.bbg-upgrade-row');
+      if (!row) return;
+      const idx = parseInt(row.dataset.idx);
       const u   = renderedList[idx];
       if (!u) return;
-      document.querySelectorAll('.bldg-card.selected').forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
+      document.querySelectorAll('.bbg-upgrade-row.selected').forEach(r => r.classList.remove('selected'));
+      row.classList.add('selected');
       openDetail(u);
     });
 
