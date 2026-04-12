@@ -670,7 +670,9 @@
 
         let lvlDisplay;
         if (uIsSC) {
-          lvlDisplay = `<img src="Images/SCicon.png" style="height:1em;vertical-align:middle;margin:0 2px;" alt="SC"> Supercharge`;
+          const scStars = ((u.upgrade || '').match(/Lvl\s+(\*+)/i) || [])[1] || '*';
+          const scIcons = scStars.split('').map(() => `<img src="Images/SCicon.png" style="height:1em;vertical-align:middle;margin:0 2px;" alt="SC">`).join('');
+          lvlDisplay = `${scIcons} Supercharge`;
         } else if (uInfo && uInfo.level !== null) {
           lvlDisplay = `Lvl ${uInfo.level}`;
         } else {
