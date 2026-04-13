@@ -3026,7 +3026,7 @@ function showLoginScreen(onConfirm) {
 
   setTimeout(() => usernameInput.focus(), 100);
 
-  function doLogin() {
+  async function doLogin() {
     const val = usernameInput.value.replace(/[^a-zA-Z0-9_]/g, "").trim();
     if (!val) {
       err.textContent = "Please enter a username.";
@@ -3046,6 +3046,15 @@ function showLoginScreen(onConfirm) {
     }
     err.style.display = "none";
     localStorage.setItem("coc_username", val);
+
+    // Fetch stored profile data (th_level, tag) from the Registrations sheet
+    try {
+      const res  = await fetch(`${API_BASE}?action=get_town_hall_level&username=${encodeURIComponent(val)}`);
+      const data = await res.json();
+      if (data.th_level) localStorage.setItem("coc_th_level", String(data.th_level));
+      if (data.tag)      localStorage.setItem("coc_tag", data.tag);
+    } catch { /* non-blocking — proceed without it */ }
+
     overlay.remove();
     onConfirm(val);
   }
