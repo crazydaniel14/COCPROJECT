@@ -313,6 +313,66 @@
       .cat-tabs { padding: 10px 14px; }
       .sort-bar { padding: 8px 14px; }
     }
+
+    /* ── TH PROGRESS VIEW ── */
+    .prog-summary {
+      grid-column: 1 / -1;
+      background: rgba(245,208,76,0.08); border: 1px solid rgba(245,208,76,0.25);
+      border-radius: 12px; padding: 12px 16px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      flex-wrap: wrap; margin-bottom: 4px;
+    }
+    .prog-summary-title { font-size: 13px; font-weight: 800; color: var(--gold); }
+    .prog-summary-stats { font-size: 12px; color: var(--text-dim); font-weight: 600; }
+    .prog-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px;
+    }
+    .prog-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      overflow: hidden; transition: border-color .18s;
+    }
+    .prog-card:hover { border-color: rgba(245,208,76,0.3); }
+    .prog-card-header {
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .prog-card-img { width: 48px; height: 48px; object-fit: contain; border-radius: 8px; flex-shrink: 0; }
+    .prog-card-info { flex: 1; min-width: 0; }
+    .prog-card-name { font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.3; }
+    .prog-card-sub  { font-size: 11px; color: var(--text-dim); font-weight: 600; margin-top: 3px; }
+    .prog-card-body { padding: 8px 14px 12px; display: flex; flex-direction: column; gap: 8px; }
+    .prog-instance-row { display: flex; align-items: center; gap: 8px; }
+    .prog-inst-label {
+      font-size: 11px; font-weight: 800; color: var(--text-dim);
+      width: 22px; flex-shrink: 0; text-align: right;
+    }
+    .prog-bar-wrap {
+      flex: 1; height: 8px; background: rgba(255,255,255,0.07); border-radius: 4px; overflow: hidden;
+    }
+    .prog-bar-fill {
+      height: 100%; border-radius: 4px; background: var(--gold); transition: width .3s ease;
+    }
+    .prog-bar-fill.maxed { background: #4caf50; }
+    .prog-bar-fill.unknown { background: rgba(255,255,255,0.15); }
+    .prog-inst-val {
+      font-size: 11px; font-weight: 700; color: var(--text); white-space: nowrap; min-width: 54px; text-align: right;
+    }
+    .prog-inst-val.maxed { color: #4caf50; }
+    .prog-inst-val.unknown { color: var(--text-dim); }
+    .prog-no-json {
+      font-size: 11px; color: var(--text-dim); font-weight: 600; padding: 4px 0;
+      text-align: center; font-style: italic;
+    }
+    #progressGrid { padding-bottom: 80px; display: flex; flex-direction: column; gap: 12px; }
+    .prog-no-th {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 60px 20px; color: var(--text-dim); font-size: 14px; font-weight: 500;
+      gap: 10px; text-align: center;
+    }
+
+    @media (max-width: 480px) {
+      .prog-grid { grid-template-columns: 1fr; gap: 10px; }
+    }
   </style>
 </head>
 <body>
@@ -340,6 +400,7 @@
     <button class="cat-tab" data-cat="6"><img class="tab-icon" src="Images/Upgrades/Longshot.png" alt="">Guardians</button>
     <button class="cat-tab" data-cat="7"><img class="tab-icon" src="Images/Upgrades/Hero Hall Lvl 1.png" alt="">Heroes</button>
     <button class="cat-tab" data-cat="8"><img class="tab-icon" src="Images/Army.png" alt="">Army</button>
+    <button class="cat-tab" data-cat="progress">TH Progress</button>
   </nav>
 
   <!-- SORT BAR -->
@@ -357,6 +418,7 @@
       <span>Loading buildings…</span>
     </div>
     <div class="bldg-grid" id="bldgGrid" style="display:none;"></div>
+    <div id="progressGrid" style="display:none;"></div>
   </main>
 
   <!-- DETAIL MODAL -->
@@ -385,6 +447,7 @@
     </div>
   </div>
 
+  <script src="gamedata.js"></script>
   <script>
     /* ── CONFIG ── */
     const API_BASE = "https://script.google.com/macros/s/AKfycbzaxmuwpTD9cUzrz4e4k75caCpQrTjEDefs-B5nuEaqlFoMrBHjrhDun3Iy7kPkc9j2/exec";
@@ -903,7 +966,15 @@
       tab.classList.add('active');
       activeTab = tab.dataset.cat;
       closeDetail();
-      renderGrid();
+      if (activeTab === 'progress') {
+        document.getElementById('bldgGrid').style.display = 'none';
+        document.querySelector('.sort-bar').style.display = 'none';
+        loadProgress();
+      } else {
+        document.getElementById('progressGrid').style.display = 'none';
+        document.querySelector('.sort-bar').style.display = '';
+        renderGrid();
+      }
     });
 
     // Sort
@@ -972,6 +1043,125 @@
       if (document.getElementById('detailModal').style.display !== 'none') { closeDetail(); return; }
       if (document.getElementById('searchModal').style.display !== 'none') { closeSearch(); return; }
     });
+
+    /* ── TH PROGRESS ── */
+    let progressLoaded = false;
+
+    async function loadProgress() {
+      const pg = document.getElementById('progressGrid');
+      const thLevel = parseInt(localStorage.getItem('coc_th_level') || '0');
+
+      if (!thLevel) {
+        pg.innerHTML = `<div class="prog-no-th">
+          <span>Town Hall level not found.</span>
+          <span>Log in via the registration flow to set your TH level.</span>
+        </div>`;
+        pg.style.display = '';
+        return;
+      }
+
+      // Show spinner while loading
+      pg.innerHTML = `<div class="bldg-status"><div class="bldg-spinner"></div><span>Loading TH${thLevel} data…</span></div>`;
+      pg.style.display = '';
+
+      // Try to fetch current village building levels from backend
+      // Grouped by buildingId: { "1000009": [12, 10, 8], ... } (sorted desc)
+      let villageLevels = {};
+      try {
+        const res  = await fetch(endpoint('get_village_buildings'));
+        const data = await res.json();
+        if (data.buildings) villageLevels = data.buildings;
+      } catch { /* graceful — show reference list without current levels */ }
+
+      const defenses = getDefensesAtTH(thLevel);
+      renderProgressGrid(pg, defenses, villageLevels, thLevel);
+      progressLoaded = true;
+    }
+
+    function renderProgressGrid(pg, defenses, villageLevels, thLevel) {
+      if (defenses.length === 0) {
+        pg.innerHTML = `<div class="prog-no-th"><span>No defense data found for TH${thLevel}.</span></div>`;
+        pg.style.display = '';
+        return;
+      }
+
+      const hasVillageData = Object.keys(villageLevels).length > 0;
+
+      // Tally maxed instances for summary
+      let totalInstances = 0, maxedInstances = 0;
+      for (const bldg of defenses) {
+        const currentLevels = bldg.buildingId ? (villageLevels[String(bldg.buildingId)] || []) : [];
+        for (let i = 0; i < bldg.count; i++) {
+          totalInstances++;
+          const curLvl = currentLevels[i] ?? null;
+          if (curLvl !== null && curLvl >= bldg.maxLevel) maxedInstances++;
+        }
+      }
+
+      const summaryHtml = `
+        <div class="prog-summary">
+          <span class="prog-summary-title">TH ${thLevel} — Defense Progress</span>
+          <span class="prog-summary-stats">${
+            hasVillageData
+              ? `${maxedInstances} / ${totalInstances} maxed for TH${thLevel}`
+              : `${totalInstances} upgradeable buildings at TH${thLevel}`
+          }</span>
+        </div>`;
+
+      const cardsHtml = defenses.map(bldg => {
+        const imgSrc  = getUpgradeImage(`${bldg.name} Lvl ${bldg.maxLevel}`) || 'Images/Upgrades/PH.png';
+        const resSym  = bldg.resource === 'de' ? '🟣' : bldg.resource === 'gems' ? '💎' : '🪙';
+        const maxData = bldg.levels[bldg.levels.length - 1];
+        const subText = `×${bldg.count} at TH${thLevel} · max Lvl ${bldg.maxLevel} · ${formatDefenseDuration(maxData.duration_min)}`;
+
+        const currentLevels = bldg.buildingId ? (villageLevels[String(bldg.buildingId)] || []) : [];
+
+        const instanceRows = Array.from({ length: bldg.count }, (_, i) => {
+          const instNum   = bldg.count > 1 ? `#${i + 1}` : '—';
+          const curLvl    = currentLevels[i] ?? null;
+          const isMaxed   = curLvl !== null && curLvl >= bldg.maxLevel;
+          const isUnknown = curLvl === null;
+          const pct       = isUnknown ? 0 : Math.min(100, Math.round((curLvl / bldg.maxLevel) * 100));
+
+          const fillClass = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
+          const valClass  = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
+          const valText   = isUnknown ? `? / ${bldg.maxLevel}` : `${curLvl} / ${bldg.maxLevel}`;
+
+          return `
+            <div class="prog-instance-row">
+              <span class="prog-inst-label">${esc(instNum)}</span>
+              <div class="prog-bar-wrap">
+                <div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div>
+              </div>
+              <span class="prog-inst-val ${valClass}">${valText}</span>
+            </div>`;
+        }).join('');
+
+        const noJsonNote = !hasVillageData
+          ? `<div class="prog-no-json">Register with village JSON to see current levels</div>`
+          : '';
+
+        return `
+          <div class="prog-card">
+            <div class="prog-card-header">
+              <img src="${esc(imgSrc)}" class="prog-card-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
+              <div class="prog-card-info">
+                <div class="prog-card-name">${esc(bldg.name)}</div>
+                <div class="prog-card-sub">${esc(subText)}</div>
+              </div>
+            </div>
+            <div class="prog-card-body">
+              ${instanceRows}
+              ${noJsonNote}
+            </div>
+          </div>`;
+      }).join('');
+
+      pg.innerHTML = `
+        ${summaryHtml}
+        <div class="prog-grid">${cardsHtml}</div>`;
+      pg.style.display = '';
+    }
 
     /* ── INIT ── */
     document.addEventListener('DOMContentLoaded', () => {
