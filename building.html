@@ -1049,7 +1049,22 @@
 
     async function loadProgress() {
       const pg = document.getElementById('progressGrid');
-      const thLevel = parseInt(localStorage.getItem('coc_th_level') || '0');
+      let thLevel = parseInt(localStorage.getItem('coc_th_level') || '0');
+
+      // Not cached yet — try fetching from backend (reads Registrations sheet)
+      if (!thLevel) {
+        pg.innerHTML = `<div class="bldg-status"><div class="bldg-spinner"></div><span>Looking up your TH level…</span></div>`;
+        pg.style.display = '';
+        try {
+          const res  = await fetch(endpoint('get_town_hall_level'));
+          const data = await res.json();
+          if (data.th_level) {
+            thLevel = parseInt(data.th_level);
+            localStorage.setItem('coc_th_level', String(thLevel));
+            if (data.tag) localStorage.setItem('coc_tag', data.tag);
+          }
+        } catch { /* fall through to error below */ }
+      }
 
       if (!thLevel) {
         pg.innerHTML = `<div class="prog-no-th">
