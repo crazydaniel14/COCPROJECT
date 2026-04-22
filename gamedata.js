@@ -375,11 +375,10 @@ const DEFENSE_GAME_DATA = {
   },
 
   // ── SUPER WIZARD TOWER ───────────────────────────────────────────────────────
-  // TH18 only. buildingId is null — not yet in BUILDING_ID_MAP.
-  // Add the correct ID when found in village JSON export.
+  // TH18 only. ID confirmed from village JSON export (two individual entries).
   "Super Wizard Tower": {
     resource: "gold",
-    buildingId: null,
+    buildingId: 1000102,
     levels: [
       { level: 1, th_required: 18, duration_min: 18720, cost: 29000000 },
       { level: 2, th_required: 18, duration_min: 20160, cost: 30000000 },
@@ -388,11 +387,10 @@ const DEFENSE_GAME_DATA = {
   },
 
   // ── REVENGE TOWER ────────────────────────────────────────────────────────────
-  // TH18 only. buildingId is null — not yet in BUILDING_ID_MAP.
-  // Add the correct ID when found in village JSON export.
+  // TH18 only. ID confirmed from village JSON export (one individual entry).
   "Revenge Tower": {
     resource: "de",
-    buildingId: null,
+    buildingId: 1000093,
     levels: [
       { level: 1, th_required: 18, duration_min: 18720, cost: 430000 },
       { level: 2, th_required: 18, duration_min: 20160, cost: 460000 },
