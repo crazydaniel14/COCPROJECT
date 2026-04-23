@@ -982,7 +982,7 @@ async function updateCardDuration(builderName, newMinutes, newDurationHr, durati
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       scheduleNextRefresh(); // push auto-refresh back so it doesn't race with our update
-      await refreshDashboardFast();
+      showRefreshIndicator('done');
     } catch (err) {
       console.error('Update failed:', err);
       // Rollback
