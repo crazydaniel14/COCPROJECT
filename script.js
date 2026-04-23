@@ -2792,7 +2792,8 @@ function wireSearchFeature() {
    Parses village JSON, extracts tag + TH level, POSTs to register_user.
    ========================= */
 async function doRegister(nameInput, jsonInput, errEl, loadingEl, btn, overlay, onConfirm) {
-  const name = nameInput.value.replace(/[^a-zA-Z0-9_ ]/g, "").trim();
+  const rawName = nameInput.value.replace(/[^a-zA-Z0-9_ ]/g, "").trim();
+  const name = rawName.charAt(0).toUpperCase() + rawName.slice(1);
   if (!name) {
     errEl.textContent = "Please enter your in-game name.";
     errEl.style.display = "block";
@@ -3032,7 +3033,8 @@ function showLoginScreen(onConfirm) {
   setTimeout(() => usernameInput.focus(), 100);
 
   async function doLogin() {
-    const val = usernameInput.value.replace(/[^a-zA-Z0-9_]/g, "").trim();
+    const raw = usernameInput.value.replace(/[^a-zA-Z0-9_]/g, "").trim();
+    const val = raw.charAt(0).toUpperCase() + raw.slice(1);
     if (!val) {
       err.textContent = "Please enter a username.";
       err.style.display = "block";
