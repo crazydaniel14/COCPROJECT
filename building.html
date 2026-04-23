@@ -574,6 +574,7 @@
     let activeTab     = 'all';
     let sortMode      = 'builder';
     let renderedList  = []; // the sorted+filtered list currently shown
+    let dataReady     = false; // true once loadBuildings() has populated allUpgrades
 
     /* ── FETCH ── */
     async function fetchBuilderQueue(num) {
@@ -621,6 +622,7 @@
             allUpgrades.push({ ...u, typeB: typeB ? String(typeB) : null });
           });
         });
+        dataReady = true;
         updateTabCounts();
         renderGrid();
         showLoading(false);
@@ -676,7 +678,15 @@
 
     /* ── RENDER GRID (section per building type, cards per instance) ── */
     function renderGrid() {
+      // TH Progress tab owns its own container — skip normal grid entirely
+      if (activeTab === 'progress') return;
       const grid = document.getElementById('bldgGrid');
+      // Data hasn't arrived yet — show a spinner so nothing flashes as empty
+      if (!dataReady) {
+        grid.innerHTML = `<div class="bldg-status"><div class="bldg-spinner"></div><span>Loading upgrades…</span></div>`;
+        grid.style.display = '';
+        return;
+      }
       const filtered = activeTab === 'all'
         ? allUpgrades
         : allUpgrades.filter(u => u.typeB === activeTab);

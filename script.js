@@ -340,6 +340,9 @@ let townHallLevel = null;
 let allBuildersLastFinish = null;
 let todaysBoostInfo = null;
 let isRefreshing = false;
+let _pendingRefresh = false;      // queues a fast-refresh while one is in-flight
+let _mutationQueue = Promise.resolve(); // serialises write operations
+let _autoRefreshTimer = null;     // resettable auto-refresh timeout
 let reviewedTabs = new Set();
 let finishedUpgradesData = null;
 let boostPlanData = [];
@@ -383,6 +386,27 @@ function updateLastRefreshed() {
     el.textContent = `Last refreshed: ${timeStr} · next in ${secsLeft}s`;
     if (secsLeft === 0) clearInterval(_refreshCountdownTimer);
   }, 1000);
+}
+
+// Enqueue a write operation so concurrent edits are serialised.
+// The async fn is not started until all previously-queued mutations finish.
+function enqueueMutation(fn) {
+  const result = _mutationQueue.then(() => fn());
+  _mutationQueue = result.catch(() => {}); // keep the chain alive on error
+  return result;
+}
+
+// Resettable auto-refresh: each call cancels the current timer and starts a
+// fresh one.  Call after a successful mutation to push the next refresh back.
+function scheduleNextRefresh(delay = AUTO_REFRESH_MS) {
+  clearTimeout(_autoRefreshTimer);
+  _nextRefreshAt = Date.now() + delay;
+  _autoRefreshTimer = setTimeout(runAutoRefresh, delay);
+}
+
+async function runAutoRefresh() {
+  await refreshDashboard();
+  scheduleNextRefresh(); // chain the next tick
 }
 
 function parseScheduledStart(scheduledStart) {
@@ -551,7 +575,7 @@ async function loadBoostPlan() {
 }
 
 async function refreshDashboardFast() {
-  if (isRefreshing) return;
+  if (isRefreshing) { _pendingRefresh = true; return; }
   isRefreshing = true;
   showRefreshIndicator('refreshing');
   try {
@@ -578,11 +602,12 @@ async function refreshDashboardFast() {
     showRefreshIndicator('hidden');
   } finally {
     isRefreshing = false;
+    if (_pendingRefresh) { _pendingRefresh = false; refreshDashboardFast(); }
   }
 }
 
 async function refreshDashboard() {
-  if (isRefreshing) return;
+  if (isRefreshing) { _pendingRefresh = true; return; }
   isRefreshing = true;
   showRefreshIndicator('refreshing');
   try {
@@ -610,6 +635,7 @@ async function refreshDashboard() {
     showRefreshIndicator('hidden');
   } finally {
     isRefreshing = false;
+    if (_pendingRefresh) { _pendingRefresh = false; refreshDashboardFast(); }
   }
 }
 
@@ -950,23 +976,26 @@ async function updateCardDuration(builderName, newMinutes, newDurationHr, durati
   showRefreshIndicator('refreshing');
   suppressFinishedCheckFor(60 * 1000);
 
-  try {
-    const res  = await fetch(`${API_BASE}?action=update_active_upgrade_time&username=${window.COC_USERNAME}&builder=${builderName}&remaining_minutes=${newMinutes}`);
-    const data = await res.json();
-    if (data.error) throw new Error(data.error);
-    await refreshDashboardFast();
-  } catch (err) {
-    console.error('Update failed:', err);
-    // Rollback
-    durationEl.textContent = originalText;
-    if (finishEl && originalFinishText) finishEl.textContent = originalFinishText;
-    if (builderNum && currentWorkData && originalDataFinish !== null) {
-      const dataRow = currentWorkData.find(r => r[0]?.toString().includes(`_${builderNum}`) || r[0]?.toString().endsWith(builderNum));
-      if (dataRow) dataRow[2] = originalDataFinish;
+  await enqueueMutation(async () => {
+    try {
+      const res  = await fetch(`${API_BASE}?action=update_active_upgrade_time&username=${window.COC_USERNAME}&builder=${builderName}&remaining_minutes=${newMinutes}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      scheduleNextRefresh(); // push auto-refresh back so it doesn't race with our update
+      await refreshDashboardFast();
+    } catch (err) {
+      console.error('Update failed:', err);
+      // Rollback
+      durationEl.textContent = originalText;
+      if (finishEl && originalFinishText) finishEl.textContent = originalFinishText;
+      if (builderNum && currentWorkData && originalDataFinish !== null) {
+        const dataRow = currentWorkData.find(r => r[0]?.toString().includes(`_${builderNum}`) || r[0]?.toString().endsWith(builderNum));
+        if (dataRow) dataRow[2] = originalDataFinish;
+      }
+      showRefreshIndicator('hidden');
+      showBsErrorToast('Failed to update duration — no changes were made');
     }
-    showRefreshIndicator('hidden');
-    showBsErrorToast('Failed to update duration — no changes were made');
-  }
+  });
 }
 
 function setupDurationEditor(detailsWrapper) {
@@ -1053,22 +1082,25 @@ function showDurationPicker(initialDays, initialHours, initialMins, callback) {
 async function updateUpgradeDuration(builderName, row, newMinutes, newDurationHr, durationEl, detailsWrapper) {
   const originalText = durationEl.textContent;
   durationEl.textContent = 'Saving...';
-  try {
-    const res  = await fetch(`${API_BASE}?action=update_upgrade_duration&username=${window.COC_USERNAME}&builder=${builderName}&row=${row}&minutes=${newMinutes}&duration_hr=${encodeURIComponent(newDurationHr)}`);
-    const data = await res.json();
-    if (data.error) { alert('Failed to update: ' + data.error); durationEl.textContent = originalText; return; }
-    durationEl.textContent = '✓ Saved!';
-    setTimeout(() => {
-      fetchBuilderDetails(detailsWrapper.dataset.builder).then(bd => {
-        if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
-        else { console.error('Bad response from fetchBuilderDetails:', bd); alert('Failed to reload builder details.'); }
-      });
-    }, 800);
-  } catch (err) {
-    console.error('Update failed:', err);
-    alert('Failed to update duration');
-    durationEl.textContent = originalText;
-  }
+  await enqueueMutation(async () => {
+    try {
+      const res  = await fetch(`${API_BASE}?action=update_upgrade_duration&username=${window.COC_USERNAME}&builder=${builderName}&row=${row}&minutes=${newMinutes}&duration_hr=${encodeURIComponent(newDurationHr)}`);
+      const data = await res.json();
+      if (data.error) { alert('Failed to update: ' + data.error); durationEl.textContent = originalText; return; }
+      scheduleNextRefresh();
+      durationEl.textContent = '✓ Saved!';
+      setTimeout(() => {
+        fetchBuilderDetails(detailsWrapper.dataset.builder).then(bd => {
+          if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
+          else { console.error('Bad response from fetchBuilderDetails:', bd); alert('Failed to reload builder details.'); }
+        });
+      }, 800);
+    } catch (err) {
+      console.error('Update failed:', err);
+      alert('Failed to update duration');
+      durationEl.textContent = originalText;
+    }
+  });
 }
 
 /* =========================
@@ -1822,7 +1854,7 @@ function setupPullToRefresh(onRefresh) {
 }
 
 function startAutoRefresh() {
-  setInterval(refreshDashboard, AUTO_REFRESH_MS);
+  scheduleNextRefresh(); // resettable timer instead of fixed setInterval
   setInterval(softRefreshBuilderCards, 10 * 60 * 1000);
 }
 
