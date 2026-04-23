@@ -467,7 +467,7 @@ async function loadTownHallLevel() {
     const res  = await fetch(TOWN_HALL_LEVEL_URL());
     const data = await res.json();
     console.log("[TH] raw response:", data);
-    const parsed = parseInt(data.level, 10);
+    const parsed = parseInt(data.th_level, 10);
     townHallLevel = isNaN(parsed) ? null : parsed;
   } catch (e) {
     console.error("loadTownHallLevel failed", e);
