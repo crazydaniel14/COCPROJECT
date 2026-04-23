@@ -257,7 +257,7 @@ const IMAGE_MAP = {
   "Gold Mine":         ["Lvl 17"],
   "Gold Storage":      ["Lvl 18","Lvl 19"],
   "Hero Hall":         ["Lvl 1","Lvl 11&12"],
-  "Hidden Tesla":      ["Lvl 16","Lvl 17"],
+  "Hidden Tesla":      ["Lvl 1","Lvl 2","Lvl 3","Lvl 4","Lvl 5","Lvl 6","Lvl 7","Lvl 8","Lvl 9","Lvl 10","Lvl 11","Lvl 12","Lvl 13","Lvl 14","Lvl 15","Lvl 16","Lvl 17"],
   "Inferno Tower":     ["Lvl 1","Lvl 2","Lvl 3","Lvl 4","Lvl 5","Lvl 6","Lvl 7","Lvl 8","Lvl 9","Lvl 10","Lvl 11","Lvl 12"],
   "Laboratory":        ["Lvl 16"],
   "Monolith":          ["Lvl 1","Lvl 2","Lvl 3","Lvl 4"],

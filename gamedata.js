@@ -445,6 +445,7 @@ function getDefensesAtTH(thLevel) {
     if (count === 0) continue;
     const maxLevel = getMaxLevelAtTH(name, thLevel);
     if (maxLevel === 0) continue;
+    if (name === "Builder Hut" && maxLevel < 2) continue; // Lvl 1 is not a defense
     result.push({
       name,
       resource:   data.resource,
