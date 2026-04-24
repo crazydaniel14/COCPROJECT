@@ -1106,11 +1106,20 @@
 
       // Try to fetch current village building levels from backend
       // Grouped by buildingId: { "1000009": [12, 10, 8], ... } (sorted desc)
+      // Heroes arrive separately as: { heroes: [{data: 28000000, lvl: 101}, ...] }
       let villageLevels = {};
       try {
         const res  = await fetch(endpoint('get_village_buildings'));
         const data = await res.json();
         if (data.buildings) villageLevels = data.buildings;
+        // Merge hero levels into the same map so lookups by heroId work uniformly
+        if (Array.isArray(data.heroes)) {
+          for (const h of data.heroes) {
+            if (h.data != null && h.lvl != null) {
+              villageLevels[String(h.data)] = [h.lvl];
+            }
+          }
+        }
       } catch { /* graceful — show reference list without current levels */ }
 
       const defenses      = getDefensesAtTH(thLevel);
