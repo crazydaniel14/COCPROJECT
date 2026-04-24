@@ -466,6 +466,87 @@ const RESOURCE_GAME_DATA = {
     count_at_th: { 1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:6, 8:6, 9:7, 10:7, 11:7, 12:7, 13:7, 14:7, 15:7, 16:7, 17:7, 18:7 },
   },
 
+  // ── GOLD STORAGE ──────────────────────────────────────────────────────────
+  // dataId: 1000005. Costs Elixir to upgrade.
+  "Gold Storage": {
+    resource: "elixir",
+    buildingId: 1000005,
+    levels: [
+      { level:  1, th_required:  1, duration_min:     0, cost:       300 },
+      { level:  2, th_required:  2, duration_min:     2, cost:       750 },
+      { level:  3, th_required:  2, duration_min:     5, cost:      1500 },
+      { level:  4, th_required:  3, duration_min:    15, cost:      3000 },
+      { level:  5, th_required:  3, duration_min:    30, cost:      6000 },
+      { level:  6, th_required:  3, duration_min:    60, cost:     12000 },
+      { level:  7, th_required:  4, duration_min:   120, cost:     25000 },
+      { level:  8, th_required:  4, duration_min:   180, cost:     50000 },
+      { level:  9, th_required:  5, duration_min:   240, cost:    100000 },
+      { level: 10, th_required:  6, duration_min:   300, cost:    250000 },
+      { level: 11, th_required:  7, duration_min:   360, cost:    500000 },
+      { level: 12, th_required: 11, duration_min:   720, cost:   1000000 },
+      { level: 13, th_required: 12, duration_min:  1440, cost:   1800000 },
+      { level: 14, th_required: 13, duration_min:  2880, cost:   2800000 },
+      { level: 15, th_required: 14, duration_min:  4320, cost:   3000000 },
+      { level: 16, th_required: 15, duration_min:  5760, cost:   4000000 },
+      { level: 17, th_required: 16, duration_min:  7200, cost:   5500000 },
+      { level: 18, th_required: 17, duration_min: 10080, cost:  10000000 },
+      { level: 19, th_required: 18, duration_min: 18000, cost:  18000000 },
+    ],
+    count_at_th: { 1:1, 2:1, 3:2, 4:2, 5:2, 6:2, 7:2, 8:3, 9:4, 10:4, 11:4, 12:4, 13:4, 14:4, 15:4, 16:4, 17:4, 18:4 },
+  },
+
+  // ── ELIXIR STORAGE ────────────────────────────────────────────────────────
+  // dataId: 1000003. Costs Gold to upgrade.
+  "Elixir Storage": {
+    resource: "gold",
+    buildingId: 1000003,
+    levels: [
+      { level:  1, th_required:  1, duration_min:     0, cost:       300 },
+      { level:  2, th_required:  2, duration_min:     2, cost:       750 },
+      { level:  3, th_required:  2, duration_min:     5, cost:      1500 },
+      { level:  4, th_required:  3, duration_min:    15, cost:      3000 },
+      { level:  5, th_required:  3, duration_min:    30, cost:      6000 },
+      { level:  6, th_required:  3, duration_min:    60, cost:     12000 },
+      { level:  7, th_required:  4, duration_min:   120, cost:     25000 },
+      { level:  8, th_required:  4, duration_min:   180, cost:     50000 },
+      { level:  9, th_required:  5, duration_min:   240, cost:    100000 },
+      { level: 10, th_required:  6, duration_min:   300, cost:    250000 },
+      { level: 11, th_required:  7, duration_min:   360, cost:    500000 },
+      { level: 12, th_required: 11, duration_min:   720, cost:   1000000 },
+      { level: 13, th_required: 12, duration_min:  1440, cost:   1800000 },
+      { level: 14, th_required: 13, duration_min:  2880, cost:   2800000 },
+      { level: 15, th_required: 14, duration_min:  4320, cost:   3000000 },
+      { level: 16, th_required: 15, duration_min:  5760, cost:   4000000 },
+      { level: 17, th_required: 16, duration_min:  7200, cost:   5500000 },
+      { level: 18, th_required: 17, duration_min: 10080, cost:  10000000 },
+      { level: 19, th_required: 18, duration_min: 18000, cost:  18000000 },
+    ],
+    count_at_th: { 1:1, 2:1, 3:2, 4:2, 5:2, 6:2, 7:2, 8:3, 9:4, 10:4, 11:4, 12:4, 13:4, 14:4, 15:4, 16:4, 17:4, 18:4 },
+  },
+
+  // ── DARK ELIXIR STORAGE ───────────────────────────────────────────────────
+  // dataId: 1000024. Costs Elixir to upgrade. Unlocks at TH7.
+  "Dark Elixir Storage": {
+    resource: "elixir",
+    buildingId: 1000024,
+    levels: [
+      { level:  1, th_required:  7, duration_min:   480, cost:    250000 },
+      { level:  2, th_required:  7, duration_min:   960, cost:    500000 },
+      { level:  3, th_required:  8, duration_min:  1440, cost:   1000000 },
+      { level:  4, th_required:  8, duration_min:  2160, cost:   1500000 },
+      { level:  5, th_required:  9, duration_min:  2400, cost:   2000000 },
+      { level:  6, th_required:  9, duration_min:  2880, cost:   2400000 },
+      { level:  7, th_required: 12, duration_min:  4320, cost:   3800000 },
+      { level:  8, th_required: 13, duration_min:  5040, cost:   5400000 },
+      { level:  9, th_required: 14, duration_min:  5760, cost:   6600000 },
+      { level: 10, th_required: 15, duration_min:  6480, cost:   8000000 },
+      { level: 11, th_required: 16, duration_min:  7200, cost:  10000000 },
+      { level: 12, th_required: 17, duration_min: 12960, cost:  16000000 },
+      { level: 13, th_required: 18, duration_min: 18720, cost:  25000000 },
+    ],
+    count_at_th: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:1, 8:1, 9:1, 10:1, 11:1, 12:1, 13:1, 14:1, 15:1, 16:1, 17:1, 18:1 },
+  },
+
   // ── DARK ELIXIR DRILL ─────────────────────────────────────────────────────
   // dataId: 1000023. Costs Elixir to upgrade. Unlocks at TH7.
   "Dark Elixir Drill": {
@@ -492,7 +573,7 @@ const RESOURCE_GAME_DATA = {
 // ── HELPER: all resource buildings available at a TH level ────────────────────
 // Returns array of { name, resource, buildingId, count, maxLevel, levels[] }
 function getResourcesAtTH(thLevel) {
-  const ORDER = ["Gold Mine", "Elixir Collector", "Dark Elixir Drill"];
+  const ORDER = ["Gold Mine", "Elixir Collector", "Dark Elixir Drill", "Gold Storage", "Elixir Storage", "Dark Elixir Storage"];
   const result = [];
   for (const name of ORDER) {
     const data = RESOURCE_GAME_DATA[name];
