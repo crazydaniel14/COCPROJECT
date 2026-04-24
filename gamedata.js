@@ -400,6 +400,145 @@ const DEFENSE_GAME_DATA = {
 
 };
 
+// ── HERO GAME DATA ────────────────────────────────────────────────────────────
+// Heroes are limited by Hero Hall level (not Town Hall level).
+// Hero Hall dataId: 1000071
+//
+// Each hero entry:
+//   resource     — "de" (dark elixir)
+//   heroId       — integer dataId from in-game village JSON
+//   levels       — array of { level, hero_hall_required, duration_min, cost }
+//                  (level 1 has duration_min: 0 and cost: 0 — no upgrade needed)
+
+const HERO_GAME_DATA = {
+
+  // ── BARBARIAN KING ───────────────────────────────────────────────────────────
+  // One per village. Levels 1–105 (as of 2026-04). dataId: 28000000
+  "Barbarian King": {
+    resource: "de",
+    heroId: 28000000,
+    levels: [
+      { level:   1, hero_hall_required:  1, duration_min:     0, cost:      0 },
+      { level:   2, hero_hall_required:  1, duration_min:   120, cost:   5000 },
+      { level:   3, hero_hall_required:  1, duration_min:   240, cost:   5500 },
+      { level:   4, hero_hall_required:  1, duration_min:   480, cost:   6000 },
+      { level:   5, hero_hall_required:  1, duration_min:   600, cost:   6500 },
+      { level:   6, hero_hall_required:  1, duration_min:   720, cost:   7000 },
+      { level:   7, hero_hall_required:  1, duration_min:   840, cost:   7500 },
+      { level:   8, hero_hall_required:  1, duration_min:   960, cost:   8000 },
+      { level:   9, hero_hall_required:  1, duration_min:  1080, cost:   8500 },
+      { level:  10, hero_hall_required:  1, duration_min:  1200, cost:  10000 },
+      { level:  11, hero_hall_required:  2, duration_min:  1320, cost:  10500 },
+      { level:  12, hero_hall_required:  2, duration_min:  1440, cost:  11000 },
+      { level:  13, hero_hall_required:  2, duration_min:  1440, cost:  11500 },
+      { level:  14, hero_hall_required:  2, duration_min:  1440, cost:  12000 },
+      { level:  15, hero_hall_required:  2, duration_min:  1440, cost:  12500 },
+      { level:  16, hero_hall_required:  2, duration_min:  1440, cost:  13000 },
+      { level:  17, hero_hall_required:  2, duration_min:  1440, cost:  13500 },
+      { level:  18, hero_hall_required:  2, duration_min:  1440, cost:  14000 },
+      { level:  19, hero_hall_required:  2, duration_min:  1440, cost:  14500 },
+      { level:  20, hero_hall_required:  2, duration_min:  1440, cost:  15000 },
+      { level:  21, hero_hall_required:  3, duration_min:  1440, cost:  17000 },
+      { level:  22, hero_hall_required:  3, duration_min:  1440, cost:  19000 },
+      { level:  23, hero_hall_required:  3, duration_min:  1440, cost:  21000 },
+      { level:  24, hero_hall_required:  3, duration_min:  1440, cost:  23000 },
+      { level:  25, hero_hall_required:  3, duration_min:  1440, cost:  25000 },
+      { level:  26, hero_hall_required:  3, duration_min:  2880, cost:  27000 },
+      { level:  27, hero_hall_required:  3, duration_min:  2880, cost:  29000 },
+      { level:  28, hero_hall_required:  3, duration_min:  2880, cost:  31000 },
+      { level:  29, hero_hall_required:  3, duration_min:  2880, cost:  33000 },
+      { level:  30, hero_hall_required:  3, duration_min:  2880, cost:  35000 },
+      { level:  31, hero_hall_required:  4, duration_min:  2880, cost:  37000 },
+      { level:  32, hero_hall_required:  4, duration_min:  2880, cost:  39000 },
+      { level:  33, hero_hall_required:  4, duration_min:  2880, cost:  41000 },
+      { level:  34, hero_hall_required:  4, duration_min:  2880, cost:  43000 },
+      { level:  35, hero_hall_required:  4, duration_min:  2880, cost:  45000 },
+      { level:  36, hero_hall_required:  4, duration_min:  2880, cost:  47000 },
+      { level:  37, hero_hall_required:  4, duration_min:  2880, cost:  49000 },
+      { level:  38, hero_hall_required:  4, duration_min:  2880, cost:  51000 },
+      { level:  39, hero_hall_required:  4, duration_min:  2880, cost:  53000 },
+      { level:  40, hero_hall_required:  4, duration_min:  2880, cost:  55000 },
+      { level:  41, hero_hall_required:  5, duration_min:  4320, cost:  58000 },
+      { level:  42, hero_hall_required:  5, duration_min:  4320, cost:  61000 },
+      { level:  43, hero_hall_required:  5, duration_min:  4320, cost:  64000 },
+      { level:  44, hero_hall_required:  5, duration_min:  4320, cost:  67000 },
+      { level:  45, hero_hall_required:  5, duration_min:  4320, cost:  70000 },
+      { level:  46, hero_hall_required:  5, duration_min:  4320, cost:  73000 },
+      { level:  47, hero_hall_required:  5, duration_min:  4320, cost:  76000 },
+      { level:  48, hero_hall_required:  5, duration_min:  4320, cost:  79000 },
+      { level:  49, hero_hall_required:  5, duration_min:  4320, cost:  82000 },
+      { level:  50, hero_hall_required:  5, duration_min:  4320, cost:  85000 },
+      { level:  51, hero_hall_required:  6, duration_min:  4320, cost:  86000 },
+      { level:  52, hero_hall_required:  6, duration_min:  4320, cost:  87000 },
+      { level:  53, hero_hall_required:  6, duration_min:  4320, cost:  88000 },
+      { level:  54, hero_hall_required:  6, duration_min:  4320, cost:  89000 },
+      { level:  55, hero_hall_required:  6, duration_min:  4320, cost:  90000 },
+      { level:  56, hero_hall_required:  6, duration_min:  4320, cost:  93000 },
+      { level:  57, hero_hall_required:  6, duration_min:  4320, cost:  96000 },
+      { level:  58, hero_hall_required:  6, duration_min:  4320, cost:  99000 },
+      { level:  59, hero_hall_required:  6, duration_min:  4320, cost: 102000 },
+      { level:  60, hero_hall_required:  6, duration_min:  4320, cost: 105000 },
+      { level:  61, hero_hall_required:  6, duration_min:  5760, cost: 107000 },
+      { level:  62, hero_hall_required:  6, duration_min:  5760, cost: 109000 },
+      { level:  63, hero_hall_required:  6, duration_min:  5760, cost: 111000 },
+      { level:  64, hero_hall_required:  6, duration_min:  5760, cost: 113000 },
+      { level:  65, hero_hall_required:  6, duration_min:  5760, cost: 115000 },
+      { level:  66, hero_hall_required:  7, duration_min:  5760, cost: 117000 },
+      { level:  67, hero_hall_required:  7, duration_min:  5760, cost: 119000 },
+      { level:  68, hero_hall_required:  7, duration_min:  5760, cost: 121000 },
+      { level:  69, hero_hall_required:  7, duration_min:  5760, cost: 123000 },
+      { level:  70, hero_hall_required:  7, duration_min:  5760, cost: 125000 },
+      { level:  71, hero_hall_required:  7, duration_min:  5760, cost: 130000 },
+      { level:  72, hero_hall_required:  7, duration_min:  5760, cost: 135000 },
+      { level:  73, hero_hall_required:  7, duration_min:  5760, cost: 140000 },
+      { level:  74, hero_hall_required:  7, duration_min:  5760, cost: 145000 },
+      { level:  75, hero_hall_required:  7, duration_min:  5760, cost: 150000 },
+      { level:  76, hero_hall_required:  8, duration_min:  5760, cost: 155000 },
+      { level:  77, hero_hall_required:  8, duration_min:  5760, cost: 160000 },
+      { level:  78, hero_hall_required:  8, duration_min:  5760, cost: 165000 },
+      { level:  79, hero_hall_required:  8, duration_min:  5760, cost: 170000 },
+      { level:  80, hero_hall_required:  8, duration_min:  5760, cost: 175000 },
+      { level:  81, hero_hall_required:  8, duration_min:  7200, cost: 180000 },
+      { level:  82, hero_hall_required:  8, duration_min:  7200, cost: 185000 },
+      { level:  83, hero_hall_required:  8, duration_min:  7200, cost: 195000 },
+      { level:  84, hero_hall_required:  8, duration_min:  7200, cost: 205000 },
+      { level:  85, hero_hall_required:  8, duration_min:  7200, cost: 215000 },
+      { level:  86, hero_hall_required:  9, duration_min:  8640, cost: 220000 },
+      { level:  87, hero_hall_required:  9, duration_min:  8640, cost: 230000 },
+      { level:  88, hero_hall_required:  9, duration_min:  8640, cost: 240000 },
+      { level:  89, hero_hall_required:  9, duration_min:  8640, cost: 250000 },
+      { level:  90, hero_hall_required:  9, duration_min:  8640, cost: 255000 },
+      { level:  91, hero_hall_required: 10, duration_min: 10080, cost: 280000 },
+      { level:  92, hero_hall_required: 10, duration_min: 10080, cost: 290000 },
+      { level:  93, hero_hall_required: 10, duration_min: 10080, cost: 300000 },
+      { level:  94, hero_hall_required: 10, duration_min: 10080, cost: 310000 },
+      { level:  95, hero_hall_required: 10, duration_min: 10080, cost: 320000 },
+      { level:  96, hero_hall_required: 11, duration_min: 11520, cost: 340000 },
+      { level:  97, hero_hall_required: 11, duration_min: 11520, cost: 350000 },
+      { level:  98, hero_hall_required: 11, duration_min: 11520, cost: 360000 },
+      { level:  99, hero_hall_required: 11, duration_min: 11520, cost: 370000 },
+      { level: 100, hero_hall_required: 11, duration_min: 11520, cost: 380000 },
+      { level: 101, hero_hall_required: 12, duration_min: 11520, cost: 400000 },
+      { level: 102, hero_hall_required: 12, duration_min: 11520, cost: 410000 },
+      { level: 103, hero_hall_required: 12, duration_min: 11520, cost: 420000 },
+      { level: 104, hero_hall_required: 12, duration_min: 11520, cost: 430000 },
+      { level: 105, hero_hall_required: 12, duration_min: 11520, cost: 450000 },
+    ],
+  },
+
+};
+
+// ── HELPER: max hero level achievable at a given Hero Hall level ───────────────
+function getMaxHeroLevelAtHH(heroName, heroHallLevel) {
+  const data = HERO_GAME_DATA[heroName];
+  if (!data) return 0;
+  let max = 0;
+  for (const lvl of data.levels) {
+    if (lvl.hero_hall_required <= heroHallLevel && lvl.level > max) max = lvl.level;
+  }
+  return max;
+}
+
 // ── HELPER: count at a given TH level ─────────────────────────────────────────
 // Returns number of buildings of the given type available at thLevel.
 // Uses the last known count if thLevel exceeds all keys.
