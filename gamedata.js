@@ -400,6 +400,124 @@ const DEFENSE_GAME_DATA = {
 
 };
 
+// ── RESOURCE GAME DATA ────────────────────────────────────────────────────────
+// Collectors: Gold Mine, Elixir Collector, Dark Elixir Drill.
+// Data collected from in-game by Daniel. Last updated: 2026-04.
+//
+// Each entry:
+//   resource      — "gold" | "elixir" | "de"
+//   buildingId    — integer dataId from in-game village JSON
+//   levels        — array of { level, th_required, duration_min, cost }
+//   count_at_th   — { thLevel: numberOfBuildings }
+
+const RESOURCE_GAME_DATA = {
+
+  // ── GOLD MINE ─────────────────────────────────────────────────────────────
+  // dataId: 1000004. Costs Elixir to upgrade.
+  "Gold Mine": {
+    resource: "elixir",
+    buildingId: 1000004,
+    levels: [
+      { level:  1, th_required:  1, duration_min:    0, cost:       150 },
+      { level:  2, th_required:  1, duration_min:    0, cost:       300 },
+      { level:  3, th_required:  2, duration_min:    1, cost:       700 },
+      { level:  4, th_required:  2, duration_min:    2, cost:      1400 },
+      { level:  5, th_required:  3, duration_min:    5, cost:      3000 },
+      { level:  6, th_required:  3, duration_min:   15, cost:      7000 },
+      { level:  7, th_required:  4, duration_min:   30, cost:     14000 },
+      { level:  8, th_required:  4, duration_min:   60, cost:     28000 },
+      { level:  9, th_required:  5, duration_min:  120, cost:     56000 },
+      { level: 10, th_required:  5, duration_min:  180, cost:     75000 },
+      { level: 11, th_required:  7, duration_min:  240, cost:     85000 },
+      { level: 12, th_required:  8, duration_min:  360, cost:    170000 },
+      { level: 13, th_required: 10, duration_min:  480, cost:    400000 },
+      { level: 14, th_required: 11, duration_min:  600, cost:    800000 },
+      { level: 15, th_required: 12, duration_min: 1080, cost:  1200000 },
+      { level: 16, th_required: 14, duration_min: 2880, cost:  2000000 },
+      { level: 17, th_required: 16, duration_min: 5760, cost:  8000000 },
+    ],
+    count_at_th: { 1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:6, 8:6, 9:7, 10:7, 11:7, 12:7, 13:7, 14:7, 15:7, 16:7, 17:7, 18:7 },
+  },
+
+  // ── ELIXIR COLLECTOR ──────────────────────────────────────────────────────
+  // dataId: 1000002. Costs Gold to upgrade.
+  "Elixir Collector": {
+    resource: "gold",
+    buildingId: 1000002,
+    levels: [
+      { level:  1, th_required:  1, duration_min:    0, cost:       150 },
+      { level:  2, th_required:  1, duration_min:    0, cost:       300 },
+      { level:  3, th_required:  2, duration_min:    1, cost:       700 },
+      { level:  4, th_required:  2, duration_min:    2, cost:      1400 },
+      { level:  5, th_required:  3, duration_min:    5, cost:      3000 },
+      { level:  6, th_required:  3, duration_min:   15, cost:      7000 },
+      { level:  7, th_required:  4, duration_min:   30, cost:     14000 },
+      { level:  8, th_required:  4, duration_min:   60, cost:     28000 },
+      { level:  9, th_required:  5, duration_min:  120, cost:     56000 },
+      { level: 10, th_required:  5, duration_min:  180, cost:     75000 },
+      { level: 11, th_required:  7, duration_min:  240, cost:     85000 },
+      { level: 12, th_required:  8, duration_min:  360, cost:    170000 },
+      { level: 13, th_required: 10, duration_min:  480, cost:    400000 },
+      { level: 14, th_required: 11, duration_min:  600, cost:    800000 },
+      { level: 15, th_required: 12, duration_min: 1080, cost:  1200000 },
+      { level: 16, th_required: 14, duration_min: 2880, cost:  2000000 },
+      { level: 17, th_required: 16, duration_min: 5760, cost:  8000000 },
+    ],
+    count_at_th: { 1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:6, 8:6, 9:7, 10:7, 11:7, 12:7, 13:7, 14:7, 15:7, 16:7, 17:7, 18:7 },
+  },
+
+  // ── DARK ELIXIR DRILL ─────────────────────────────────────────────────────
+  // dataId: 1000023. Costs Elixir to upgrade. Unlocks at TH7.
+  "Dark Elixir Drill": {
+    resource: "elixir",
+    buildingId: 1000023,
+    levels: [
+      { level:  1, th_required:  7, duration_min:  240, cost:   180000 },
+      { level:  2, th_required:  7, duration_min:  360, cost:   270000 },
+      { level:  3, th_required:  7, duration_min:  720, cost:   540000 },
+      { level:  4, th_required:  9, duration_min: 1080, cost:   900000 },
+      { level:  5, th_required:  9, duration_min: 1440, cost:  1200000 },
+      { level:  6, th_required:  9, duration_min: 2160, cost:  1800000 },
+      { level:  7, th_required: 10, duration_min: 2520, cost:  2100000 },
+      { level:  8, th_required: 11, duration_min: 2880, cost:  2400000 },
+      { level:  9, th_required: 12, duration_min: 3600, cost:  3700000 },
+      { level: 10, th_required: 14, duration_min: 4320, cost:  5300000 },
+      { level: 11, th_required: 16, duration_min: 8640, cost: 12000000 },
+    ],
+    count_at_th: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:1, 8:2, 9:3, 10:3, 11:3, 12:3, 13:3, 14:3, 15:3, 16:3, 17:3, 18:3 },
+  },
+
+};
+
+// ── HELPER: all resource buildings available at a TH level ────────────────────
+// Returns array of { name, resource, buildingId, count, maxLevel, levels[] }
+function getResourcesAtTH(thLevel) {
+  const ORDER = ["Gold Mine", "Elixir Collector", "Dark Elixir Drill"];
+  const result = [];
+  for (const name of ORDER) {
+    const data = RESOURCE_GAME_DATA[name];
+    if (!data) continue;
+    const keys  = Object.keys(data.count_at_th).map(Number).sort((a, b) => a - b);
+    let count = 0;
+    for (const th of keys) { if (th <= thLevel) count = data.count_at_th[th]; }
+    if (count === 0) continue;
+    let maxLevel = 0;
+    for (const lvl of data.levels) {
+      if (lvl.th_required <= thLevel && lvl.level > maxLevel) maxLevel = lvl.level;
+    }
+    if (maxLevel === 0) continue;
+    result.push({
+      name,
+      resource:   data.resource,
+      buildingId: data.buildingId,
+      count,
+      maxLevel,
+      levels: data.levels.filter(l => l.th_required <= thLevel),
+    });
+  }
+  return result;
+}
+
 // ── HERO GAME DATA ────────────────────────────────────────────────────────────
 // Heroes are limited by Hero Hall level (not Town Hall level).
 // Hero Hall dataId: 1000071

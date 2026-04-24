@@ -1130,14 +1130,15 @@
       }
 
       const defenses      = getDefensesAtTH(thLevel);
+      const resources     = getResourcesAtTH(thLevel);
       const heroHallLevel = villageLevels['1000071']?.[0] ?? null;
       const heroes        = getHeroesForProgress(heroHallLevel);
-      renderProgressGrid(pg, defenses, heroes, villageLevels, thLevel, heroHallLevel);
+      renderProgressGrid(pg, defenses, resources, heroes, villageLevels, thLevel, heroHallLevel);
       progressLoaded = true;
     }
 
-    function renderProgressGrid(pg, defenses, heroes, villageLevels, thLevel, heroHallLevel) {
-      if (defenses.length === 0 && heroes.length === 0) {
+    function renderProgressGrid(pg, defenses, resources, heroes, villageLevels, thLevel, heroHallLevel) {
+      if (defenses.length === 0 && resources.length === 0 && heroes.length === 0) {
         pg.innerHTML = `<div class="prog-no-th"><span>No data found for TH${thLevel}.</span></div>`;
         pg.style.display = '';
         return;
@@ -1145,9 +1146,9 @@
 
       const hasVillageData = Object.keys(villageLevels).length > 0;
 
-      // Tally maxed instances for summary (defenses + heroes)
+      // Tally maxed instances for summary (defenses + resources + heroes)
       let totalInstances = 0, maxedInstances = 0;
-      for (const bldg of defenses) {
+      for (const bldg of [...defenses, ...resources]) {
         const currentLevels = bldg.buildingId ? (villageLevels[String(bldg.buildingId)] || []) : [];
         for (let i = 0; i < bldg.count; i++) {
           totalInstances++;
@@ -1261,13 +1262,67 @@
           </div>`;
       }).join('');
 
+      // ── Resource cards ──
+      const resourceCardsHtml = resources.map(bldg => {
+        const imgSrc  = getUpgradeImage(`${bldg.name} Lvl ${bldg.maxLevel}`) || 'Images/Upgrades/PH.png';
+        const maxData = bldg.levels[bldg.levels.length - 1];
+        const subText = `×${bldg.count} at TH${thLevel} · max Lvl ${bldg.maxLevel} · ${formatDefenseDuration(maxData.duration_min)}`;
+
+        const currentLevels = bldg.buildingId ? (villageLevels[String(bldg.buildingId)] || []) : [];
+
+        const instanceRows = Array.from({ length: bldg.count }, (_, i) => {
+          const instNum   = bldg.count > 1 ? `#${i + 1}` : '—';
+          const curLvl    = currentLevels[i] ?? null;
+          const isMaxed   = curLvl !== null && curLvl >= bldg.maxLevel;
+          const isUnknown = curLvl === null;
+          const pct       = isUnknown ? 0 : Math.min(100, Math.round((curLvl / bldg.maxLevel) * 100));
+
+          const fillClass = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
+          const valClass  = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
+          const valText   = isUnknown ? `? / ${bldg.maxLevel}` : `${curLvl} / ${bldg.maxLevel}`;
+
+          return `
+            <div class="prog-instance-row">
+              <span class="prog-inst-label">${esc(instNum)}</span>
+              <div class="prog-bar-wrap">
+                <div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div>
+              </div>
+              <span class="prog-inst-val ${valClass}">${valText}</span>
+            </div>`;
+        }).join('');
+
+        const noJsonNote = !hasVillageData
+          ? `<div class="prog-no-json">Register with village JSON to see current levels</div>`
+          : '';
+
+        return `
+          <div class="prog-card">
+            <div class="prog-card-header">
+              <img src="${esc(imgSrc)}" class="prog-card-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
+              <div class="prog-card-info">
+                <div class="prog-card-name">${esc(bldg.name)}</div>
+                <div class="prog-card-sub">${esc(subText)}</div>
+              </div>
+            </div>
+            <div class="prog-card-body">
+              ${instanceRows}
+              ${noJsonNote}
+            </div>
+          </div>`;
+      }).join('');
+
       const heroesSectionHtml = heroes.length > 0 ? `
         <div class="bldg-section-header" style="margin-top:8px"><span>Heroes</span></div>
         <div class="prog-grid">${heroCardsHtml}</div>` : '';
 
+      const resourcesSectionHtml = resources.length > 0 ? `
+        <div class="bldg-section-header" style="margin-top:8px"><span>Resources</span></div>
+        <div class="prog-grid">${resourceCardsHtml}</div>` : '';
+
       pg.innerHTML = `
         ${summaryHtml}
         <div class="prog-grid">${defenseCardsHtml}</div>
+        ${resourcesSectionHtml}
         ${heroesSectionHtml}`;
       pg.style.display = '';
     }
