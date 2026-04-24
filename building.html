@@ -1111,6 +1111,7 @@
       try {
         const res  = await fetch(endpoint('get_village_buildings'));
         const data = await res.json();
+        console.log('[DEBUG] get_village_buildings response:', JSON.stringify(data));
         if (data.buildings) villageLevels = data.buildings;
         // Merge hero levels into the same map so lookups by heroId work uniformly
         if (Array.isArray(data.heroes)) {
