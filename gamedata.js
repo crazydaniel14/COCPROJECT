@@ -17,7 +17,7 @@ const DEFENSE_GAME_DATA = {
     resource: "gold",
     buildingId: 1000009,
     levels: [
-      { level: 1,  th_required: 2,  duration_min: 0.25,  cost: 1000 },
+      { level: 1,  th_required: 2,  duration_min: 0,     cost: 1000 },
       { level: 2,  th_required: 2,  duration_min: 2,     cost: 2000 },
       { level: 3,  th_required: 3,  duration_min: 20,    cost: 5000 },
       { level: 4,  th_required: 4,  duration_min: 60,    cost: 20000 },
