@@ -1106,22 +1106,28 @@
 
       // Try to fetch current village building levels from backend
       // Grouped by buildingId: { "1000009": [12, 10, 8], ... } (sorted desc)
-      // Heroes arrive separately as: { heroes: [{data: 28000000, lvl: 101}, ...] }
       let villageLevels = {};
       try {
         const res  = await fetch(endpoint('get_village_buildings'));
         const data = await res.json();
-        console.log('[DEBUG] get_village_buildings response:', JSON.stringify(data));
         if (data.buildings) villageLevels = data.buildings;
-        // Merge hero levels into the same map so lookups by heroId work uniformly
-        if (Array.isArray(data.heroes)) {
-          for (const h of data.heroes) {
-            if (h.data != null && h.lvl != null) {
-              villageLevels[String(h.data)] = [h.lvl];
-            }
-          }
-        }
       } catch { /* graceful — show reference list without current levels */ }
+
+      // Hero levels are not in get_village_buildings. Infer from the builder queue:
+      // the lowest queued upgrade level for a hero minus 1 = its current level.
+      for (const u of allUpgrades) {
+        if (u.typeB !== '7') continue;
+        const info = parseBuildingInfo(u.upgrade || '');
+        if (!info || info.isSC || info.level === null) continue;
+        const heroEntry = Object.entries(HERO_GAME_DATA).find(([name]) => name === info.base);
+        if (!heroEntry) continue;
+        const heroId  = String(heroEntry[1].heroId);
+        const curInferred = info.level - 1;
+        // Keep the lowest inferred value (closest next upgrade = truest current level)
+        if (!villageLevels[heroId] || curInferred < villageLevels[heroId][0]) {
+          villageLevels[heroId] = [curInferred];
+        }
+      }
 
       const defenses      = getDefensesAtTH(thLevel);
       const heroHallLevel = villageLevels['1000071']?.[0] ?? null;
