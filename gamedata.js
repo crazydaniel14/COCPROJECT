@@ -599,6 +599,119 @@ function getResourcesAtTH(thLevel) {
   return result;
 }
 
+// ── ARMY GAME DATA ────────────────────────────────────────────────────────────
+// Army buildings: Army Camp, Barracks, Dark Barracks.
+// Data collected from in-game by Daniel. Last updated: 2026-04.
+//
+// Each entry follows the same schema as RESOURCE_GAME_DATA.
+
+const ARMY_GAME_DATA = {
+
+  // ── ARMY CAMP ──────────────────────────────────────────────────────────────
+  // dataId: 1000000. Costs Elixir to upgrade.
+  "Army Camp": {
+    resource: "elixir",
+    buildingId: 1000000,
+    levels: [
+      { level:  1, th_required:  1, duration_min:     0, cost:       200 },
+      { level:  2, th_required:  2, duration_min:     0, cost:      2000 },
+      { level:  3, th_required:  3, duration_min:    30, cost:     10000 },
+      { level:  4, th_required:  4, duration_min:   120, cost:    100000 },
+      { level:  5, th_required:  5, duration_min:   360, cost:    250000 },
+      { level:  6, th_required:  6, duration_min:   720, cost:    500000 },
+      { level:  7, th_required:  9, duration_min:  2880, cost:   1500000 },
+      { level:  8, th_required: 10, duration_min:  4320, cost:   2500000 },
+      { level:  9, th_required: 11, duration_min:  5040, cost:   4200000 },
+      { level: 10, th_required: 12, duration_min:  5760, cost:   4500000 },
+      { level: 11, th_required: 13, duration_min:  7200, cost:   7500000 },
+      { level: 12, th_required: 15, duration_min:  8640, cost:  10000000 },
+      { level: 13, th_required: 17, duration_min: 14400, cost:  17000000 },
+    ],
+    count_at_th: { 1:1, 2:1, 3:2, 4:2, 5:3, 6:3, 7:4, 8:4, 9:4, 10:4, 11:4, 12:4, 13:4, 14:4, 15:4, 16:4, 17:4, 18:4 },
+  },
+
+  // ── BARRACKS ───────────────────────────────────────────────────────────────
+  // dataId: 1000006. Costs Elixir to upgrade.
+  "Barracks": {
+    resource: "elixir",
+    buildingId: 1000006,
+    levels: [
+      { level:  1, th_required:  1, duration_min:     0, cost:       100 },
+      { level:  2, th_required:  2, duration_min:     0, cost:       500 },
+      { level:  3, th_required:  2, duration_min:     2, cost:      2500 },
+      { level:  4, th_required:  2, duration_min:    30, cost:      5000 },
+      { level:  5, th_required:  3, duration_min:   120, cost:     20000 },
+      { level:  6, th_required:  4, duration_min:   240, cost:    120000 },
+      { level:  7, th_required:  5, duration_min:   360, cost:    270000 },
+      { level:  8, th_required:  6, duration_min:   720, cost:    600000 },
+      { level:  9, th_required:  7, duration_min:  1440, cost:   1000000 },
+      { level: 10, th_required:  8, duration_min:  2160, cost:   1400000 },
+      { level: 11, th_required:  9, duration_min:  2880, cost:   2600000 },
+      { level: 12, th_required: 10, duration_min:  5760, cost:   3700000 },
+      { level: 13, th_required: 11, duration_min:  7200, cost:   6000000 },
+      { level: 14, th_required: 12, duration_min:  8640, cost:   7000000 },
+      { level: 15, th_required: 13, duration_min: 10080, cost:   9000000 },
+      { level: 16, th_required: 14, duration_min: 10800, cost:  11000000 },
+      { level: 17, th_required: 15, duration_min: 11520, cost:  12600000 },
+      { level: 18, th_required: 16, duration_min: 12960, cost:  15000000 },
+      { level: 19, th_required: 17, duration_min: 20160, cost:  26000000 },
+    ],
+    count_at_th: { 1:1, 2:1, 3:1, 4:1, 5:1, 6:1, 7:1, 8:1, 9:1, 10:1, 11:1, 12:1, 13:1, 14:1, 15:1, 16:1, 17:1, 18:1 },
+  },
+
+  // ── DARK BARRACKS ──────────────────────────────────────────────────────────
+  // dataId: 1000026. Costs Elixir to upgrade. Unlocks at TH7.
+  "Dark Barracks": {
+    resource: "elixir",
+    buildingId: 1000026,
+    levels: [
+      { level:  1, th_required:  7, duration_min:   480, cost:    200000 },
+      { level:  2, th_required:  7, duration_min:  1440, cost:    600000 },
+      { level:  3, th_required:  8, duration_min:  2160, cost:   1000000 },
+      { level:  4, th_required:  8, duration_min:  2880, cost:   1600000 },
+      { level:  5, th_required:  9, duration_min:  3600, cost:   2200000 },
+      { level:  6, th_required:  9, duration_min:  4320, cost:   2900000 },
+      { level:  7, th_required: 10, duration_min:  7200, cost:   4000000 },
+      { level:  8, th_required: 11, duration_min:  8640, cost:   7000000 },
+      { level:  9, th_required: 12, duration_min: 10080, cost:   7200000 },
+      { level: 10, th_required: 13, duration_min: 10800, cost:  10000000 },
+      { level: 11, th_required: 14, duration_min: 11520, cost:  12000000 },
+      { level: 12, th_required: 15, duration_min: 17280, cost:  20000000 },
+    ],
+    count_at_th: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:1, 8:1, 9:1, 10:1, 11:1, 12:1, 13:1, 14:1, 15:1, 16:1, 17:1, 18:1 },
+  },
+
+};
+
+// ── HELPER: all army buildings available at a TH level ────────────────────────
+// Returns array of { name, resource, buildingId, count, maxLevel, levels[] }
+function getArmyAtTH(thLevel) {
+  const ORDER = ["Army Camp", "Barracks", "Dark Barracks"];
+  const result = [];
+  for (const name of ORDER) {
+    const data = ARMY_GAME_DATA[name];
+    if (!data) continue;
+    const keys  = Object.keys(data.count_at_th).map(Number).sort((a, b) => a - b);
+    let count = 0;
+    for (const th of keys) { if (th <= thLevel) count = data.count_at_th[th]; }
+    if (count === 0) continue;
+    let maxLevel = 0;
+    for (const lvl of data.levels) {
+      if (lvl.th_required <= thLevel && lvl.level > maxLevel) maxLevel = lvl.level;
+    }
+    if (maxLevel === 0) continue;
+    result.push({
+      name,
+      resource:   data.resource,
+      buildingId: data.buildingId,
+      count,
+      maxLevel,
+      levels: data.levels.filter(l => l.th_required <= thLevel),
+    });
+  }
+  return result;
+}
+
 // ── HERO GAME DATA ────────────────────────────────────────────────────────────
 // Heroes are limited by Hero Hall level (not Town Hall level).
 // Hero Hall dataId: 1000071
