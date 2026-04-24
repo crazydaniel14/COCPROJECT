@@ -897,6 +897,40 @@ const HERO_GAME_DATA = {
     ],
   },
 
+  // ── DRAGON DUKE ──────────────────────────────────────────────────────────────
+  // One per village. Levels 1–25 (as of 2026-04). dataId: 28000007 (verify from village JSON)
+  "Dragon Duke": {
+    resource: "de",
+    heroId: 28000007,
+    levels: [
+      { level:  1, hero_hall_required:  9, duration_min:     0, cost:      0 },
+      { level:  2, hero_hall_required:  9, duration_min:   360, cost:  50000 },
+      { level:  3, hero_hall_required:  9, duration_min:   720, cost:  60000 },
+      { level:  4, hero_hall_required:  9, duration_min:  1440, cost:  70000 },
+      { level:  5, hero_hall_required:  9, duration_min:  1440, cost:  80000 },
+      { level:  6, hero_hall_required:  9, duration_min:  2880, cost:  90000 },
+      { level:  7, hero_hall_required:  9, duration_min:  2880, cost: 100000 },
+      { level:  8, hero_hall_required:  9, duration_min:  2880, cost: 110000 },
+      { level:  9, hero_hall_required:  9, duration_min:  4320, cost: 120000 },
+      { level: 10, hero_hall_required:  9, duration_min:  4320, cost: 130000 },
+      { level: 11, hero_hall_required: 10, duration_min:  5760, cost: 150000 },
+      { level: 12, hero_hall_required: 10, duration_min:  7200, cost: 175000 },
+      { level: 13, hero_hall_required: 10, duration_min:  7200, cost: 200000 },
+      { level: 14, hero_hall_required: 10, duration_min:  8640, cost: 225000 },
+      { level: 15, hero_hall_required: 10, duration_min:  8640, cost: 250000 },
+      { level: 16, hero_hall_required: 11, duration_min: 10080, cost: 275000 },
+      { level: 17, hero_hall_required: 11, duration_min: 10080, cost: 300000 },
+      { level: 18, hero_hall_required: 11, duration_min: 11520, cost: 325000 },
+      { level: 19, hero_hall_required: 11, duration_min: 11520, cost: 350000 },
+      { level: 20, hero_hall_required: 11, duration_min: 11520, cost: 375000 },
+      { level: 21, hero_hall_required: 12, duration_min: 11520, cost: 400000 },
+      { level: 22, hero_hall_required: 12, duration_min: 11520, cost: 420000 },
+      { level: 23, hero_hall_required: 12, duration_min: 11520, cost: 440000 },
+      { level: 24, hero_hall_required: 12, duration_min: 11520, cost: 460000 },
+      { level: 25, hero_hall_required: 12, duration_min: 11520, cost: 480000 },
+    ],
+  },
+
 };
 
 // ── HELPER: max hero level achievable at a given Hero Hall level ───────────────
