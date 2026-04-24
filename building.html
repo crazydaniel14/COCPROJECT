@@ -1088,13 +1088,20 @@
 
       // Tally maxed instances for summary (defenses + resources + army + traps + heroes)
       let totalInstances = 0, maxedInstances = 0;
-      for (const bldg of [...defenses, ...resources, ...army, ...traps]) {
+      for (const bldg of [...defenses, ...resources, ...army]) {
         const currentLevels = bldg.buildingId ? (villageLevels[String(bldg.buildingId)] || []) : [];
         for (let i = 0; i < bldg.count; i++) {
           totalInstances++;
           const curLvl = currentLevels[i] ?? null;
           if (curLvl !== null && curLvl >= bldg.maxLevel) maxedInstances++;
         }
+      }
+      // Traps count as one entry per type (single shared upgrade level)
+      for (const bldg of traps) {
+        totalInstances++;
+        const trapLevels = bldg.buildingId ? (villageLevels[String(bldg.buildingId)] || []) : [];
+        const curLvl = trapLevels.length > 0 ? Math.max(...trapLevels) : null;
+        if (curLvl !== null && curLvl >= bldg.maxLevel) maxedInstances++;
       }
       for (const hero of heroes) {
         totalInstances++;
@@ -1313,36 +1320,27 @@
         <div class="prog-grid">${armyCardsHtml}</div>` : '';
 
       // ── Trap cards ──
+      // Traps of the same type share one upgrade level (you can't have Bomb #1
+      // at a different level from Bomb #2), so we show ONE bar per trap type
+      // using the highest level seen in villageLevels, rather than per-instance rows.
       const trapCardsHtml = traps.map(bldg => {
         const imgSrc  = getUpgradeImage(`${bldg.name} Lvl ${bldg.maxLevel}`) || 'Images/Upgrades/PH.png';
         const maxData = bldg.levels[bldg.levels.length - 1];
         const subText = `×${bldg.count} at TH${thLevel} · max Lvl ${bldg.maxLevel} · ${formatDefenseDuration(maxData.duration_min)}`;
 
-        const currentLevels = bldg.buildingId ? (villageLevels[String(bldg.buildingId)] || []) : [];
+        // Use the highest reported level for this trap type (all copies are the same)
+        const trapLevels = bldg.buildingId ? (villageLevels[String(bldg.buildingId)] || []) : [];
+        const curLvl    = trapLevels.length > 0 ? Math.max(...trapLevels) : null;
+        const isMaxed   = curLvl !== null && curLvl >= bldg.maxLevel;
+        const isUnknown = curLvl === null;
+        const pct       = isUnknown ? 0 : Math.min(100, Math.round((curLvl / bldg.maxLevel) * 100));
 
-        const instanceRows = Array.from({ length: bldg.count }, (_, i) => {
-          const instNum   = bldg.count > 1 ? `#${i + 1}` : '—';
-          const curLvl    = currentLevels[i] ?? null;
-          const isMaxed   = curLvl !== null && curLvl >= bldg.maxLevel;
-          const isUnknown = curLvl === null;
-          const pct       = isUnknown ? 0 : Math.min(100, Math.round((curLvl / bldg.maxLevel) * 100));
-
-          const fillClass = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
-          const valClass  = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
-          const valText   = isUnknown ? `? / ${bldg.maxLevel}` : `${curLvl} / ${bldg.maxLevel}`;
-
-          return `
-            <div class="prog-instance-row">
-              <span class="prog-inst-label">${esc(instNum)}</span>
-              <div class="prog-bar-wrap">
-                <div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div>
-              </div>
-              <span class="prog-inst-val ${valClass}">${valText}</span>
-            </div>`;
-        }).join('');
+        const fillClass = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
+        const valClass  = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
+        const valText   = isUnknown ? `? / ${bldg.maxLevel}` : `${curLvl} / ${bldg.maxLevel}`;
 
         const noJsonNote = !hasVillageData
-          ? `<div class="prog-no-json">Register with village JSON to see current levels</div>`
+          ? `<div class="prog-no-json">Register with village JSON to see current level</div>`
           : '';
 
         return `
@@ -1355,7 +1353,13 @@
               </div>
             </div>
             <div class="prog-card-body">
-              ${instanceRows}
+              <div class="prog-instance-row">
+                <span class="prog-inst-label">—</span>
+                <div class="prog-bar-wrap">
+                  <div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div>
+                </div>
+                <span class="prog-inst-val ${valClass}">${valText}</span>
+              </div>
               ${noJsonNote}
             </div>
           </div>`;
