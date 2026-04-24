@@ -600,7 +600,8 @@ function getResourcesAtTH(thLevel) {
 }
 
 // ── ARMY GAME DATA ────────────────────────────────────────────────────────────
-// Army buildings: Army Camp, Barracks, Dark Barracks.
+// Army buildings: Army Camp, Barracks, Dark Barracks, Spell Factory,
+//   Dark Spell Factory, Laboratory, Workshop, Blacksmith, Hero Hall, Pet House.
 // Data collected from in-game by Daniel. Last updated: 2026-04.
 //
 // Each entry follows the same schema as RESOURCE_GAME_DATA.
@@ -681,12 +682,353 @@ const ARMY_GAME_DATA = {
     count_at_th: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:1, 8:1, 9:1, 10:1, 11:1, 12:1, 13:1, 14:1, 15:1, 16:1, 17:1, 18:1 },
   },
 
+  // ── SPELL FACTORY ──────────────────────────────────────────────────────────
+  // dataId: 1000020. Costs Elixir to upgrade. Unlocks at TH5.
+  "Spell Factory": {
+    resource: "elixir",
+    buildingId: 1000020,
+    levels: [
+      { level:  1, th_required:  5, duration_min:   360, cost:    150000 },
+      { level:  2, th_required:  6, duration_min:   720, cost:    300000 },
+      { level:  3, th_required:  7, duration_min:  1440, cost:    600000 },
+      { level:  4, th_required:  9, duration_min:  2880, cost:   1200000 },
+      { level:  5, th_required: 10, duration_min:  4320, cost:   2000000 },
+      { level:  6, th_required: 11, duration_min:  7200, cost:   3500000 },
+      { level:  7, th_required: 13, duration_min: 10080, cost:   9000000 },
+      { level:  8, th_required: 15, duration_min: 11520, cost:  14000000 },
+      { level:  9, th_required: 16, duration_min: 18720, cost:  24000000 },
+    ],
+    count_at_th: { 1:0, 2:0, 3:0, 4:0, 5:1, 6:1, 7:1, 8:1, 9:1, 10:1, 11:1, 12:1, 13:1, 14:1, 15:1, 16:1, 17:1, 18:1 },
+  },
+
+  // ── DARK SPELL FACTORY ─────────────────────────────────────────────────────
+  // dataId: 1000029. Costs Elixir to upgrade. Unlocks at TH8.
+  "Dark Spell Factory": {
+    resource: "elixir",
+    buildingId: 1000029,
+    levels: [
+      { level:  1, th_required:  8, duration_min:   360, cost:    130000 },
+      { level:  2, th_required:  8, duration_min:   720, cost:    260000 },
+      { level:  3, th_required:  9, duration_min:  2880, cost:    600000 },
+      { level:  4, th_required:  9, duration_min:  4320, cost:   1200000 },
+      { level:  5, th_required: 10, duration_min:  7200, cost:   2500000 },
+      { level:  6, th_required: 12, duration_min:  8640, cost:   4000000 },
+      { level:  7, th_required: 14, duration_min: 10080, cost:  11000000 },
+    ],
+    count_at_th: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:1, 9:1, 10:1, 11:1, 12:1, 13:1, 14:1, 15:1, 16:1, 17:1, 18:1 },
+  },
+
+  // ── LABORATORY ─────────────────────────────────────────────────────────────
+  // dataId: 1000007. Costs Elixir to upgrade. Unlocks at TH3.
+  "Laboratory": {
+    resource: "elixir",
+    buildingId: 1000007,
+    levels: [
+      { level:  1, th_required:  3, duration_min:      1, cost:      5000 },
+      { level:  2, th_required:  4, duration_min:     30, cost:     25000 },
+      { level:  3, th_required:  5, duration_min:    120, cost:     50000 },
+      { level:  4, th_required:  6, duration_min:    240, cost:    100000 },
+      { level:  5, th_required:  7, duration_min:    480, cost:    200000 },
+      { level:  6, th_required:  8, duration_min:    960, cost:    400000 },
+      { level:  7, th_required:  9, duration_min:   1440, cost:    800000 },
+      { level:  8, th_required: 10, duration_min:   2520, cost:   1300000 },
+      { level:  9, th_required: 11, duration_min:   3960, cost:   2100000 },
+      { level: 10, th_required: 12, duration_min:   5760, cost:   3800000 },
+      { level: 11, th_required: 13, duration_min:   8640, cost:   5500000 },
+      { level: 12, th_required: 14, duration_min:  10080, cost:   8100000 },
+      { level: 13, th_required: 15, duration_min:  11520, cost:  10800000 },
+      { level: 14, th_required: 16, duration_min:  12960, cost:  13000000 },
+      { level: 15, th_required: 17, duration_min:  14400, cost:  18000000 },
+      { level: 16, th_required: 18, duration_min:  23040, cost:  27000000 },
+    ],
+    count_at_th: { 1:0, 2:0, 3:1, 4:1, 5:1, 6:1, 7:1, 8:1, 9:1, 10:1, 11:1, 12:1, 13:1, 14:1, 15:1, 16:1, 17:1, 18:1 },
+  },
+
+  // ── WORKSHOP ───────────────────────────────────────────────────────────────
+  // dataId: 1000059. Costs Elixir to upgrade. Unlocks at TH12.
+  "Workshop": {
+    resource: "elixir",
+    buildingId: 1000059,
+    levels: [
+      { level:  1, th_required: 12, duration_min:  2880, cost:   2400000 },
+      { level:  2, th_required: 12, duration_min:  4320, cost:   3700000 },
+      { level:  3, th_required: 12, duration_min:  5040, cost:   5000000 },
+      { level:  4, th_required: 13, duration_min:  5760, cost:   8700000 },
+      { level:  5, th_required: 13, duration_min:  7200, cost:   9000000 },
+      { level:  6, th_required: 14, duration_min:  7920, cost:  10000000 },
+      { level:  7, th_required: 15, duration_min:  8640, cost:  11000000 },
+      { level:  8, th_required: 16, duration_min: 10080, cost:  13000000 },
+    ],
+    count_at_th: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:1, 13:1, 14:1, 15:1, 16:1, 17:1, 18:1 },
+  },
+
+  // ── BLACKSMITH ─────────────────────────────────────────────────────────────
+  // dataId: 1000070. Costs Elixir to upgrade. Unlocks at TH8.
+  "Blacksmith": {
+    resource: "elixir",
+    buildingId: 1000070,
+    levels: [
+      { level:  1, th_required:  8, duration_min:   720, cost:    600000 },
+      { level:  2, th_required:  9, duration_min:  1440, cost:   1200000 },
+      { level:  3, th_required: 10, duration_min:  2880, cost:   2300000 },
+      { level:  4, th_required: 11, duration_min:  4320, cost:   3000000 },
+      { level:  5, th_required: 12, duration_min:  5760, cost:   5000000 },
+      { level:  6, th_required: 13, duration_min:  6480, cost:   6200000 },
+      { level:  7, th_required: 14, duration_min:  7200, cost:   9200000 },
+      { level:  8, th_required: 15, duration_min:  8640, cost:  10000000 },
+      { level:  9, th_required: 16, duration_min: 10080, cost:  11000000 },
+    ],
+    count_at_th: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:1, 9:1, 10:1, 11:1, 12:1, 13:1, 14:1, 15:1, 16:1, 17:1, 18:1 },
+  },
+
+  // ── HERO HALL ──────────────────────────────────────────────────────────────
+  // dataId: 1000071. Costs Elixir to upgrade. Unlocks at TH7.
+  "Hero Hall": {
+    resource: "elixir",
+    buildingId: 1000071,
+    levels: [
+      { level:  1, th_required:  7, duration_min:  1440, cost:    800000 },
+      { level:  2, th_required:  8, duration_min:  2880, cost:   1600000 },
+      { level:  3, th_required:  9, duration_min:  4320, cost:   2300000 },
+      { level:  4, th_required: 10, duration_min:  5760, cost:   2500000 },
+      { level:  5, th_required: 11, duration_min:  6480, cost:   4500000 },
+      { level:  6, th_required: 12, duration_min:  7200, cost:   5500000 },
+      { level:  7, th_required: 13, duration_min:  8640, cost:   8500000 },
+      { level:  8, th_required: 14, duration_min:  9360, cost:   9500000 },
+      { level:  9, th_required: 15, duration_min: 10080, cost:  11000000 },
+      { level: 10, th_required: 16, duration_min: 11520, cost:  13000000 },
+      { level: 11, th_required: 17, duration_min: 13680, cost:  17000000 },
+      { level: 12, th_required: 18, duration_min: 19440, cost:  26000000 },
+    ],
+    count_at_th: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:1, 8:1, 9:1, 10:1, 11:1, 12:1, 13:1, 14:1, 15:1, 16:1, 17:1, 18:1 },
+  },
+
+  // ── PET HOUSE ──────────────────────────────────────────────────────────────
+  // dataId: 1000068. Costs Elixir to upgrade. Unlocks at TH14.
+  "Pet House": {
+    resource: "elixir",
+    buildingId: 1000068,
+    levels: [
+      { level:  1, th_required: 14, duration_min:  1440, cost:   3000000 },
+      { level:  2, th_required: 14, duration_min:  2880, cost:   4000000 },
+      { level:  3, th_required: 14, duration_min:  4320, cost:   5000000 },
+      { level:  4, th_required: 14, duration_min:  5040, cost:   6000000 },
+      { level:  5, th_required: 15, duration_min:  5760, cost:   7000000 },
+      { level:  6, th_required: 15, duration_min:  6480, cost:   8000000 },
+      { level:  7, th_required: 15, duration_min:  7200, cost:   9000000 },
+      { level:  8, th_required: 15, duration_min:  7920, cost:  10000000 },
+      { level:  9, th_required: 16, duration_min:  8640, cost:  11000000 },
+      { level: 10, th_required: 16, duration_min: 10080, cost:  12000000 },
+      { level: 11, th_required: 17, duration_min: 12960, cost:  16500000 },
+      { level: 12, th_required: 18, duration_min: 19440, cost:  25500000 },
+    ],
+    count_at_th: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0, 13:0, 14:1, 15:1, 16:1, 17:1, 18:1 },
+  },
+
 };
+
+// ── TRAP GAME DATA ────────────────────────────────────────────────────────────
+// Trap buildings: Bomb, Air Bomb, Spring Trap, Giant Bomb,
+//   Seeking Air Mine, Skeleton Trap, Tornado Trap, Giga Bomb.
+// Data collected from in-game by Daniel. Last updated: 2026-04.
+//
+// resource — "gold" (all traps cost gold to re-arm/upgrade)
+
+const TRAP_GAME_DATA = {
+
+  // ── BOMB ───────────────────────────────────────────────────────────────────
+  // dataId: 12000000. Costs Gold to upgrade. Unlocks at TH3.
+  "Bomb": {
+    resource: "gold",
+    buildingId: 12000000,
+    levels: [
+      { level:  1, th_required:  3, duration_min:     0, cost:       400 },
+      { level:  2, th_required:  3, duration_min:     6, cost:      1000 },
+      { level:  3, th_required:  5, duration_min:    20, cost:     10000 },
+      { level:  4, th_required:  7, duration_min:    40, cost:     40000 },
+      { level:  5, th_required:  8, duration_min:    60, cost:    100000 },
+      { level:  6, th_required:  9, duration_min:   180, cost:    230000 },
+      { level:  7, th_required: 10, duration_min:   300, cost:    330000 },
+      { level:  8, th_required: 11, duration_min:   360, cost:    500000 },
+      { level:  9, th_required: 13, duration_min:   720, cost:    750000 },
+      { level: 10, th_required: 14, duration_min:  1440, cost:   1300000 },
+      { level: 11, th_required: 15, duration_min:  2880, cost:   2500000 },
+      { level: 12, th_required: 16, duration_min:  4320, cost:   4000000 },
+      { level: 13, th_required: 17, duration_min:  6480, cost:   8500000 },
+      { level: 14, th_required: 18, duration_min: 11520, cost:  14000000 },
+    ],
+    count_at_th: { 1:0, 2:0, 3:2, 4:2, 5:4, 6:4, 7:6, 8:6, 9:6, 10:6, 11:6, 12:6, 13:7, 14:8, 15:8, 16:8, 17:8, 18:8 },
+  },
+
+  // ── AIR BOMB ───────────────────────────────────────────────────────────────
+  // dataId: 12000005. Costs Gold to upgrade. Unlocks at TH5.
+  "Air Bomb": {
+    resource: "gold",
+    buildingId: 12000005,
+    levels: [
+      { level:  1, th_required:  5, duration_min:     0, cost:      4000 },
+      { level:  2, th_required:  5, duration_min:    30, cost:     20000 },
+      { level:  3, th_required:  7, duration_min:    60, cost:     75000 },
+      { level:  4, th_required:  9, duration_min:   240, cost:    300000 },
+      { level:  5, th_required: 11, duration_min:   480, cost:    550000 },
+      { level:  6, th_required: 12, duration_min:   720, cost:    800000 },
+      { level:  7, th_required: 13, duration_min:   960, cost:   1000000 },
+      { level:  8, th_required: 13, duration_min:  1080, cost:   1200000 },
+      { level:  9, th_required: 14, duration_min:  1440, cost:   2000000 },
+      { level: 10, th_required: 15, duration_min:  2880, cost:   3000000 },
+      { level: 11, th_required: 16, duration_min:  4320, cost:   5000000 },
+      { level: 12, th_required: 17, duration_min:  7920, cost:   9500000 },
+      { level: 13, th_required: 18, duration_min: 12960, cost:  15000000 },
+    ],
+    count_at_th: { 1:0, 2:0, 3:0, 4:0, 5:2, 6:2, 7:2, 8:4, 9:4, 10:5, 11:5, 12:6, 13:6, 14:7, 15:7, 16:7, 17:7, 18:7 },
+  },
+
+  // ── SPRING TRAP ────────────────────────────────────────────────────────────
+  // dataId: 12000001. Costs Gold to upgrade. Unlocks at TH4.
+  "Spring Trap": {
+    resource: "gold",
+    buildingId: 12000001,
+    levels: [
+      { level:  1, th_required:  4, duration_min:     0, cost:      2000 },
+      { level:  2, th_required:  7, duration_min:   120, cost:    130000 },
+      { level:  3, th_required:  8, duration_min:   240, cost:    240000 },
+      { level:  4, th_required:  9, duration_min:   360, cost:    350000 },
+      { level:  5, th_required: 10, duration_min:   480, cost:    800000 },
+      { level:  6, th_required: 11, duration_min:   720, cost:   1000000 },
+      { level:  7, th_required: 12, duration_min:  1440, cost:   1700000 },
+      { level:  8, th_required: 13, duration_min:  2160, cost:   2000000 },
+      { level:  9, th_required: 14, duration_min:  2880, cost:   3000000 },
+      { level: 10, th_required: 15, duration_min:  3600, cost:   4000000 },
+      { level: 11, th_required: 16, duration_min:  6480, cost:   6000000 },
+      { level: 12, th_required: 17, duration_min: 13680, cost:  13000000 },
+      { level: 13, th_required: 18, duration_min: 15840, cost:  16000000 },
+    ],
+    count_at_th: { 1:0, 2:0, 3:0, 4:2, 5:2, 6:4, 7:4, 8:6, 9:6, 10:6, 11:6, 12:8, 13:9, 14:9, 15:9, 16:9, 17:9, 18:9 },
+  },
+
+  // ── GIANT BOMB ─────────────────────────────────────────────────────────────
+  // dataId: 12000002. Costs Gold to upgrade. Unlocks at TH6.
+  "Giant Bomb": {
+    resource: "gold",
+    buildingId: 12000002,
+    levels: [
+      { level:  1, th_required:  6, duration_min:     0, cost:     12500 },
+      { level:  2, th_required:  6, duration_min:    60, cost:     75000 },
+      { level:  3, th_required:  8, duration_min:   180, cost:    220000 },
+      { level:  4, th_required: 10, duration_min:   480, cost:    750000 },
+      { level:  5, th_required: 11, duration_min:   600, cost:    900000 },
+      { level:  6, th_required: 13, duration_min:   660, cost:   1300000 },
+      { level:  7, th_required: 13, duration_min:   720, cost:   1500000 },
+      { level:  8, th_required: 14, duration_min:  1440, cost:   2000000 },
+      { level:  9, th_required: 15, duration_min:  2880, cost:   3200000 },
+      { level: 10, th_required: 16, duration_min:  5760, cost:   5500000 },
+      { level: 11, th_required: 17, duration_min:  7200, cost:  10000000 },
+    ],
+    count_at_th: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:1, 7:2, 8:3, 9:4, 10:5, 11:5, 12:6, 13:6, 14:7, 15:7, 16:7, 17:8, 18:8 },
+  },
+
+  // ── SEEKING AIR MINE ───────────────────────────────────────────────────────
+  // dataId: 12000006. Costs Gold to upgrade. Unlocks at TH7.
+  "Seeking Air Mine": {
+    resource: "gold",
+    buildingId: 12000006,
+    levels: [
+      { level:  1, th_required:  7, duration_min:     0, cost:     12000 },
+      { level:  2, th_required:  9, duration_min:   720, cost:    600000 },
+      { level:  3, th_required: 10, duration_min:  1440, cost:   1200000 },
+      { level:  4, th_required: 13, duration_min:  2160, cost:   2500000 },
+      { level:  5, th_required: 15, duration_min:  4320, cost:   5000000 },
+      { level:  6, th_required: 16, duration_min:  6480, cost:   6500000 },
+      { level:  7, th_required: 17, duration_min:  7920, cost:  12000000 },
+      { level:  8, th_required: 18, duration_min: 16560, cost:  19000000 },
+    ],
+    count_at_th: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:1, 8:2, 9:4, 10:5, 11:5, 12:6, 13:7, 14:8, 15:8, 16:8, 17:9, 18:9 },
+  },
+
+  // ── SKELETON TRAP ──────────────────────────────────────────────────────────
+  // dataId: 12000008. Costs Gold to upgrade. Unlocks at TH8.
+  "Skeleton Trap": {
+    resource: "gold",
+    buildingId: 12000008,
+    levels: [
+      { level:  1, th_required:  8, duration_min:     0, cost:      6000 },
+      { level:  2, th_required:  8, duration_min:   300, cost:    250000 },
+      { level:  3, th_required:  9, duration_min:   480, cost:    400000 },
+      { level:  4, th_required: 10, duration_min:   720, cost:   1000000 },
+      { level:  5, th_required: 18, duration_min: 10080, cost:  18000000 },
+    ],
+    count_at_th: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:2, 9:2, 10:3, 11:3, 12:3, 13:3, 14:4, 15:4, 16:4, 17:4, 18:4 },
+  },
+
+  // ── TORNADO TRAP ───────────────────────────────────────────────────────────
+  // dataId: 12000016. Costs Gold to upgrade. Unlocks at TH11.
+  "Tornado Trap": {
+    resource: "gold",
+    buildingId: 12000016,
+    levels: [
+      { level:  1, th_required: 11, duration_min:     0, cost:   1800000 },
+      { level:  2, th_required: 11, duration_min:  1440, cost:   2000000 },
+      { level:  3, th_required: 12, duration_min:  2880, cost:   2500000 },
+    ],
+    count_at_th: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:1, 12:1, 13:1, 14:1, 15:1, 16:1, 17:1, 18:1 },
+  },
+
+  // ── GIGA BOMB ──────────────────────────────────────────────────────────────
+  // dataId: 12000020. Costs Gold to upgrade. Unlocks at TH17.
+  "Giga Bomb": {
+    resource: "gold",
+    buildingId: 12000020,
+    levels: [
+      { level:  1, th_required: 17, duration_min:     0, cost:   4500000 },
+      { level:  2, th_required: 17, duration_min:  7200, cost:   8500000 },
+      { level:  3, th_required: 17, duration_min:  8640, cost:  12500000 },
+      { level:  4, th_required: 18, duration_min: 18720, cost:  20000000 },
+    ],
+    count_at_th: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:0, 13:0, 14:0, 15:0, 16:0, 17:1, 18:1 },
+  },
+
+};
+
+// ── HELPER: all traps available at a TH level ──────────────────────────────────
+// Returns array of { name, resource, buildingId, count, maxLevel, levels[] }
+function getTrapsAtTH(thLevel) {
+  const ORDER = [
+    "Bomb", "Air Bomb", "Spring Trap", "Giant Bomb",
+    "Seeking Air Mine", "Skeleton Trap", "Tornado Trap", "Giga Bomb",
+  ];
+  const result = [];
+  for (const name of ORDER) {
+    const data = TRAP_GAME_DATA[name];
+    if (!data) continue;
+    const keys  = Object.keys(data.count_at_th).map(Number).sort((a, b) => a - b);
+    let count = 0;
+    for (const th of keys) { if (th <= thLevel) count = data.count_at_th[th]; }
+    if (count === 0) continue;
+    let maxLevel = 0;
+    for (const lvl of data.levels) {
+      if (lvl.th_required <= thLevel && lvl.level > maxLevel) maxLevel = lvl.level;
+    }
+    if (maxLevel === 0) continue;
+    result.push({
+      name,
+      resource:   data.resource,
+      buildingId: data.buildingId,
+      count,
+      maxLevel,
+      levels: data.levels.filter(l => l.th_required <= thLevel),
+    });
+  }
+  return result;
+}
 
 // ── HELPER: all army buildings available at a TH level ────────────────────────
 // Returns array of { name, resource, buildingId, count, maxLevel, levels[] }
 function getArmyAtTH(thLevel) {
-  const ORDER = ["Army Camp", "Barracks", "Dark Barracks"];
+  const ORDER = [
+    "Army Camp", "Barracks", "Dark Barracks",
+    "Spell Factory", "Dark Spell Factory", "Laboratory",
+    "Workshop", "Blacksmith", "Hero Hall", "Pet House",
+  ];
   const result = [];
   for (const name of ORDER) {
     const data = ARMY_GAME_DATA[name];
