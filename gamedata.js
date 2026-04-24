@@ -539,6 +539,25 @@ function getMaxHeroLevelAtHH(heroName, heroHallLevel) {
   return max;
 }
 
+// ── HELPER: heroes for progress view ─────────────────────────────────────────
+// Returns array of { name, resource, heroId, maxLevel, levels[] }
+// If heroHallLevel is null (unknown), exposes all levels with the absolute max.
+function getHeroesForProgress(heroHallLevel) {
+  const cap = (heroHallLevel !== null && heroHallLevel > 0) ? heroHallLevel : Infinity;
+  return Object.entries(HERO_GAME_DATA).map(([name, data]) => {
+    const maxLevel = cap === Infinity
+      ? data.levels[data.levels.length - 1].level
+      : getMaxHeroLevelAtHH(name, cap);
+    return {
+      name,
+      resource: data.resource,
+      heroId:   data.heroId,
+      maxLevel,
+      levels:   cap === Infinity ? data.levels : data.levels.filter(l => l.hero_hall_required <= cap),
+    };
+  }).filter(h => h.maxLevel > 0);
+}
+
 // ── HELPER: count at a given TH level ─────────────────────────────────────────
 // Returns number of buildings of the given type available at thLevel.
 // Uses the last known count if thLevel exceeds all keys.
