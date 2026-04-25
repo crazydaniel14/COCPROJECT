@@ -315,52 +315,59 @@
     }
 
     /* ── TH PROGRESS VIEW ── */
-    .prog-summary {
-      grid-column: 1 / -1;
-      background: rgba(245,208,76,0.08); border: 1px solid rgba(245,208,76,0.25);
-      border-radius: 12px; padding: 12px 16px;
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
-      flex-wrap: wrap; margin-bottom: 4px;
-    }
-    .prog-summary-title { font-size: 13px; font-weight: 800; color: var(--gold); }
-    .prog-summary-stats { font-size: 12px; color: var(--text-dim); font-weight: 600; }
     .prog-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px;
     }
     .prog-card {
       background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-      overflow: hidden; transition: border-color .18s;
+      overflow: hidden; transition: border-color .18s, box-shadow .18s;
+      border-top: 3px solid var(--border);
     }
-    .prog-card:hover { border-color: rgba(245,208,76,0.3); }
+    .prog-card:hover { border-color: rgba(245,208,76,0.3); box-shadow: 0 4px 16px rgba(0,0,0,0.25); }
+    .prog-card.prog-card--maxed {
+      border-top-color: #4caf50; border-color: rgba(76,175,80,0.25);
+    }
+    .prog-card.prog-card--partial {
+      border-top-color: var(--gold);
+    }
     .prog-card-header {
       display: flex; align-items: center; gap: 12px; padding: 12px 14px 10px;
       border-bottom: 1px solid var(--border);
     }
-    .prog-card-img { width: 48px; height: 48px; object-fit: contain; border-radius: 8px; flex-shrink: 0; }
+    .prog-card-img { width: 44px; height: 44px; object-fit: contain; border-radius: 8px; flex-shrink: 0; }
     .prog-card-info { flex: 1; min-width: 0; }
     .prog-card-name { font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.3; }
-    .prog-card-sub  { font-size: 11px; color: var(--text-dim); font-weight: 600; margin-top: 3px; }
-    .prog-card-body { padding: 8px 14px 12px; display: flex; flex-direction: column; gap: 8px; }
+    .prog-card-badge {
+      flex-shrink: 0; font-size: 11px; font-weight: 800;
+      padding: 3px 9px; border-radius: 20px; border: 1.5px solid transparent;
+      line-height: 1.5;
+    }
+    .prog-card-badge.maxed  { background: rgba(76,175,80,0.15);  color: #4caf50;       border-color: rgba(76,175,80,0.35); }
+    .prog-card-badge.partial { background: rgba(245,208,76,0.12); color: var(--gold);   border-color: rgba(245,208,76,0.35); }
+    .prog-card-badge.unknown { background: rgba(255,255,255,0.04); color: var(--text-dim); border-color: var(--border); }
+    .prog-card-body { padding: 10px 14px 14px; display: flex; flex-direction: column; gap: 9px; }
     .prog-instance-row { display: flex; align-items: center; gap: 8px; }
     .prog-inst-label {
       font-size: 11px; font-weight: 800; color: var(--text-dim);
       width: 22px; flex-shrink: 0; text-align: right;
     }
     .prog-bar-wrap {
-      flex: 1; height: 8px; background: rgba(255,255,255,0.07); border-radius: 4px; overflow: hidden;
+      flex: 1; height: 12px; background: rgba(255,255,255,0.07); border-radius: 6px; overflow: hidden;
     }
     .prog-bar-fill {
-      height: 100%; border-radius: 4px; background: var(--gold); transition: width .3s ease;
+      height: 100%; border-radius: 6px;
+      background: linear-gradient(90deg, rgba(245,208,76,0.7), var(--gold));
+      transition: width .4s ease;
     }
-    .prog-bar-fill.maxed { background: #4caf50; }
-    .prog-bar-fill.unknown { background: rgba(255,255,255,0.15); }
+    .prog-bar-fill.maxed  { background: linear-gradient(90deg, #43a047, #4caf50); }
+    .prog-bar-fill.unknown { background: rgba(255,255,255,0.1); }
     .prog-inst-val {
-      font-size: 11px; font-weight: 700; color: var(--text); white-space: nowrap; min-width: 54px; text-align: right;
+      font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; min-width: 50px; text-align: right;
     }
-    .prog-inst-val.maxed { color: #4caf50; }
+    .prog-inst-val.maxed  { color: #4caf50; }
     .prog-inst-val.unknown { color: var(--text-dim); }
     .prog-no-json {
-      font-size: 11px; color: var(--text-dim); font-weight: 600; padding: 4px 0;
+      font-size: 11px; color: var(--text-dim); font-weight: 600; padding: 2px 0;
       text-align: center; font-style: italic;
     }
     #progressGrid { padding-bottom: 80px; display: flex; flex-direction: column; gap: 12px; }
@@ -391,6 +398,7 @@
 
   <!-- CATEGORY TABS -->
   <nav class="cat-tabs" id="catTabs">
+    <button class="cat-tab" data-cat="progress">TH Progress</button>
     <button class="cat-tab active" data-cat="all">All</button>
     <button class="cat-tab" data-cat="1"><img class="tab-icon" src="Images/Upgrades/Cannon Lvl 1.png" alt="">Defenses</button>
     <button class="cat-tab" data-cat="2"><img class="tab-icon" src="Images/ged.png" alt="">Resources</button>
@@ -400,7 +408,6 @@
     <button class="cat-tab" data-cat="6"><img class="tab-icon" src="Images/Upgrades/Longshot.png" alt="">Guardians</button>
     <button class="cat-tab" data-cat="7"><img class="tab-icon" src="Images/Upgrades/Hero Hall Lvl 1.png" alt="">Heroes</button>
     <button class="cat-tab" data-cat="8"><img class="tab-icon" src="Images/Army.png" alt="">Army</button>
-    <button class="cat-tab" data-cat="progress">TH Progress</button>
   </nav>
 
   <!-- SORT BAR -->
@@ -1111,38 +1118,32 @@
         if (curLvl !== null && curLvl >= hero.maxLevel) maxedInstances++;
       }
 
-      const summaryHtml = `
-        <div class="prog-summary">
-          <span class="prog-summary-title">TH ${thLevel} — Defense &amp; Hero Progress</span>
-          <span class="prog-summary-stats">${
-            hasVillageData
-              ? `${maxedInstances} / ${totalInstances} maxed`
-              : `${totalInstances} upgradeable at TH${thLevel}`
-          }</span>
-        </div>`;
-
       // ── Defense cards ──
       const defenseCardsHtml = defenses.map(bldg => {
         const imgSrc  = getUpgradeImage(`${bldg.name} Lvl ${bldg.maxLevel}`) || 'Images/Upgrades/PH.png';
-        const maxData = bldg.levels[bldg.levels.length - 1];
-        const subText = `×${bldg.count} at TH${thLevel} · max Lvl ${bldg.maxLevel} · ${formatDefenseDuration(maxData.duration_min)}`;
-
         const currentLevels = bldg.buildingId ? (villageLevels[String(bldg.buildingId)] || []) : [];
 
-        const instanceRows = Array.from({ length: bldg.count }, (_, i) => {
-          const instNum   = bldg.count > 1 ? `#${i + 1}` : '—';
-          const curLvl    = currentLevels[i] ?? null;
+        const instLevels   = Array.from({ length: bldg.count }, (_, i) => currentLevels[i] ?? null);
+        const knownCount   = instLevels.filter(l => l !== null).length;
+        const maxedCount   = instLevels.filter(l => l !== null && l >= bldg.maxLevel).length;
+        let badgeClass, badgeText;
+        if      (knownCount === 0)               { badgeClass = 'unknown'; badgeText = '?'; }
+        else if (maxedCount === bldg.count)      { badgeClass = 'maxed';   badgeText = 'MAX'; }
+        else if (bldg.count === 1)               { badgeClass = 'partial'; badgeText = `${Math.round((instLevels[0] / bldg.maxLevel) * 100)}%`; }
+        else                                     { badgeClass = maxedCount > 0 ? 'partial' : 'unknown'; badgeText = `${maxedCount}/${bldg.count}`; }
+        const cardClass = knownCount > 0 && maxedCount === bldg.count ? 'prog-card--maxed' : maxedCount > 0 ? 'prog-card--partial' : '';
+
+        const instanceRows = instLevels.map((curLvl, i) => {
           const isMaxed   = curLvl !== null && curLvl >= bldg.maxLevel;
           const isUnknown = curLvl === null;
           const pct       = isUnknown ? 0 : Math.min(100, Math.round((curLvl / bldg.maxLevel) * 100));
-
           const fillClass = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
           const valClass  = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
           const valText   = isUnknown ? `? / ${bldg.maxLevel}` : `${curLvl} / ${bldg.maxLevel}`;
-
+          const labelHtml = bldg.count > 1 ? `<span class="prog-inst-label">#${i + 1}</span>` : '';
           return `
             <div class="prog-instance-row">
-              <span class="prog-inst-label">${esc(instNum)}</span>
+              ${labelHtml}
               <div class="prog-bar-wrap">
                 <div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div>
               </div>
@@ -1155,13 +1156,13 @@
           : '';
 
         return `
-          <div class="prog-card">
+          <div class="prog-card ${cardClass}">
             <div class="prog-card-header">
               <img src="${esc(imgSrc)}" class="prog-card-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
               <div class="prog-card-info">
                 <div class="prog-card-name">${esc(bldg.name)}</div>
-                <div class="prog-card-sub">${esc(subText)}</div>
               </div>
+              <span class="prog-card-badge ${badgeClass}">${badgeText}</span>
             </div>
             <div class="prog-card-body">
               ${instanceRows}
@@ -1172,35 +1173,33 @@
 
       // ── Hero cards ──
       const heroCardsHtml = heroes.map(hero => {
-        const imgSrc  = getUpgradeImage(hero.name);
-        const hhText  = heroHallLevel !== null ? `HH Lvl ${heroHallLevel}` : 'HH Lvl ?';
-        const subText = `${hhText} · max Lvl ${hero.maxLevel}`;
-
+        const imgSrc    = getUpgradeImage(hero.name);
         const curLvl    = (villageLevels[String(hero.heroId)] || [])[0] ?? null;
         const isMaxed   = curLvl !== null && curLvl >= hero.maxLevel;
         const isUnknown = curLvl === null;
         const pct       = isUnknown ? 0 : Math.min(100, Math.round((curLvl / hero.maxLevel) * 100));
-
         const fillClass = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
         const valClass  = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
         const valText   = isUnknown ? `? / ${hero.maxLevel}` : `${curLvl} / ${hero.maxLevel}`;
+        const badgeClass = isUnknown ? 'unknown' : isMaxed ? 'maxed' : 'partial';
+        const badgeText  = isUnknown ? '?' : isMaxed ? 'MAX' : `${pct}%`;
+        const cardClass  = isMaxed ? 'prog-card--maxed' : '';
 
         const noJsonNote = !hasVillageData
           ? `<div class="prog-no-json">Register with village JSON to see current level</div>`
           : '';
 
         return `
-          <div class="prog-card">
+          <div class="prog-card ${cardClass}">
             <div class="prog-card-header">
               <img src="${esc(imgSrc)}" class="prog-card-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
               <div class="prog-card-info">
                 <div class="prog-card-name">${esc(hero.name)}</div>
-                <div class="prog-card-sub">${esc(subText)}</div>
               </div>
+              <span class="prog-card-badge ${badgeClass}">${badgeText}</span>
             </div>
             <div class="prog-card-body">
               <div class="prog-instance-row">
-                <span class="prog-inst-label">—</span>
                 <div class="prog-bar-wrap">
                   <div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div>
                 </div>
@@ -1214,25 +1213,29 @@
       // ── Resource cards ──
       const resourceCardsHtml = resources.map(bldg => {
         const imgSrc  = getUpgradeImage(`${bldg.name} Lvl ${bldg.maxLevel}`) || 'Images/Upgrades/PH.png';
-        const maxData = bldg.levels[bldg.levels.length - 1];
-        const subText = `×${bldg.count} at TH${thLevel} · max Lvl ${bldg.maxLevel} · ${formatDefenseDuration(maxData.duration_min)}`;
-
         const currentLevels = bldg.buildingId ? (villageLevels[String(bldg.buildingId)] || []) : [];
 
-        const instanceRows = Array.from({ length: bldg.count }, (_, i) => {
-          const instNum   = bldg.count > 1 ? `#${i + 1}` : '—';
-          const curLvl    = currentLevels[i] ?? null;
+        const instLevels   = Array.from({ length: bldg.count }, (_, i) => currentLevels[i] ?? null);
+        const knownCount   = instLevels.filter(l => l !== null).length;
+        const maxedCount   = instLevels.filter(l => l !== null && l >= bldg.maxLevel).length;
+        let badgeClass, badgeText;
+        if      (knownCount === 0)               { badgeClass = 'unknown'; badgeText = '?'; }
+        else if (maxedCount === bldg.count)      { badgeClass = 'maxed';   badgeText = 'MAX'; }
+        else if (bldg.count === 1)               { badgeClass = 'partial'; badgeText = `${Math.round((instLevels[0] / bldg.maxLevel) * 100)}%`; }
+        else                                     { badgeClass = maxedCount > 0 ? 'partial' : 'unknown'; badgeText = `${maxedCount}/${bldg.count}`; }
+        const cardClass = knownCount > 0 && maxedCount === bldg.count ? 'prog-card--maxed' : maxedCount > 0 ? 'prog-card--partial' : '';
+
+        const instanceRows = instLevels.map((curLvl, i) => {
           const isMaxed   = curLvl !== null && curLvl >= bldg.maxLevel;
           const isUnknown = curLvl === null;
           const pct       = isUnknown ? 0 : Math.min(100, Math.round((curLvl / bldg.maxLevel) * 100));
-
           const fillClass = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
           const valClass  = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
           const valText   = isUnknown ? `? / ${bldg.maxLevel}` : `${curLvl} / ${bldg.maxLevel}`;
-
+          const labelHtml = bldg.count > 1 ? `<span class="prog-inst-label">#${i + 1}</span>` : '';
           return `
             <div class="prog-instance-row">
-              <span class="prog-inst-label">${esc(instNum)}</span>
+              ${labelHtml}
               <div class="prog-bar-wrap">
                 <div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div>
               </div>
@@ -1245,13 +1248,13 @@
           : '';
 
         return `
-          <div class="prog-card">
+          <div class="prog-card ${cardClass}">
             <div class="prog-card-header">
               <img src="${esc(imgSrc)}" class="prog-card-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
               <div class="prog-card-info">
                 <div class="prog-card-name">${esc(bldg.name)}</div>
-                <div class="prog-card-sub">${esc(subText)}</div>
               </div>
+              <span class="prog-card-badge ${badgeClass}">${badgeText}</span>
             </div>
             <div class="prog-card-body">
               ${instanceRows}
@@ -1267,25 +1270,29 @@
       // ── Army cards ──
       const armyCardsHtml = army.map(bldg => {
         const imgSrc  = getUpgradeImage(`${bldg.name} Lvl ${bldg.maxLevel}`) || 'Images/Upgrades/PH.png';
-        const maxData = bldg.levels[bldg.levels.length - 1];
-        const subText = `×${bldg.count} at TH${thLevel} · max Lvl ${bldg.maxLevel} · ${formatDefenseDuration(maxData.duration_min)}`;
-
         const currentLevels = bldg.buildingId ? (villageLevels[String(bldg.buildingId)] || []) : [];
 
-        const instanceRows = Array.from({ length: bldg.count }, (_, i) => {
-          const instNum   = bldg.count > 1 ? `#${i + 1}` : '—';
-          const curLvl    = currentLevels[i] ?? null;
+        const instLevels   = Array.from({ length: bldg.count }, (_, i) => currentLevels[i] ?? null);
+        const knownCount   = instLevels.filter(l => l !== null).length;
+        const maxedCount   = instLevels.filter(l => l !== null && l >= bldg.maxLevel).length;
+        let badgeClass, badgeText;
+        if      (knownCount === 0)               { badgeClass = 'unknown'; badgeText = '?'; }
+        else if (maxedCount === bldg.count)      { badgeClass = 'maxed';   badgeText = 'MAX'; }
+        else if (bldg.count === 1)               { badgeClass = 'partial'; badgeText = `${Math.round((instLevels[0] / bldg.maxLevel) * 100)}%`; }
+        else                                     { badgeClass = maxedCount > 0 ? 'partial' : 'unknown'; badgeText = `${maxedCount}/${bldg.count}`; }
+        const cardClass = knownCount > 0 && maxedCount === bldg.count ? 'prog-card--maxed' : maxedCount > 0 ? 'prog-card--partial' : '';
+
+        const instanceRows = instLevels.map((curLvl, i) => {
           const isMaxed   = curLvl !== null && curLvl >= bldg.maxLevel;
           const isUnknown = curLvl === null;
           const pct       = isUnknown ? 0 : Math.min(100, Math.round((curLvl / bldg.maxLevel) * 100));
-
           const fillClass = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
           const valClass  = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
           const valText   = isUnknown ? `? / ${bldg.maxLevel}` : `${curLvl} / ${bldg.maxLevel}`;
-
+          const labelHtml = bldg.count > 1 ? `<span class="prog-inst-label">#${i + 1}</span>` : '';
           return `
             <div class="prog-instance-row">
-              <span class="prog-inst-label">${esc(instNum)}</span>
+              ${labelHtml}
               <div class="prog-bar-wrap">
                 <div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div>
               </div>
@@ -1298,13 +1305,13 @@
           : '';
 
         return `
-          <div class="prog-card">
+          <div class="prog-card ${cardClass}">
             <div class="prog-card-header">
               <img src="${esc(imgSrc)}" class="prog-card-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
               <div class="prog-card-info">
                 <div class="prog-card-name">${esc(bldg.name)}</div>
-                <div class="prog-card-sub">${esc(subText)}</div>
               </div>
+              <span class="prog-card-badge ${badgeClass}">${badgeText}</span>
             </div>
             <div class="prog-card-body">
               ${instanceRows}
@@ -1324,25 +1331,29 @@
       // ── Trap cards ──
       const trapCardsHtml = traps.map(bldg => {
         const imgSrc  = getUpgradeImage(`${bldg.name} Lvl ${bldg.maxLevel}`) || 'Images/Upgrades/PH.png';
-        const maxData = bldg.levels[bldg.levels.length - 1];
-        const subText = `×${bldg.count} at TH${thLevel} · max Lvl ${bldg.maxLevel} · ${formatDefenseDuration(maxData.duration_min)}`;
-
         const currentLevels = bldg.buildingId ? (villageLevels[String(bldg.buildingId)] || []) : [];
 
-        const instanceRows = Array.from({ length: bldg.count }, (_, i) => {
-          const instNum   = bldg.count > 1 ? `#${i + 1}` : '—';
-          const curLvl    = currentLevels[i] ?? null;
+        const instLevels   = Array.from({ length: bldg.count }, (_, i) => currentLevels[i] ?? null);
+        const knownCount   = instLevels.filter(l => l !== null).length;
+        const maxedCount   = instLevels.filter(l => l !== null && l >= bldg.maxLevel).length;
+        let badgeClass, badgeText;
+        if      (knownCount === 0)               { badgeClass = 'unknown'; badgeText = '?'; }
+        else if (maxedCount === bldg.count)      { badgeClass = 'maxed';   badgeText = 'MAX'; }
+        else if (bldg.count === 1)               { badgeClass = 'partial'; badgeText = `${Math.round((instLevels[0] / bldg.maxLevel) * 100)}%`; }
+        else                                     { badgeClass = maxedCount > 0 ? 'partial' : 'unknown'; badgeText = `${maxedCount}/${bldg.count}`; }
+        const cardClass = knownCount > 0 && maxedCount === bldg.count ? 'prog-card--maxed' : maxedCount > 0 ? 'prog-card--partial' : '';
+
+        const instanceRows = instLevels.map((curLvl, i) => {
           const isMaxed   = curLvl !== null && curLvl >= bldg.maxLevel;
           const isUnknown = curLvl === null;
           const pct       = isUnknown ? 0 : Math.min(100, Math.round((curLvl / bldg.maxLevel) * 100));
-
           const fillClass = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
           const valClass  = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
           const valText   = isUnknown ? `? / ${bldg.maxLevel}` : `${curLvl} / ${bldg.maxLevel}`;
-
+          const labelHtml = bldg.count > 1 ? `<span class="prog-inst-label">#${i + 1}</span>` : '';
           return `
             <div class="prog-instance-row">
-              <span class="prog-inst-label">${esc(instNum)}</span>
+              ${labelHtml}
               <div class="prog-bar-wrap">
                 <div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div>
               </div>
@@ -1355,13 +1366,13 @@
           : '';
 
         return `
-          <div class="prog-card">
+          <div class="prog-card ${cardClass}">
             <div class="prog-card-header">
               <img src="${esc(imgSrc)}" class="prog-card-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
               <div class="prog-card-info">
                 <div class="prog-card-name">${esc(bldg.name)}</div>
-                <div class="prog-card-sub">${esc(subText)}</div>
               </div>
+              <span class="prog-card-badge ${badgeClass}">${badgeText}</span>
             </div>
             <div class="prog-card-body">
               ${instanceRows}
@@ -1375,7 +1386,7 @@
         <div class="prog-grid">${trapCardsHtml}</div>` : '';
 
       pg.innerHTML = `
-        ${summaryHtml}
+        <div class="bldg-section-header first"><span>Defenses</span></div>
         <div class="prog-grid">${defenseCardsHtml}</div>
         ${resourcesSectionHtml}
         ${armySectionHtml}
