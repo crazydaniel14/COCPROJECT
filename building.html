@@ -401,7 +401,10 @@
     }
 
     /* Compact maxed card */
-    .prog-card--compact { border-top: 3px solid #4caf50; border-color: rgba(76,175,80,0.25); }
+    .prog-card--compact {
+      border-top: 3px solid #4caf50; border-color: rgba(76,175,80,0.25);
+      align-self: start;
+    }
     .prog-compact-inner {
       display: flex; align-items: center; gap: 10px; padding: 9px 13px;
     }
@@ -1258,6 +1261,21 @@
           </div>`;
       }
 
+      // ── Sort helpers: maxed items go to the end ──
+      function bldgAllMaxed(bldg) {
+        const lvls = bldg.buildingId ? (villageLevels[String(bldg.buildingId)] || []) : [];
+        const inst = Array.from({ length: bldg.count }, (_, i) => lvls[i] ?? null);
+        return inst.filter(l => l !== null).length > 0 &&
+               inst.filter(l => l !== null && l >= bldg.maxLevel).length === bldg.count;
+      }
+      function heroMaxed(hero) {
+        const lvl = (villageLevels[String(hero.heroId)] || [])[0] ?? null;
+        return lvl !== null && lvl >= hero.maxLevel;
+      }
+      function sortMaxedLast(arr, fn) {
+        return [...arr].sort((a, b) => (fn(a) ? 1 : 0) - (fn(b) ? 1 : 0));
+      }
+
       pg.innerHTML = `
         <div class="prog-controls">
           <label class="prog-expand-toggle">
@@ -1265,11 +1283,11 @@
             Keep expanded
           </label>
         </div>
-        ${buildSection('Defenses',  defenses.map(buildBuildingCard).join(''))}
-        ${buildSection('Resources', resources.map(buildBuildingCard).join(''))}
-        ${buildSection('Army',      army.map(buildBuildingCard).join(''))}
-        ${buildSection('Traps',     traps.map(buildBuildingCard).join(''))}
-        ${buildSection('Heroes',    heroes.map(buildHeroCard).join(''))}`;
+        ${buildSection('Defenses',  sortMaxedLast(defenses,  bldgAllMaxed).map(buildBuildingCard).join(''))}
+        ${buildSection('Resources', sortMaxedLast(resources, bldgAllMaxed).map(buildBuildingCard).join(''))}
+        ${buildSection('Army',      sortMaxedLast(army,      bldgAllMaxed).map(buildBuildingCard).join(''))}
+        ${buildSection('Traps',     sortMaxedLast(traps,     bldgAllMaxed).map(buildBuildingCard).join(''))}
+        ${buildSection('Heroes',    sortMaxedLast(heroes,    heroMaxed).map(buildHeroCard).join(''))}`;
       pg.style.display = '';
 
       pg.querySelectorAll('.prog-section-header').forEach(header => {
