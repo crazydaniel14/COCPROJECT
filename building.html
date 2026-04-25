@@ -315,21 +315,50 @@
     }
 
     /* ── TH PROGRESS VIEW ── */
-    .prog-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px;
+
+    /* Controls bar (checkbox) */
+    .prog-controls {
+      display: flex; justify-content: flex-end; align-items: center; padding: 2px 2px 6px;
     }
+    .prog-expand-toggle {
+      display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;
+      font-size: 12px; font-weight: 600; color: var(--text-dim);
+    }
+    .prog-expand-toggle input[type="checkbox"] { cursor: pointer; accent-color: var(--gold); width: 14px; height: 14px; }
+
+    /* Collapsible section */
+    .prog-section { display: flex; flex-direction: column; }
+    .prog-section-header {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 18px; cursor: pointer; user-select: none;
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 14px;
+      transition: background .15s, border-color .15s;
+    }
+    .prog-section-header:hover { border-color: rgba(245,208,76,0.5); background: rgba(245,208,76,0.06); }
+    .prog-section-title {
+      flex: 1; font-size: 15px; font-weight: 900; letter-spacing: 1.8px;
+      text-transform: uppercase; color: var(--text);
+    }
+    .prog-section-arrow {
+      color: var(--text-dim); flex-shrink: 0; transition: transform .22s ease;
+    }
+    .prog-section.open .prog-section-arrow { transform: rotate(180deg); }
+    .prog-section-body { display: none; padding: 12px 0 4px; }
+    .prog-section.open .prog-section-body { display: block; }
+
+    /* Card grid */
+    .prog-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px;
+    }
+
+    /* Full card */
     .prog-card {
       background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
       overflow: hidden; transition: border-color .18s, box-shadow .18s;
       border-top: 3px solid var(--border);
     }
     .prog-card:hover { border-color: rgba(245,208,76,0.3); box-shadow: 0 4px 16px rgba(0,0,0,0.25); }
-    .prog-card.prog-card--maxed {
-      border-top-color: #4caf50; border-color: rgba(76,175,80,0.25);
-    }
-    .prog-card.prog-card--partial {
-      border-top-color: var(--gold);
-    }
+    .prog-card.prog-card--maxed { border-top-color: #4caf50; border-color: rgba(76,175,80,0.25); }
     .prog-card-header {
       display: flex; align-items: center; gap: 12px; padding: 12px 14px 10px;
       border-bottom: 1px solid var(--border);
@@ -339,11 +368,10 @@
     .prog-card-name { font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.3; }
     .prog-card-badge {
       flex-shrink: 0; font-size: 11px; font-weight: 800;
-      padding: 3px 9px; border-radius: 20px; border: 1.5px solid transparent;
-      line-height: 1.5;
+      padding: 3px 9px; border-radius: 20px; border: 1.5px solid transparent; line-height: 1.5;
     }
-    .prog-card-badge.maxed  { background: rgba(76,175,80,0.15);  color: #4caf50;       border-color: rgba(76,175,80,0.35); }
-    .prog-card-badge.partial { background: rgba(245,208,76,0.12); color: var(--gold);   border-color: rgba(245,208,76,0.35); }
+    .prog-card-badge.maxed   { background: rgba(76,175,80,0.15);   color: #4caf50;        border-color: rgba(76,175,80,0.35); }
+    .prog-card-badge.partial { background: rgba(245,208,76,0.12);  color: var(--gold);    border-color: rgba(245,208,76,0.35); }
     .prog-card-badge.unknown { background: rgba(255,255,255,0.04); color: var(--text-dim); border-color: var(--border); }
     .prog-card-body { padding: 10px 14px 14px; display: flex; flex-direction: column; gap: 9px; }
     .prog-instance-row { display: flex; align-items: center; gap: 8px; }
@@ -359,18 +387,32 @@
       background: linear-gradient(90deg, rgba(245,208,76,0.7), var(--gold));
       transition: width .4s ease;
     }
-    .prog-bar-fill.maxed  { background: linear-gradient(90deg, #43a047, #4caf50); }
+    .prog-bar-fill.maxed   { background: linear-gradient(90deg, #43a047, #4caf50); }
     .prog-bar-fill.unknown { background: rgba(255,255,255,0.1); }
     .prog-inst-val {
-      font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; min-width: 50px; text-align: right;
+      font-size: 12px; font-weight: 700; color: var(--text);
+      white-space: nowrap; min-width: 50px; text-align: right;
     }
-    .prog-inst-val.maxed  { color: #4caf50; }
+    .prog-inst-val.maxed   { color: #4caf50; }
     .prog-inst-val.unknown { color: var(--text-dim); }
     .prog-no-json {
-      font-size: 11px; color: var(--text-dim); font-weight: 600; padding: 2px 0;
-      text-align: center; font-style: italic;
+      font-size: 11px; color: var(--text-dim); font-weight: 600;
+      padding: 2px 0; text-align: center; font-style: italic;
     }
-    #progressGrid { padding-bottom: 80px; display: flex; flex-direction: column; gap: 12px; }
+
+    /* Compact maxed card */
+    .prog-card--compact { border-top: 3px solid #4caf50; border-color: rgba(76,175,80,0.25); }
+    .prog-compact-inner {
+      display: flex; align-items: center; gap: 10px; padding: 9px 13px;
+    }
+    .prog-compact-img { width: 34px; height: 34px; object-fit: contain; border-radius: 6px; flex-shrink: 0; }
+    .prog-compact-info {
+      flex: 1; min-width: 0; display: flex; align-items: center; gap: 7px;
+    }
+    .prog-compact-name  { font-size: 12px; font-weight: 700; color: var(--text); }
+    .prog-compact-count { font-size: 11px; font-weight: 800; color: var(--text-dim); }
+
+    #progressGrid { padding-bottom: 80px; display: flex; flex-direction: column; gap: 10px; }
     .prog-no-th {
       display: flex; flex-direction: column; align-items: center;
       padding: 60px 20px; color: var(--text-dim); font-size: 14px; font-weight: 500;
@@ -379,6 +421,7 @@
 
     @media (max-width: 480px) {
       .prog-grid { grid-template-columns: 1fr; gap: 10px; }
+      .prog-section-title { font-size: 13px; }
     }
   </style>
 </head>
@@ -1092,46 +1135,36 @@
       }
 
       const hasVillageData = Object.keys(villageLevels).length > 0;
+      const startExpanded  = localStorage.getItem('coc_prog_keep_expanded') === 'true';
 
-      // Tally maxed instances for summary (defenses + resources + army + traps + heroes)
-      let totalInstances = 0, maxedInstances = 0;
-      for (const bldg of [...defenses, ...resources, ...army]) {
+      // ── Build a standard building card, or a compact one if fully maxed ──
+      function buildBuildingCard(bldg) {
+        const imgSrc       = getUpgradeImage(`${bldg.name} Lvl ${bldg.maxLevel}`) || 'Images/Upgrades/PH.png';
         const currentLevels = bldg.buildingId ? (villageLevels[String(bldg.buildingId)] || []) : [];
-        for (let i = 0; i < bldg.count; i++) {
-          totalInstances++;
-          const curLvl = currentLevels[i] ?? null;
-          if (curLvl !== null && curLvl >= bldg.maxLevel) maxedInstances++;
-        }
-      }
-      // Traps: count each instance individually (same as defenses)
-      for (const bldg of traps) {
-        const currentLevels = bldg.buildingId ? (villageLevels[String(bldg.buildingId)] || []) : [];
-        for (let i = 0; i < bldg.count; i++) {
-          totalInstances++;
-          const curLvl = currentLevels[i] ?? null;
-          if (curLvl !== null && curLvl >= bldg.maxLevel) maxedInstances++;
-        }
-      }
-      for (const hero of heroes) {
-        totalInstances++;
-        const curLvl = (villageLevels[String(hero.heroId)] || [])[0] ?? null;
-        if (curLvl !== null && curLvl >= hero.maxLevel) maxedInstances++;
-      }
-
-      // ── Defense cards ──
-      const defenseCardsHtml = defenses.map(bldg => {
-        const imgSrc  = getUpgradeImage(`${bldg.name} Lvl ${bldg.maxLevel}`) || 'Images/Upgrades/PH.png';
-        const currentLevels = bldg.buildingId ? (villageLevels[String(bldg.buildingId)] || []) : [];
-
         const instLevels   = Array.from({ length: bldg.count }, (_, i) => currentLevels[i] ?? null);
         const knownCount   = instLevels.filter(l => l !== null).length;
         const maxedCount   = instLevels.filter(l => l !== null && l >= bldg.maxLevel).length;
+        const allMaxed     = knownCount > 0 && maxedCount === bldg.count;
+
+        if (allMaxed) {
+          const countTag = bldg.count > 1 ? `<span class="prog-compact-count">×${bldg.count}</span>` : '';
+          return `
+            <div class="prog-card prog-card--maxed prog-card--compact">
+              <div class="prog-compact-inner">
+                <img src="${esc(imgSrc)}" class="prog-compact-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
+                <div class="prog-compact-info">
+                  <span class="prog-compact-name">${esc(bldg.name)}</span>
+                  ${countTag}
+                </div>
+                <span class="prog-card-badge maxed">MAX</span>
+              </div>
+            </div>`;
+        }
+
         let badgeClass, badgeText;
-        if      (knownCount === 0)               { badgeClass = 'unknown'; badgeText = '?'; }
-        else if (maxedCount === bldg.count)      { badgeClass = 'maxed';   badgeText = 'MAX'; }
-        else if (bldg.count === 1)               { badgeClass = 'partial'; badgeText = `${Math.round((instLevels[0] / bldg.maxLevel) * 100)}%`; }
-        else                                     { badgeClass = maxedCount > 0 ? 'partial' : 'unknown'; badgeText = `${maxedCount}/${bldg.count}`; }
-        const cardClass = knownCount > 0 && maxedCount === bldg.count ? 'prog-card--maxed' : maxedCount > 0 ? 'prog-card--partial' : '';
+        if      (knownCount === 0)      { badgeClass = 'unknown'; badgeText = '?'; }
+        else if (bldg.count === 1)      { badgeClass = 'partial'; badgeText = `${Math.round((instLevels[0] / bldg.maxLevel) * 100)}%`; }
+        else                            { badgeClass = maxedCount > 0 ? 'partial' : 'unknown'; badgeText = `${maxedCount}/${bldg.count}`; }
 
         const instanceRows = instLevels.map((curLvl, i) => {
           const isMaxed   = curLvl !== null && curLvl >= bldg.maxLevel;
@@ -1144,255 +1177,109 @@
           return `
             <div class="prog-instance-row">
               ${labelHtml}
-              <div class="prog-bar-wrap">
-                <div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div>
-              </div>
+              <div class="prog-bar-wrap"><div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div></div>
               <span class="prog-inst-val ${valClass}">${valText}</span>
             </div>`;
         }).join('');
 
         const noJsonNote = !hasVillageData
-          ? `<div class="prog-no-json">Register with village JSON to see current levels</div>`
-          : '';
+          ? `<div class="prog-no-json">Register with village JSON to see current levels</div>` : '';
 
         return `
-          <div class="prog-card ${cardClass}">
+          <div class="prog-card">
             <div class="prog-card-header">
               <img src="${esc(imgSrc)}" class="prog-card-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
-              <div class="prog-card-info">
-                <div class="prog-card-name">${esc(bldg.name)}</div>
-              </div>
+              <div class="prog-card-info"><div class="prog-card-name">${esc(bldg.name)}</div></div>
               <span class="prog-card-badge ${badgeClass}">${badgeText}</span>
             </div>
-            <div class="prog-card-body">
-              ${instanceRows}
-              ${noJsonNote}
-            </div>
+            <div class="prog-card-body">${instanceRows}${noJsonNote}</div>
           </div>`;
-      }).join('');
+      }
 
-      // ── Hero cards ──
-      const heroCardsHtml = heroes.map(hero => {
+      // ── Build a hero card, or compact if maxed ──
+      function buildHeroCard(hero) {
         const imgSrc    = getUpgradeImage(hero.name);
         const curLvl    = (villageLevels[String(hero.heroId)] || [])[0] ?? null;
         const isMaxed   = curLvl !== null && curLvl >= hero.maxLevel;
         const isUnknown = curLvl === null;
-        const pct       = isUnknown ? 0 : Math.min(100, Math.round((curLvl / hero.maxLevel) * 100));
-        const fillClass = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
-        const valClass  = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
-        const valText   = isUnknown ? `? / ${hero.maxLevel}` : `${curLvl} / ${hero.maxLevel}`;
-        const badgeClass = isUnknown ? 'unknown' : isMaxed ? 'maxed' : 'partial';
-        const badgeText  = isUnknown ? '?' : isMaxed ? 'MAX' : `${pct}%`;
-        const cardClass  = isMaxed ? 'prog-card--maxed' : '';
 
+        if (isMaxed) {
+          return `
+            <div class="prog-card prog-card--maxed prog-card--compact">
+              <div class="prog-compact-inner">
+                <img src="${esc(imgSrc)}" class="prog-compact-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
+                <div class="prog-compact-info"><span class="prog-compact-name">${esc(hero.name)}</span></div>
+                <span class="prog-card-badge maxed">MAX</span>
+              </div>
+            </div>`;
+        }
+
+        const pct       = isUnknown ? 0 : Math.min(100, Math.round((curLvl / hero.maxLevel) * 100));
+        const fillClass = isUnknown ? 'unknown' : '';
+        const valClass  = isUnknown ? 'unknown' : '';
+        const valText   = isUnknown ? `? / ${hero.maxLevel}` : `${curLvl} / ${hero.maxLevel}`;
+        const badgeClass = isUnknown ? 'unknown' : 'partial';
+        const badgeText  = isUnknown ? '?' : `${pct}%`;
         const noJsonNote = !hasVillageData
-          ? `<div class="prog-no-json">Register with village JSON to see current level</div>`
-          : '';
+          ? `<div class="prog-no-json">Register with village JSON to see current level</div>` : '';
 
         return `
-          <div class="prog-card ${cardClass}">
+          <div class="prog-card">
             <div class="prog-card-header">
               <img src="${esc(imgSrc)}" class="prog-card-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
-              <div class="prog-card-info">
-                <div class="prog-card-name">${esc(hero.name)}</div>
-              </div>
+              <div class="prog-card-info"><div class="prog-card-name">${esc(hero.name)}</div></div>
               <span class="prog-card-badge ${badgeClass}">${badgeText}</span>
             </div>
             <div class="prog-card-body">
               <div class="prog-instance-row">
-                <div class="prog-bar-wrap">
-                  <div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div>
-                </div>
+                <div class="prog-bar-wrap"><div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div></div>
                 <span class="prog-inst-val ${valClass}">${valText}</span>
               </div>
               ${noJsonNote}
             </div>
           </div>`;
-      }).join('');
+      }
 
-      // ── Resource cards ──
-      const resourceCardsHtml = resources.map(bldg => {
-        const imgSrc  = getUpgradeImage(`${bldg.name} Lvl ${bldg.maxLevel}`) || 'Images/Upgrades/PH.png';
-        const currentLevels = bldg.buildingId ? (villageLevels[String(bldg.buildingId)] || []) : [];
-
-        const instLevels   = Array.from({ length: bldg.count }, (_, i) => currentLevels[i] ?? null);
-        const knownCount   = instLevels.filter(l => l !== null).length;
-        const maxedCount   = instLevels.filter(l => l !== null && l >= bldg.maxLevel).length;
-        let badgeClass, badgeText;
-        if      (knownCount === 0)               { badgeClass = 'unknown'; badgeText = '?'; }
-        else if (maxedCount === bldg.count)      { badgeClass = 'maxed';   badgeText = 'MAX'; }
-        else if (bldg.count === 1)               { badgeClass = 'partial'; badgeText = `${Math.round((instLevels[0] / bldg.maxLevel) * 100)}%`; }
-        else                                     { badgeClass = maxedCount > 0 ? 'partial' : 'unknown'; badgeText = `${maxedCount}/${bldg.count}`; }
-        const cardClass = knownCount > 0 && maxedCount === bldg.count ? 'prog-card--maxed' : maxedCount > 0 ? 'prog-card--partial' : '';
-
-        const instanceRows = instLevels.map((curLvl, i) => {
-          const isMaxed   = curLvl !== null && curLvl >= bldg.maxLevel;
-          const isUnknown = curLvl === null;
-          const pct       = isUnknown ? 0 : Math.min(100, Math.round((curLvl / bldg.maxLevel) * 100));
-          const fillClass = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
-          const valClass  = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
-          const valText   = isUnknown ? `? / ${bldg.maxLevel}` : `${curLvl} / ${bldg.maxLevel}`;
-          const labelHtml = bldg.count > 1 ? `<span class="prog-inst-label">#${i + 1}</span>` : '';
-          return `
-            <div class="prog-instance-row">
-              ${labelHtml}
-              <div class="prog-bar-wrap">
-                <div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div>
-              </div>
-              <span class="prog-inst-val ${valClass}">${valText}</span>
-            </div>`;
-        }).join('');
-
-        const noJsonNote = !hasVillageData
-          ? `<div class="prog-no-json">Register with village JSON to see current levels</div>`
-          : '';
-
+      // ── Wrap cards in a collapsible section ──
+      function buildSection(title, cardsHtml) {
+        if (!cardsHtml) return '';
+        const openClass = startExpanded ? ' open' : '';
         return `
-          <div class="prog-card ${cardClass}">
-            <div class="prog-card-header">
-              <img src="${esc(imgSrc)}" class="prog-card-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
-              <div class="prog-card-info">
-                <div class="prog-card-name">${esc(bldg.name)}</div>
-              </div>
-              <span class="prog-card-badge ${badgeClass}">${badgeText}</span>
+          <div class="prog-section${openClass}">
+            <div class="prog-section-header">
+              <span class="prog-section-title">${title}</span>
+              <svg class="prog-section-arrow" width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M4.5 6.75 9 11.25l4.5-4.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
             </div>
-            <div class="prog-card-body">
-              ${instanceRows}
-              ${noJsonNote}
+            <div class="prog-section-body">
+              <div class="prog-grid">${cardsHtml}</div>
             </div>
           </div>`;
-      }).join('');
-
-      const heroesSectionHtml = heroes.length > 0 ? `
-        <div class="bldg-section-header" style="margin-top:8px"><span>Heroes</span></div>
-        <div class="prog-grid">${heroCardsHtml}</div>` : '';
-
-      // ── Army cards ──
-      const armyCardsHtml = army.map(bldg => {
-        const imgSrc  = getUpgradeImage(`${bldg.name} Lvl ${bldg.maxLevel}`) || 'Images/Upgrades/PH.png';
-        const currentLevels = bldg.buildingId ? (villageLevels[String(bldg.buildingId)] || []) : [];
-
-        const instLevels   = Array.from({ length: bldg.count }, (_, i) => currentLevels[i] ?? null);
-        const knownCount   = instLevels.filter(l => l !== null).length;
-        const maxedCount   = instLevels.filter(l => l !== null && l >= bldg.maxLevel).length;
-        let badgeClass, badgeText;
-        if      (knownCount === 0)               { badgeClass = 'unknown'; badgeText = '?'; }
-        else if (maxedCount === bldg.count)      { badgeClass = 'maxed';   badgeText = 'MAX'; }
-        else if (bldg.count === 1)               { badgeClass = 'partial'; badgeText = `${Math.round((instLevels[0] / bldg.maxLevel) * 100)}%`; }
-        else                                     { badgeClass = maxedCount > 0 ? 'partial' : 'unknown'; badgeText = `${maxedCount}/${bldg.count}`; }
-        const cardClass = knownCount > 0 && maxedCount === bldg.count ? 'prog-card--maxed' : maxedCount > 0 ? 'prog-card--partial' : '';
-
-        const instanceRows = instLevels.map((curLvl, i) => {
-          const isMaxed   = curLvl !== null && curLvl >= bldg.maxLevel;
-          const isUnknown = curLvl === null;
-          const pct       = isUnknown ? 0 : Math.min(100, Math.round((curLvl / bldg.maxLevel) * 100));
-          const fillClass = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
-          const valClass  = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
-          const valText   = isUnknown ? `? / ${bldg.maxLevel}` : `${curLvl} / ${bldg.maxLevel}`;
-          const labelHtml = bldg.count > 1 ? `<span class="prog-inst-label">#${i + 1}</span>` : '';
-          return `
-            <div class="prog-instance-row">
-              ${labelHtml}
-              <div class="prog-bar-wrap">
-                <div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div>
-              </div>
-              <span class="prog-inst-val ${valClass}">${valText}</span>
-            </div>`;
-        }).join('');
-
-        const noJsonNote = !hasVillageData
-          ? `<div class="prog-no-json">Register with village JSON to see current levels</div>`
-          : '';
-
-        return `
-          <div class="prog-card ${cardClass}">
-            <div class="prog-card-header">
-              <img src="${esc(imgSrc)}" class="prog-card-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
-              <div class="prog-card-info">
-                <div class="prog-card-name">${esc(bldg.name)}</div>
-              </div>
-              <span class="prog-card-badge ${badgeClass}">${badgeText}</span>
-            </div>
-            <div class="prog-card-body">
-              ${instanceRows}
-              ${noJsonNote}
-            </div>
-          </div>`;
-      }).join('');
-
-      const resourcesSectionHtml = resources.length > 0 ? `
-        <div class="bldg-section-header" style="margin-top:8px"><span>Resources</span></div>
-        <div class="prog-grid">${resourceCardsHtml}</div>` : '';
-
-      const armySectionHtml = army.length > 0 ? `
-        <div class="bldg-section-header" style="margin-top:8px"><span>Army</span></div>
-        <div class="prog-grid">${armyCardsHtml}</div>` : '';
-
-      // ── Trap cards ──
-      const trapCardsHtml = traps.map(bldg => {
-        const imgSrc  = getUpgradeImage(`${bldg.name} Lvl ${bldg.maxLevel}`) || 'Images/Upgrades/PH.png';
-        const currentLevels = bldg.buildingId ? (villageLevels[String(bldg.buildingId)] || []) : [];
-
-        const instLevels   = Array.from({ length: bldg.count }, (_, i) => currentLevels[i] ?? null);
-        const knownCount   = instLevels.filter(l => l !== null).length;
-        const maxedCount   = instLevels.filter(l => l !== null && l >= bldg.maxLevel).length;
-        let badgeClass, badgeText;
-        if      (knownCount === 0)               { badgeClass = 'unknown'; badgeText = '?'; }
-        else if (maxedCount === bldg.count)      { badgeClass = 'maxed';   badgeText = 'MAX'; }
-        else if (bldg.count === 1)               { badgeClass = 'partial'; badgeText = `${Math.round((instLevels[0] / bldg.maxLevel) * 100)}%`; }
-        else                                     { badgeClass = maxedCount > 0 ? 'partial' : 'unknown'; badgeText = `${maxedCount}/${bldg.count}`; }
-        const cardClass = knownCount > 0 && maxedCount === bldg.count ? 'prog-card--maxed' : maxedCount > 0 ? 'prog-card--partial' : '';
-
-        const instanceRows = instLevels.map((curLvl, i) => {
-          const isMaxed   = curLvl !== null && curLvl >= bldg.maxLevel;
-          const isUnknown = curLvl === null;
-          const pct       = isUnknown ? 0 : Math.min(100, Math.round((curLvl / bldg.maxLevel) * 100));
-          const fillClass = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
-          const valClass  = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
-          const valText   = isUnknown ? `? / ${bldg.maxLevel}` : `${curLvl} / ${bldg.maxLevel}`;
-          const labelHtml = bldg.count > 1 ? `<span class="prog-inst-label">#${i + 1}</span>` : '';
-          return `
-            <div class="prog-instance-row">
-              ${labelHtml}
-              <div class="prog-bar-wrap">
-                <div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div>
-              </div>
-              <span class="prog-inst-val ${valClass}">${valText}</span>
-            </div>`;
-        }).join('');
-
-        const noJsonNote = !hasVillageData
-          ? `<div class="prog-no-json">Register with village JSON to see current levels</div>`
-          : '';
-
-        return `
-          <div class="prog-card ${cardClass}">
-            <div class="prog-card-header">
-              <img src="${esc(imgSrc)}" class="prog-card-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
-              <div class="prog-card-info">
-                <div class="prog-card-name">${esc(bldg.name)}</div>
-              </div>
-              <span class="prog-card-badge ${badgeClass}">${badgeText}</span>
-            </div>
-            <div class="prog-card-body">
-              ${instanceRows}
-              ${noJsonNote}
-            </div>
-          </div>`;
-      }).join('');
-
-      const trapsSectionHtml = traps.length > 0 ? `
-        <div class="bldg-section-header" style="margin-top:8px"><span>Traps</span></div>
-        <div class="prog-grid">${trapCardsHtml}</div>` : '';
+      }
 
       pg.innerHTML = `
-        <div class="bldg-section-header first"><span>Defenses</span></div>
-        <div class="prog-grid">${defenseCardsHtml}</div>
-        ${resourcesSectionHtml}
-        ${armySectionHtml}
-        ${trapsSectionHtml}
-        ${heroesSectionHtml}`;
+        <div class="prog-controls">
+          <label class="prog-expand-toggle">
+            <input type="checkbox" id="progKeepExpanded" ${startExpanded ? 'checked' : ''}>
+            Keep expanded
+          </label>
+        </div>
+        ${buildSection('Defenses',  defenses.map(buildBuildingCard).join(''))}
+        ${buildSection('Resources', resources.map(buildBuildingCard).join(''))}
+        ${buildSection('Army',      army.map(buildBuildingCard).join(''))}
+        ${buildSection('Traps',     traps.map(buildBuildingCard).join(''))}
+        ${buildSection('Heroes',    heroes.map(buildHeroCard).join(''))}`;
       pg.style.display = '';
+
+      pg.querySelectorAll('.prog-section-header').forEach(header => {
+        header.addEventListener('click', () => header.closest('.prog-section').classList.toggle('open'));
+      });
+
+      pg.querySelector('#progKeepExpanded')?.addEventListener('change', e => {
+        localStorage.setItem('coc_prog_keep_expanded', e.target.checked);
+        if (e.target.checked) pg.querySelectorAll('.prog-section').forEach(s => s.classList.add('open'));
+      });
     }
 
     /* ── INIT ── */
