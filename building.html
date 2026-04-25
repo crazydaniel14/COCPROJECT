@@ -363,19 +363,13 @@
       display: flex; align-items: center; gap: 12px; padding: 12px 14px 10px;
       border-bottom: 1px solid var(--border);
     }
-    .prog-card-img { width: 44px; height: 44px; object-fit: contain; border-radius: 8px; flex-shrink: 0; }
+    .prog-card-img { width: 44px; height: 44px; object-fit: contain; border-radius: 8px; flex-shrink: 0; filter: drop-shadow(0 0 6px rgba(245,208,76,0.55)); }
+    .prog-compact-img { filter: drop-shadow(0 0 5px rgba(245,208,76,0.55)); }
     .prog-card-info { flex: 1; min-width: 0; overflow: hidden; }
     .prog-card-name {
-      font-size: 15px; font-weight: 900; color: #fff; line-height: 1.2;
+      font-size: 13px; font-weight: 900; color: #fff; line-height: 1.2;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .prog-card-badge {
-      flex-shrink: 0; font-size: 11px; font-weight: 800;
-      padding: 3px 9px; border-radius: 20px; border: 1.5px solid transparent; line-height: 1.5;
-    }
-    .prog-card-badge.maxed   { background: rgba(76,175,80,0.15);   color: #4caf50;        border-color: rgba(76,175,80,0.35); }
-    .prog-card-badge.partial { background: rgba(245,208,76,0.12);  color: var(--gold);    border-color: rgba(245,208,76,0.35); }
-    .prog-card-badge.unknown { background: rgba(255,255,255,0.04); color: var(--text-dim); border-color: var(--border); }
     .prog-card-body { padding: 10px 14px 14px; display: flex; flex-direction: column; gap: 9px; }
     .prog-instance-row { display: flex; align-items: center; gap: 8px; }
     .prog-inst-label {
@@ -1165,7 +1159,6 @@
                   <span class="prog-compact-name">${esc(bldg.name)}</span>
                   ${countTag}
                 </div>
-                <span class="prog-card-badge maxed">MAX</span>
               </div>
             </div>`;
         }
@@ -1199,7 +1192,6 @@
             <div class="prog-card-header">
               <img src="${esc(imgSrc)}" class="prog-card-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
               <div class="prog-card-info"><div class="prog-card-name">${esc(bldg.name)}</div></div>
-              <span class="prog-card-badge ${badgeClass}">${badgeText}</span>
             </div>
             <div class="prog-card-body">${instanceRows}${noJsonNote}</div>
           </div>`;
@@ -1218,7 +1210,6 @@
               <div class="prog-compact-inner">
                 <img src="${esc(imgSrc)}" class="prog-compact-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
                 <div class="prog-compact-info"><span class="prog-compact-name">${esc(hero.name)}</span></div>
-                <span class="prog-card-badge maxed">MAX</span>
               </div>
             </div>`;
         }
@@ -1237,7 +1228,6 @@
             <div class="prog-card-header">
               <img src="${esc(imgSrc)}" class="prog-card-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
               <div class="prog-card-info"><div class="prog-card-name">${esc(hero.name)}</div></div>
-              <span class="prog-card-badge ${badgeClass}">${badgeText}</span>
             </div>
             <div class="prog-card-body">
               <div class="prog-instance-row">
