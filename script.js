@@ -11,6 +11,58 @@ function endpoint(action) {
 }
 
 /* =========================
+   GAME DOMAIN RULES
+   — These constants define how the COC building system works.
+     All pages and logic should respect these rules.
+   =========================
+
+   BUILDING LEVEL STRUCTURE
+   ─────────────────────────
+   Levels progress as integers: 1, 2, 3, … up to the building's current max.
+   After reaching numeric max, some buildings gain supercharge levels: *, **, ***.
+   In upgrade names these appear as "Lvl *", "Lvl **", "Lvl ***".
+   Numeric levels always sort before supercharge levels.
+
+   UPGRADE NAME FORMAT
+   ────────────────────
+   "{Building Name} #{instance} Lvl {level}"
+   - #{instance} is only present when multiple copies exist (e.g. #1, #2).
+     Unique buildings omit it entirely.
+   - {level} is either a number (1, 2, …) or stars (*, **, ***).
+   Examples:
+     "Super Wizard Tower #1 Lvl 2"   → instance 1, upgrading to Lvl 2 (current = Lvl 1)
+     "Archer Tower Lvl 21"           → unique building, upgrading to Lvl 21
+     "Inferno Tower #2 Lvl *"        → supercharging instance 2 (already at numeric max)
+
+   CATEGORY PERMANENCE
+   ────────────────────
+   TypeB_ID | Name               | Permanent | Notes
+   ---------|--------------------|-----------|-----------------------------------------
+   1        | Defenses           | YES       | Standard defenses
+   2        | Resources          | YES       | Mines, drills, storages
+   3        | Craft. Defenses    | NO        | Temporary — added for a developer-set
+            |                    |           | cycle, then removed from the game
+   4        | Traps              | YES       | Spring Traps, Bombs, etc.
+   5        | Supercharged       | NO        | Temporary boost on fully-upgraded
+            |                    |           | defenses/collectors; disappears when
+            |                    |           | the game releases the next real level
+   6        | Guardians          | YES       |
+   7        | Heroes             | YES       |
+   8        | Army               | YES       |
+   ========================= */
+
+const CATEGORY_META = {
+  "1": { name: "Defenses",        permanent: true  },
+  "2": { name: "Resources",       permanent: true  },
+  "3": { name: "Craft. Defenses", permanent: false },
+  "4": { name: "Traps",           permanent: true  },
+  "5": { name: "Supercharged",    permanent: false },
+  "6": { name: "Guardians",       permanent: true  },
+  "7": { name: "Heroes",          permanent: true  },
+  "8": { name: "Army",            permanent: true  },
+};
+
+/* =========================
    USER PASSWORDS
    Add passwords here for users that need protection.
    Users NOT listed can log in with no password at all.
@@ -31,95 +83,185 @@ function BOOST_PLAN_URL()         { return endpoint("boost_plan"); }
 function APPLY_TODAYS_BOOST_URL() { return endpoint("apply_todays_boost"); }
 function SET_BOOST_BUILDER_URL(b) { return endpoint("set_todays_boost_builder") + "&builder=" + b; }
 
+function BOOST_LEVEL_URL()        { return endpoint("get_boost_level"); }
+function SET_BOOST_LEVEL_URL(lvl) { return endpoint("set_boost_level") + "&level=" + lvl; }
+
 function BUILDER_SNACK_URL()  { return endpoint("apply_one_hour_boost"); }
 function BATTLE_PASS_URL()    { return endpoint("apply_battle_pass"); }
 function BUILDER_DETAILS_URL(builderName) { return endpoint("builder_details") + "&builder=" + builderName; }
 function PAUSED_BUILDERS_URL() { return endpoint("get_paused_builders"); }
+function TOWN_HALL_LEVEL_URL()        { return endpoint("get_town_hall_level"); }
+function ALL_BUILDERS_LAST_FINISH_URL() { return endpoint("get_all_builders_last_finish"); }
+function REGISTER_USER_URL()          { return `${API_BASE}?action=register_user`; }
 
 /* =========================
-   IMAGE MATCHING
+   BUILDING ID MAP
+   Maps Clash of Clans building data IDs to human-readable names.
+   Used for parsing village JSON exports.
    ========================= */
-const HERO_NAMES = [
-  "Archer Queen",
-  "Barbarian King",
-  "Grand Warden",
-  "Minion Prince",
-  "Dragon Duke",
-  "Royal Champion",
-  "Longshot"
-];
-
-const IMAGE_MAP = {
-  "Air Bomb": ["Lvl 11"],
-  "Air Defense":["Lvl 16"],
-  "Pet House": ["Lvl 12"],
-  "Archer Tower": ["Lvl 21"],
-  "Blacksmith": ["Lvl 9"],
-  "Bomb": ["Lvl 11&12","Lvl 13&14"],
-  "Bomb Tower":["Lvl 13"],
-  "Builder Hut": ["Level 7&8&9"],
-  "Dark Elixir Drill": ["Lvl 10", "Lvl 11"],
-  "Dark Elixir Storage": ["Lvl 12","Lvl 13"],
-  "Elixir Collector": ["Lvl 17"],
-  "Elixir Storage": ["Lvl 18","Lvl 19"],
-  "Giant Bomb": ["Lvl 6", "Lvl 7&8", "Lvl 9&10"],
-  "Giga Bomb":["Lvl 4"],
-  "Gold Mine": ["Lvl 17"],
-  "Gold Storage": ["Lvl 18","Lvl 19"],
-  "Hidden Tesla": ["Lvl 16","Lvl 17"],
-  "Monolith": ["Lvl 2&3&4"],
-  "Mortar": ["Lvl 17"],
-  "Scattershot": ["Lvl 6&7&8"],
-  "Seeking Air Mine": ["Lvl 5&6"],
-  "Spring Trap": ["Lvl 7&8", "Lvl 9&10"],
-  "Town Hall": ["Lvl 18"],
-  "Wizard Tower": ["Lvl 17"],
-  "Firespitter": ["Lvl 3"], 
-  "Workshop": ["Lvl 8"],
-  "Spell Tower": ["Lvl 4"],
-  "Inferno Tower": ["Lvl 12"],
-  "X-Bow": ["Lvl 12&13&14"],
-  "Hero Hall":["Lvl 11&12"],
-  "Laboratory":["Lvl 16"],
-  "Clan Castle":["Lvl 14"],
-  "Revenge Tower":["Lvl 1","Lvl 2"],
-  "Super Wizard Tower":["Lvl 1","Lvl 2"],
-  "Ricochet Cannon":["Lvl 4"],
-  "Multi-Archer Tower":["Lvl 4"]
+const BUILDING_ID_MAP = {
+  1000000: "Army Camp",
+  1000001: "Town Hall",
+  1000002: "Elixir Collector",
+  1000003: "Elixir Storage",
+  1000004: "Gold Mine",
+  1000005: "Gold Storage",
+  1000006: "Barracks",
+  1000007: "Laboratory",
+  1000008: "Cannon",
+  1000009: "Archer Tower",
+  1000010: "Wall",
+  1000011: "Wizard Tower",
+  1000012: "Air Defense",
+  1000013: "Mortar",
+  1000014: "Clan Castle",
+  1000015: "Builders Hut",
+  1000019: "Hidden Tesla",
+  1000020: "Spell Factory",
+  1000021: "X-Bow",
+  1000023: "Dark Elixir Drill",
+  1000024: "Dark Elixir Storage",
+  1000026: "Dark Barracks",
+  1000027: "Inferno Tower",
+  1000028: "Air Sweeper",
+  1000029: "Dark Spell Factory",
+  1000031: "Eagle Artillery",
+  1000032: "Bomb Tower",
+  1000059: "Workshop",
+  1000067: "Scattershot",
+  1000068: "Pet House",
+  1000070: "Blacksmith",
+  1000071: "Hero Hall",
+  1000072: "Spell Tower",
+  1000077: "Monolith",
+  1000079: "Multi-Gear Tower",
+  1000084: "Multi-Archer Tower",
+  1000085: "Ricochet Cannon",
+  1000089: "Firespitter",
+  1000093: "Revenge Tower",
+  1000097: "Crafted Defense",
+  1000102: "Super Wizard Tower",
+  4000000: "Barbarian",
+  4000001: "Archer",
+  4000002: "Goblin",
+  4000003: "Giant",
+  4000004: "Wall Breaker",
+  4000005: "Balloon",
+  4000006: "Wizard",
+  4000007: "Healer",
+  4000008: "Dragon",
+  4000009: "P.E.K.K.A",
+  4000010: "Minion",
+  4000011: "Hog Rider",
+  4000012: "Valkyrie",
+  4000013: "Golem",
+  4000015: "Witch",
+  4000017: "Lava Hound",
+  4000022: "Bowler",
+  4000023: "Baby Dragon",
+  4000024: "Miner",
+  4000051: "Wall Wrecker",
+  4000052: "Battle Blimp",
+  4000053: "Yeti",
+  4000058: "Ice Golem",
+  4000059: "Electro Dragon",
+  4000062: "Stone Slammer",
+  4000065: "Dragon Rider",
+  4000075: "Siege Barracks",
+  4000082: "Headhunter",
+  4000087: "Log Launcher",
+  4000091: "Flame Flinger",
+  4000092: "Battle Drill",
+  4000095: "Electro Titan",
+  4000097: "Apprentice Warden",
+  4000110: "Root Rider",
+  4000123: "Druid",
+  4000132: "Thrower",
+  4000135: "Troop Launcher",
+  4000150: "Furnace",
+  12000000: "Bomb",
+  12000001: "Spring Trap",
+  12000002: "Giant Bomb",
+  12000005: "Air Bomb",
+  12000006: "Seeking Air Mine",
+  12000008: "Skeleton Trap",
+  12000016: "Tornado Trap",
+  12000020: "Giga Bomb",
+  26000000: "Lightning Spell",
+  26000001: "Healing Spell",
+  26000002: "Rage Spell",
+  26000003: "Jump Spell",
+  26000005: "Freeze Spell",
+  26000009: "Poison Spell",
+  26000010: "Earthquake Spell",
+  26000011: "Haste Spell",
+  26000016: "Clone Spell",
+  26000017: "Skeleton Spell",
+  26000028: "Bat Spell",
+  26000035: "Invisibility Spell",
+  26000053: "Recall Spell",
+  26000070: "Overgrowth Spell",
+  26000098: "Revive Spell",
+  26000109: "Ice Block Spell",
+  28000000: "Barbarian King",
+  28000001: "Archer Queen",
+  28000002: "Grand Warden",
+  28000004: "Royal Champion",
+  28000006: "Minion Prince",
+  73000000: "L.A.S.S.I",
+  73000001: "Electro Owl",
+  73000002: "Mighty Yak",
+  73000003: "Unicorn",
+  73000004: "Phoenix",
+  73000007: "Poison Lizard",
+  73000008: "Diggy",
+  73000009: "Frosty",
+  73000010: "Spirit Fox",
+  73000011: "Angry Jelly",
+  73000016: "Sneezy",
 };
 
-function getUpgradeImage(upgradeName) {
-  const basePath = "Images/Upgrades/";
-  for (const hero of HERO_NAMES) {
-    if (upgradeName.includes(hero)) return basePath + hero + ".png";
+/* IMAGE_MAP, HERO_NAMES, getSuperchargeImage, getUpgradeImage → imagemap.js */
+
+let _riDoneTimer = null;
+function showRefreshIndicator(state) {
+  const el = document.getElementById('refresh-indicator');
+  if (!el) return;
+  clearTimeout(_riDoneTimer);
+  el.classList.remove('hidden', 'refreshing', 'done');
+  if (state === 'refreshing') {
+    el.classList.add('refreshing');
+  } else if (state === 'done') {
+    el.classList.add('done');
+    _riDoneTimer = setTimeout(() => el.classList.add('hidden'), 1800);
+  } else {
+    el.classList.add('hidden');
   }
-  const match = upgradeName.match(/^(.+?)\s*(?:#\d+)?\s+(?:Level|Lvl)\s+(\d+)/i);
-  if (!match) return basePath + "PH.png";
-  const baseName = match[1].trim();
-  const levelNum = parseInt(match[2]);
-  if (!IMAGE_MAP[baseName]) return basePath + "PH.png";
-  for (const levelStr of IMAGE_MAP[baseName]) {
-    if (levelStr === `Lvl ${levelNum}` || levelStr === `Level ${levelNum}`)
-      return basePath + baseName + " " + levelStr + ".png";
-    if (levelStr.includes("&")) {
-      const levels = levelStr.match(/\d+/g).map(Number);
-      if (levels.includes(levelNum))
-        return basePath + baseName + " " + levelStr + ".png";
-    }
-  }
-  return basePath + "PH.png";
 }
+
+function formatUpgradeName(name) {
+  if (!name) return '';
+  return name.replace(/\*/g, '<img src="Images/SCicon.png" style="height:1em;vertical-align:middle;margin:0 1px;" alt="SC">');
+}
+
 
 /* =========================
    GLOBAL STATE
    ========================= */
 let currentWorkData = null;
+let townHallLevel = null;
+let allBuildersLastFinish = null;
 let todaysBoostInfo = null;
 let isRefreshing = false;
+let _pendingRefresh = false;      // queues a fast-refresh while one is in-flight
+let _mutationQueue = Promise.resolve(); // serialises write operations
+let _autoRefreshTimer = null;     // resettable auto-refresh timeout
 let reviewedTabs = new Set();
 let finishedUpgradesData = null;
 let boostPlanData = [];
 let currentBoostIndex = 0;
+let currentBoostLevel = 8;
+const MAX_BOOST_LEVEL = 8; // update when a new level is added to the game
 let openBuilders = [];
 let loadingBuilders = new Set();
 let lastActiveStatusUpdate = 0;
@@ -137,14 +279,47 @@ function formatFinishTime(raw) {
   }).replace(",", " at");
 }
 
+const AUTO_REFRESH_MS = 90 * 1000;
+let _nextRefreshAt = null;
+let _refreshCountdownTimer = null;
+
 function updateLastRefreshed() {
   const el = document.getElementById("lastRefreshed");
   if (!el) return;
-  el.textContent = "Last refreshed: " + new Date().toLocaleString("en-US", {
+  const timeStr = new Date().toLocaleString("en-US", {
     timeZone: "America/New_York",
     month: "short", day: "numeric",
     hour: "numeric", minute: "2-digit", hour12: true
   });
+  _nextRefreshAt = Date.now() + AUTO_REFRESH_MS;
+  clearInterval(_refreshCountdownTimer);
+  _refreshCountdownTimer = setInterval(() => {
+    if (!_nextRefreshAt) return;
+    const secsLeft = Math.max(0, Math.ceil((_nextRefreshAt - Date.now()) / 1000));
+    el.textContent = `Last refreshed: ${timeStr} · next in ${secsLeft}s`;
+    if (secsLeft === 0) clearInterval(_refreshCountdownTimer);
+  }, 1000);
+}
+
+// Enqueue a write operation so concurrent edits are serialised.
+// The async fn is not started until all previously-queued mutations finish.
+function enqueueMutation(fn) {
+  const result = _mutationQueue.then(() => fn());
+  _mutationQueue = result.catch(() => {}); // keep the chain alive on error
+  return result;
+}
+
+// Resettable auto-refresh: each call cancels the current timer and starts a
+// fresh one.  Call after a successful mutation to push the next refresh back.
+function scheduleNextRefresh(delay = AUTO_REFRESH_MS) {
+  clearTimeout(_autoRefreshTimer);
+  _nextRefreshAt = Date.now() + delay;
+  _autoRefreshTimer = setTimeout(runAutoRefresh, delay);
+}
+
+async function runAutoRefresh() {
+  await refreshDashboard();
+  scheduleNextRefresh(); // chain the next tick
 }
 
 function parseScheduledStart(scheduledStart) {
@@ -189,6 +364,7 @@ async function softRefreshBuilderCards() {
       container.innerHTML = "";
       renderBuilderCards();
     }
+    renderTownHallSection();
   } catch (e) { console.error("Soft refresh failed:", e); }
 }
 
@@ -223,26 +399,127 @@ async function loadPausedBuilders() {
   }
 }
 
+async function loadTownHallLevel() {
+  try {
+    const res  = await fetch(TOWN_HALL_LEVEL_URL());
+    const data = await res.json();
+    console.log("[TH] raw response:", data);
+    const parsed = parseInt(data.th_level, 10);
+    townHallLevel = isNaN(parsed) ? null : parsed;
+  } catch (e) {
+    console.error("loadTownHallLevel failed", e);
+    townHallLevel = null;
+  }
+}
+
+async function loadAllBuildersLastFinish() {
+  try {
+    const res  = await fetch(ALL_BUILDERS_LAST_FINISH_URL());
+    const data = await res.json();
+    allBuildersLastFinish = data.last_finish ?? null;
+  } catch (e) {
+    console.error("loadAllBuildersLastFinish failed", e);
+    allBuildersLastFinish = null;
+  }
+}
+
+function formatLastFinishDate(raw) {
+  const d = new Date(raw);
+  if (isNaN(d)) return "—";
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  const opts = {
+    timeZone: "America/New_York",
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  };
+  return d.toLocaleString("en-US", opts).replace(/,/g, "");
+}
+
+function renderTownHallSection() {
+  const section = document.getElementById("th-info-section");
+  if (!section) return;
+  if (!townHallLevel) { section.innerHTML = ""; return; }
+
+  const imgSrc   = `Images/Upgrades/Town Hall Lvl ${townHallLevel}.png`;
+  const finishStr = allBuildersLastFinish ? formatLastFinishDate(allBuildersLastFinish) : "—";
+
+  section.innerHTML = `
+    <img class="th-info-img" src="${imgSrc}" alt="Town Hall ${townHallLevel}"
+         onerror="this.src='Images/Upgrades/PH.png'" />
+    <div class="th-info-details">
+      <div class="th-info-title">Town Hall ${townHallLevel}</div>
+      <div class="th-info-finish">
+        <span class="th-info-finish-label">Est. Finish</span>
+        <span class="th-info-finish-date">${finishStr}</span>
+      </div>
+    </div>`;
+}
+
+async function loadBoostLevel() {
+  try {
+    const res  = await fetch(BOOST_LEVEL_URL());
+    const data = await res.json();
+    currentBoostLevel = data.level ?? 8;
+    const badge = document.getElementById("boostLevelBadge");
+    if (badge) badge.textContent = currentBoostLevel + " Lvl";
+  } catch (e) { console.error("loadBoostLevel failed", e); }
+}
+
 async function loadBoostPlan() {
   try {
     const res = await fetch(BOOST_PLAN_URL());
     const data = await res.json();
     if (!data?.table || data.table.length <= 1) { boostPlanData = []; return; }
     boostPlanData = data.table.slice(1).map((row, i) => ({
-      day: i === 0 ? "TODAY" : row[0],
-      hasBoost: true,
-      builder: row[2].replace("_", " "),
+      day:          i === 0 ? "TODAY" : row[0],
+      hasBoost:     true,
+      upgradeName:  row[1],
+      builder:      row[2].replace("_", " "),
       newFinishTime: row[4],
-      mode: row[5]
+      mode:         row[5]
     }));
     currentBoostIndex = 0;
     renderBoostFocusCard();
   } catch (e) { console.error("Boost plan failed", e); }
 }
 
-async function refreshDashboard() {
-  if (isRefreshing) return;
+async function refreshDashboardFast() {
+  if (isRefreshing) { _pendingRefresh = true; return; }
   isRefreshing = true;
+  showRefreshIndicator('refreshing');
+  try {
+    updateActiveStatusSmart();
+    await Promise.all([
+      loadCurrentWork(),
+      loadTodaysBoost(),
+      loadPausedBuilders(),
+      loadBoostPlan(),
+      loadBoostLevel(),
+      loadTownHallLevel(),
+      loadAllBuildersLastFinish()
+    ]);
+    if (openBuilders.length === 0) {
+      const container = document.getElementById("builders-container");
+      if (container) container.innerHTML = "";
+      renderBuilderCards();
+    }
+    renderTownHallSection();
+    updateLastRefreshed();
+    showRefreshIndicator('done');
+  } catch (e) {
+    console.error("Fast refresh failed", e);
+    showRefreshIndicator('hidden');
+  } finally {
+    isRefreshing = false;
+    if (_pendingRefresh) { _pendingRefresh = false; refreshDashboardFast(); }
+  }
+}
+
+async function refreshDashboard() {
+  if (isRefreshing) { _pendingRefresh = true; return; }
+  isRefreshing = true;
+  showRefreshIndicator('refreshing');
   try {
     updateActiveStatusSmart();
     await fetch(REFRESH_ENDPOINT);
@@ -250,18 +527,25 @@ async function refreshDashboard() {
       loadCurrentWork(),
       loadTodaysBoost(),
       loadPausedBuilders(),
-      loadBoostPlan()
+      loadBoostPlan(),
+      loadBoostLevel(),
+      loadTownHallLevel(),
+      loadAllBuildersLastFinish()
     ]);
     if (openBuilders.length === 0) {
       const container = document.getElementById("builders-container");
       if (container) container.innerHTML = "";
       renderBuilderCards();
     }
+    renderTownHallSection();
     updateLastRefreshed();
+    showRefreshIndicator('done');
   } catch (e) {
     console.error("Refresh failed", e);
+    showRefreshIndicator('hidden');
   } finally {
     isRefreshing = false;
+    if (_pendingRefresh) { _pendingRefresh = false; refreshDashboardFast(); }
   }
 }
 
@@ -285,8 +569,9 @@ function renderBoostFocusCard() {
   if (day.hasBoost) {
     statusEl.textContent = "Boost Planned For";
     statusEl.classList.add("boost-active");
-    builderEl.textContent = day.builder;
-    builderEl.style.display = "block";
+    const thumbSrc = getUpgradeImage(day.upgradeName || '');
+    builderEl.innerHTML = `<img src="${thumbSrc}" class="boost-upgrade-thumb" onerror="this.src='Images/Upgrades/PH.png'" />${day.builder}`;
+    builderEl.style.display = "flex";
     extraEl.style.display = "block";
     finishEl.textContent = day.newFinishTime;
     modeEl.textContent = day.mode;
@@ -313,6 +598,7 @@ function renderBoostFocusCard() {
   } else {
     statusEl.textContent = "No Boost";
     statusEl.classList.remove("boost-active");
+    builderEl.innerHTML = "";
     builderEl.style.display = "none";
     extraEl.style.display = "none";
     if (menuBtn) menuBtn.style.display = "none";
@@ -342,13 +628,25 @@ function renderBuilderDetails(details) {
     <div class="builder-details-header">
       <button class="builder-refresh-btn" title="Refresh builder data">🔄</button>
     </div>
+    <div class="builder-stats-bar">
+      <div class="builder-stat">
+        <span class="builder-stat-value">${details.upgrades.length}</span>
+        <span class="builder-stat-label">upgrade${details.upgrades.length !== 1 ? 's' : ''} queued</span>
+      </div>
+      <div class="builder-stat-sep"></div>
+      <div class="builder-stat">
+        <span class="builder-stat-label">Expected finish</span>
+        <span class="builder-stat-value">${details.upgrades.length > 0 ? details.upgrades[details.upgrades.length - 1].end : '—'}</span>
+      </div>
+    </div>
     <div class="upgrade-headers">
       <span></span><span>Future Upgrades</span><span>Duration</span>
       <span>Start and End dates</span><span></span>
     </div>
     <div class="upgrade-list" data-original-order="${originalOrder.join(',')}">
       ${details.upgrades.map((upg, idx) => {
-        const imgSrc = getUpgradeImage(upg.upgrade);
+        const isSC = upg.upgrade && upg.upgrade.includes('*');
+        const imgSrc = isSC ? getSuperchargeImage(upg.upgrade) : getUpgradeImage(upg.upgrade);
         const totalMinutes = upg.durationMinutes || 0;
         return `
           <div class="upgrade-item"
@@ -357,9 +655,17 @@ function renderBuilderDetails(details) {
                data-duration-minutes="${totalMinutes}" draggable="true">
             <div class="drag-handle">⋮⋮</div>
             <div class="upgrade-name">
+              ${isSC ? `
+              <div style="position:relative;display:inline-flex;flex-shrink:0;">
+                <img src="${imgSrc}" class="upgrade-icon" alt="${upg.upgrade}"
+                     onerror="this.src='Images/Upgrades/PH.png'"
+                     style="filter:drop-shadow(0 0 5px rgba(9,61,186,0.85));" />
+                <div style="position:absolute;inset:0;background:rgba(9,61,186,0.10);border-radius:6px;pointer-events:none;"></div>
+              </div>` : `
               <img src="${imgSrc}" class="upgrade-icon" alt="${upg.upgrade}"
-                   onerror="this.src='Images/Upgrades/PH.png'" />
-              <span>${upg.upgrade}</span>
+                   onerror="this.src='Images/Upgrades/PH.png'" />`}
+              <span${isSC ? ' style="color:#093DBA"' : ''}>${formatUpgradeName(upg.upgrade)}</span>
+              ${upg.cost ? `<span class="upgrade-cost">${upg.cost}</span>` : ''}
             </div>
             <div class="upgrade-duration editable-duration" data-index="${idx}">${upg.duration}</div>
             <div class="upgrade-time">
@@ -513,7 +819,10 @@ function renderBuilderCards() {
           <div class="builder-time-left editable-card-duration"
                data-builder="Builder_${builderNumber}" data-upgrade="${row[1]}"
                data-row="2" title="Click to edit duration">${row[3]}</div>
-          <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}</div>
+          <div class="builder-finish-row">
+            <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}</div>
+            <button class="finish-upgrade-btn" data-builder="${builderNumber}" data-upgrade="${row[1]}" data-next="${row[4]}" title="Mark upgrade as finished"><img src="Images/Finished.png" alt="Finish" /></button>
+          </div>
           <div class="builder-next">
             <img src="${getUpgradeImage(row[4])}" class="next-upgrade-icon"
                  alt="${row[4]}" onerror="this.src='Images/Upgrades/PH.png'" />
@@ -558,24 +867,45 @@ function setupCardDurationEditor(durationEl) {
 
 async function updateCardDuration(builderName, newMinutes, newDurationHr, durationEl) {
   const originalText = durationEl.textContent;
-  durationEl.textContent = 'Saving...';
-  try {
-    const res  = await fetch(`${API_BASE}?action=update_active_upgrade_time&username=${window.COC_USERNAME}&builder=${builderName}&remaining_minutes=${newMinutes}`);
-    const data = await res.json();
-    if (data.error) { alert('Failed to update: ' + data.error); durationEl.textContent = originalText; return; }
-    durationEl.textContent = '✓ Saved!';
-    suppressFinishedCheckFor(60 * 1000);
-    setTimeout(async () => {
-      const container = document.getElementById("builders-container");
-      container.innerHTML = "";
-      await Promise.all([loadCurrentWork(), loadTodaysBoost(), loadPausedBuilders()]);
-      renderBuilderCards();
-    }, 800);
-  } catch (err) {
-    console.error('Update failed:', err);
-    alert('Failed to update duration');
-    durationEl.textContent = originalText;
+  const newFinishDate = new Date(Date.now() + newMinutes * 60 * 1000);
+
+  // Optimistic DOM update
+  durationEl.textContent = newDurationHr;
+  const finishEl = durationEl.closest('.builder-text')?.querySelector('.builder-finish');
+  const originalFinishText = finishEl?.textContent;
+  if (finishEl) finishEl.textContent = 'Finishes: ' + formatFinishTime(newFinishDate);
+
+  // Optimistic currentWorkData update
+  const builderNum = builderName.match(/(\d+)/)?.[1];
+  let originalDataFinish = null;
+  if (builderNum && currentWorkData) {
+    const dataRow = currentWorkData.find(r => r[0]?.toString().includes(`_${builderNum}`) || r[0]?.toString().endsWith(builderNum));
+    if (dataRow) { originalDataFinish = dataRow[2]; dataRow[2] = newFinishDate.toISOString(); }
   }
+
+  showRefreshIndicator('refreshing');
+  suppressFinishedCheckFor(60 * 1000);
+
+  await enqueueMutation(async () => {
+    try {
+      const res  = await fetch(`${API_BASE}?action=update_active_upgrade_time&username=${window.COC_USERNAME}&builder=${builderName}&remaining_minutes=${newMinutes}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      scheduleNextRefresh(); // push auto-refresh back so it doesn't race with our update
+      showRefreshIndicator('done');
+    } catch (err) {
+      console.error('Update failed:', err);
+      // Rollback
+      durationEl.textContent = originalText;
+      if (finishEl && originalFinishText) finishEl.textContent = originalFinishText;
+      if (builderNum && currentWorkData && originalDataFinish !== null) {
+        const dataRow = currentWorkData.find(r => r[0]?.toString().includes(`_${builderNum}`) || r[0]?.toString().endsWith(builderNum));
+        if (dataRow) dataRow[2] = originalDataFinish;
+      }
+      showRefreshIndicator('hidden');
+      showBsErrorToast('Failed to update duration — no changes were made');
+    }
+  });
 }
 
 function setupDurationEditor(detailsWrapper) {
@@ -662,22 +992,25 @@ function showDurationPicker(initialDays, initialHours, initialMins, callback) {
 async function updateUpgradeDuration(builderName, row, newMinutes, newDurationHr, durationEl, detailsWrapper) {
   const originalText = durationEl.textContent;
   durationEl.textContent = 'Saving...';
-  try {
-    const res  = await fetch(`${API_BASE}?action=update_upgrade_duration&username=${window.COC_USERNAME}&builder=${builderName}&row=${row}&minutes=${newMinutes}&duration_hr=${encodeURIComponent(newDurationHr)}`);
-    const data = await res.json();
-    if (data.error) { alert('Failed to update: ' + data.error); durationEl.textContent = originalText; return; }
-    durationEl.textContent = '✓ Saved!';
-    setTimeout(() => {
-      fetchBuilderDetails(detailsWrapper.dataset.builder).then(bd => {
-        if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
-        else { console.error('Bad response from fetchBuilderDetails:', bd); alert('Failed to reload builder details.'); }
-      });
-    }, 800);
-  } catch (err) {
-    console.error('Update failed:', err);
-    alert('Failed to update duration');
-    durationEl.textContent = originalText;
-  }
+  await enqueueMutation(async () => {
+    try {
+      const res  = await fetch(`${API_BASE}?action=update_upgrade_duration&username=${window.COC_USERNAME}&builder=${builderName}&row=${row}&minutes=${newMinutes}&duration_hr=${encodeURIComponent(newDurationHr)}`);
+      const data = await res.json();
+      if (data.error) { alert('Failed to update: ' + data.error); durationEl.textContent = originalText; return; }
+      scheduleNextRefresh();
+      durationEl.textContent = '✓ Saved!';
+      setTimeout(() => {
+        fetchBuilderDetails(detailsWrapper.dataset.builder).then(bd => {
+          if (bd && bd.builder) { detailsWrapper.replaceWith(renderBuilderDetails(bd)); }
+          else { console.error('Bad response from fetchBuilderDetails:', bd); alert('Failed to reload builder details.'); }
+        });
+      }, 800);
+    } catch (err) {
+      console.error('Update failed:', err);
+      alert('Failed to update duration');
+      durationEl.textContent = originalText;
+    }
+  });
 }
 
 /* =========================
@@ -929,19 +1262,22 @@ function wireApprenticeBoost() {
 
       badge.src = "Images/Badge/Builder Apprentice applied.png";
 
-      await loadCurrentWork();
-
-      if (card && currentWorkData && builderNumber) {
-        const bd = currentWorkData.find(r => r[0]?.toString().includes(builderNumber));
-        if (bd) {
-          const tl = card.querySelector(".builder-time-left");
-          const ft = card.querySelector(".builder-finish");
-          if (tl) tl.textContent = bd[3];
-          if (ft) ft.textContent = "Finishes: " + formatFinishTime(bd[2]);
+      // Instant card update from the API response — no extra fetch needed
+      if (card && data.newEndTime && data.newDuration != null) {
+        const newEnd = new Date(data.newEndTime);
+        const tl = card.querySelector(".builder-time-left");
+        const ft = card.querySelector(".builder-finish");
+        if (tl) {
+          const d = Math.floor(data.newDuration / (24 * 60));
+          const h = Math.floor((data.newDuration % (24 * 60)) / 60);
+          const m = data.newDuration % 60;
+          tl.textContent = `${d} d ${h} hr ${m} min`;
         }
+        if (ft) ft.textContent = "Finishes: " + formatFinishTime(newEnd);
       }
 
-      await loadBoostPlan();
+      // Refresh remaining data in parallel
+      await Promise.all([loadCurrentWork(), loadBoostPlan()]);
       updateLastRefreshed();
       const container = document.getElementById("builders-container");
       container.innerHTML = "";
@@ -954,20 +1290,353 @@ function wireApprenticeBoost() {
 }
 
 function wireImageButtons() {
-  document.getElementById("oneHourBoostBtn")?.addEventListener("click", async () => { await fetch(BUILDER_SNACK_URL()); refreshDashboard(); });
-  document.getElementById("battlePassBtn")?.addEventListener("click",  async () => { await fetch(BATTLE_PASS_URL());  refreshDashboard(); });
+  document.getElementById("oneHourBoostBtn")?.addEventListener("click",  () => showBuilderSnackModal());
+  document.getElementById("builderPotionBtn")?.addEventListener("click", () => showBuilderPotionModal());
+  document.getElementById("battlePassBtn")?.addEventListener("click",    async () => { await fetch(BATTLE_PASS_URL()); refreshDashboard(); });
+  document.getElementById("buildingBtn")?.addEventListener("click",      () => { window.location.href = "building.html"; });
+}
+
+/* =========================
+   BUILDER BOOST MODAL (shared)
+   ========================= */
+function showBuilderSnackModal()  { showBuilderBoostModal({ title: 'Builder Snack',  image: 'Images/BuilderSnack.png',   desc: 'Each snack reduces all active builders by 1 hour.',   minsPerUse: 60,  apiAction: 'apply_one_hour_boost',   errorMsg: 'Failed to apply snacks — no changes were made'  }); }
+function showBuilderPotionModal() { showBuilderBoostModal({ title: 'Builder Potion', image: 'Images/BuilderPotion.png', desc: 'Each potion reduces all active builders by 9 hours.', minsPerUse: 540, apiAction: 'apply_builder_potion', errorMsg: 'Failed to apply potion — no changes were made' }); }
+
+function showBuilderBoostModal({ title, image, desc, minsPerUse, apiAction, errorMsg }) {
+  document.querySelector('.bs-modal-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'bs-modal-overlay';
+  overlay.innerHTML = `
+    <div class="bs-modal">
+      <h3><img src="${image}" class="bs-title-icon" alt=""> ${title}</h3>
+      <p class="bs-modal-desc">${desc}</p>
+      <div class="bs-count-row">
+        <button class="bs-count-btn" id="bsDecBtn">−</button>
+        <input class="bs-count-input" id="bsCountInput" type="number" min="1" max="10" value="1">
+        <button class="bs-count-btn" id="bsIncBtn">+</button>
+      </div>
+      <div class="bs-preview-list" id="bsPreviewList">
+        <div class="bs-preview-loading">Loading preview…</div>
+      </div>
+      <div class="bs-modal-footer">
+        <button class="bs-cancel-btn" id="bsCancelBtn">Cancel</button>
+        <button class="bs-apply-btn" id="bsApplyBtn" disabled>Apply</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  const countInput  = overlay.querySelector('#bsCountInput');
+  const decBtn      = overlay.querySelector('#bsDecBtn');
+  const incBtn      = overlay.querySelector('#bsIncBtn');
+  const applyBtn    = overlay.querySelector('#bsApplyBtn');
+  const cancelBtn   = overlay.querySelector('#bsCancelBtn');
+  const previewList = overlay.querySelector('#bsPreviewList');
+
+  let debounceTimer = null;
+
+  function updateCountBtns() {
+    const v = parseInt(countInput.value) || 1;
+    decBtn.disabled = v <= 1;
+    incBtn.disabled = v >= 10;
+  }
+
+  function bsFormatTime(ms) {
+    if (!ms) return '—';
+    const d = new Date(ms);
+    return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+  }
+
+  function bsBuilderLabel(builderStr) {
+    return builderStr.replace(/^[^_]+_/, '').replace(/_/g, ' ');
+  }
+
+  function fetchPreview() {
+    const times = parseInt(countInput.value) || 1;
+    const reduceMs = times * minsPerUse * 60 * 1000;
+
+    if (!currentWorkData || currentWorkData.length <= 1) {
+      previewList.innerHTML = '<div class="bs-preview-loading">No builder data loaded.</div>';
+      return;
+    }
+
+    const rows = [];
+    for (let i = 1; i < currentWorkData.length; i++) {
+      const row = currentWorkData[i];
+      const builderName = row[0]?.toString();
+      const upgradeName = row[1]?.toString() || '';
+      const finishMs = new Date(row[2]).getTime();
+      if (!builderName || isNaN(finishMs)) continue;
+      rows.push({ builder: builderName, upgrade: upgradeName, oldTime: finishMs, newTime: finishMs - reduceMs });
+    }
+
+    if (rows.length === 0) {
+      previewList.innerHTML = '<div class="bs-preview-loading">No active upgrades found.</div>';
+      applyBtn.disabled = true;
+      return;
+    }
+
+    const savedMins = reduceMs / 60000;
+    const savedLabel = savedMins >= 60
+      ? `(${savedMins / 60} hr${savedMins / 60 !== 1 ? 's' : ''})`
+      : `(${savedMins} min.)`;
+
+    previewList.innerHTML = rows.map(p => `
+      <div class="bs-builder-row">
+        <img src="${getUpgradeImage(p.upgrade)}" class="bs-upgrade-icon"
+             alt="${p.upgrade}" onerror="this.src='Images/Upgrades/PH.png'">
+        <span class="bs-builder-name">${bsBuilderLabel(p.builder)}<span class="bs-saved-label">${savedLabel}</span></span>
+        <span class="bs-builder-times">
+          ${bsFormatTime(p.oldTime)}
+          <span class="bs-arrow">→</span>
+          <span class="bs-new-time">${bsFormatTime(p.newTime)}</span>
+        </span>
+      </div>`).join('');
+    applyBtn.disabled = false;
+  }
+
+  function schedulePreview() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(fetchPreview, 200);
+  }
+
+  decBtn.addEventListener('click', () => {
+    const v = parseInt(countInput.value) || 1;
+    if (v > 1) { countInput.value = v - 1; updateCountBtns(); schedulePreview(); }
+  });
+  incBtn.addEventListener('click', () => {
+    const v = parseInt(countInput.value) || 1;
+    if (v < 10) { countInput.value = v + 1; updateCountBtns(); schedulePreview(); }
+  });
+  countInput.addEventListener('input', () => {
+    let v = parseInt(countInput.value) || 1;
+    v = Math.max(1, Math.min(10, v));
+    countInput.value = v;
+    updateCountBtns();
+    schedulePreview();
+  });
+
+  cancelBtn.addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  applyBtn.addEventListener('click', async () => {
+    const times = parseInt(countInput.value) || 1;
+    const reduceMs = times * minsPerUse * 60 * 1000;
+
+    const snapshot = currentWorkData ? currentWorkData.map(row => [...row]) : null;
+
+    if (currentWorkData) {
+      for (let i = 1; i < currentWorkData.length; i++) {
+        const finishMs = new Date(currentWorkData[i][2]).getTime();
+        if (!isNaN(finishMs)) {
+          currentWorkData[i][2] = new Date(finishMs - reduceMs).toISOString();
+        }
+      }
+      const now = Date.now();
+      document.querySelectorAll('.builder-time-left[data-builder]').forEach(el => {
+        const builderNum = el.dataset.builder.match(/(\d+)/)?.[1];
+        if (!builderNum) return;
+        const row = currentWorkData.find(r => r[0]?.toString().includes(`_${builderNum}`) || r[0]?.toString().endsWith(builderNum));
+        if (!row) return;
+        const newFinishMs = new Date(row[2]).getTime();
+        const remainingMs = newFinishMs - now;
+        if (remainingMs > 0) {
+          const totalMins = Math.floor(remainingMs / 60000);
+          const days  = Math.floor(totalMins / (24 * 60));
+          const hours = Math.floor((totalMins % (24 * 60)) / 60);
+          const mins  = totalMins % 60;
+          el.textContent = `${days} d ${hours} hr ${mins} min`;
+        } else {
+          el.textContent = '0 d 0 hr 0 min';
+        }
+        const finishEl = el.closest('.builder-text')?.querySelector('.builder-finish');
+        if (finishEl) finishEl.textContent = 'Finishes: ' + formatFinishTime(new Date(row[2]));
+      });
+    }
+
+    overlay.remove();
+    showRefreshIndicator('refreshing');
+
+    try {
+      const res = await fetch(`${API_BASE}?action=${apiAction}&username=${window.COC_USERNAME}&times=${times}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      if (Array.isArray(data.updatedBuilders) && data.updatedBuilders.length === 0) {
+        throw new Error('No builders were updated');
+      }
+      await refreshDashboardFast();
+    } catch(e) {
+      if (snapshot) {
+        currentWorkData = snapshot;
+        const now = Date.now();
+        document.querySelectorAll('.builder-time-left[data-builder]').forEach(el => {
+          const builderNum = el.dataset.builder.match(/(\d+)/)?.[1];
+          if (!builderNum) return;
+          const row = currentWorkData.find(r => r[0]?.toString().includes(`_${builderNum}`) || r[0]?.toString().endsWith(builderNum));
+          if (!row) return;
+          const finishMs = new Date(row[2]).getTime();
+          const remainingMs = finishMs - now;
+          if (remainingMs > 0) {
+            const totalMins = Math.floor(remainingMs / 60000);
+            const days  = Math.floor(totalMins / (24 * 60));
+            const hours = Math.floor((totalMins % (24 * 60)) / 60);
+            const mins  = totalMins % 60;
+            el.textContent = `${days} d ${hours} hr ${mins} min`;
+          } else {
+            el.textContent = '0 d 0 hr 0 min';
+          }
+          const finishEl = el.closest('.builder-text')?.querySelector('.builder-finish');
+          if (finishEl) finishEl.textContent = 'Finishes: ' + formatFinishTime(new Date(row[2]));
+        });
+      }
+      showRefreshIndicator('hidden');
+      showBsErrorToast(errorMsg);
+    }
+  });
+
+  updateCountBtns();
+  fetchPreview();
+}
+
+function showBsErrorToast(msg) {
+  document.querySelector('.bs-error-toast')?.remove();
+  const toast = document.createElement('div');
+  toast.className = 'bs-error-toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+/* =========================
+   BOOST LEVEL MODAL
+   ========================= */
+function showBoostLevelModal() {
+  document.querySelector('.boost-level-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'bs-modal-overlay boost-level-overlay';
+  overlay.style.cssText = 'display:flex;';
+
+  function buildContent() {
+    const atMax = currentBoostLevel >= MAX_BOOST_LEVEL;
+    return `
+      <div class="bs-modal boost-level-modal">
+        <button class="boost-level-close">✕</button>
+        <button class="boost-level-gear" title="Downgrade settings">⚙</button>
+
+        <div class="boost-level-body">
+          <img src="Images/Badge/Builder Apprentice Safe.png" class="boost-level-img"
+               onerror="this.src='Images/Upgrades/PH.png'" />
+          <div class="boost-level-info">
+            <div class="boost-level-title">Builder's Apprentice</div>
+            <div class="boost-level-current">Level <strong>${currentBoostLevel}</strong></div>
+            <div class="boost-level-up-section" ${atMax ? 'style="display:none"' : ''}>
+              <div class="boost-level-up-idle">
+                <button class="boost-level-up-btn">Level Up →</button>
+              </div>
+              <div class="boost-level-up-confirm" style="display:none">
+                <div class="boost-level-confirm-text">
+                  Level up to <strong>Level ${currentBoostLevel + 1}</strong>?
+                </div>
+                <div class="boost-level-confirm-actions">
+                  <button class="boost-level-confirm-yes">✓ Confirm</button>
+                  <button class="boost-level-confirm-no">Cancel</button>
+                </div>
+              </div>
+            </div>
+            ${atMax ? '<div class="boost-level-maxed">Max level</div>' : ''}
+          </div>
+        </div>
+
+        <div class="boost-level-gear-panel" style="display:none">
+          <div class="boost-level-gear-title">Downgrade to:</div>
+          ${Array.from({length: currentBoostLevel - 1}, (_, i) => i + 1).reverse().map(lvl => `
+            <button class="boost-level-down-btn" data-level="${lvl}">Level ${lvl}</button>
+          `).join('')}
+          ${currentBoostLevel <= 1 ? '<div style="color:#9999a8;font-size:12px;text-align:center">Already at minimum</div>' : ''}
+        </div>
+      </div>`;
+  }
+
+  overlay.innerHTML = buildContent();
+  document.body.appendChild(overlay);
+
+  function rebind() {
+    overlay.querySelector('.boost-level-close').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+    // Level up flow
+    overlay.querySelector('.boost-level-up-btn')?.addEventListener('click', () => {
+      overlay.querySelector('.boost-level-up-idle').style.display = 'none';
+      overlay.querySelector('.boost-level-up-confirm').style.display = 'block';
+    });
+    overlay.querySelector('.boost-level-confirm-no')?.addEventListener('click', () => {
+      overlay.querySelector('.boost-level-up-confirm').style.display = 'none';
+      overlay.querySelector('.boost-level-up-idle').style.display = 'block';
+    });
+    overlay.querySelector('.boost-level-confirm-yes')?.addEventListener('click', async () => {
+      const newLevel = currentBoostLevel + 1;
+      overlay.querySelector('.boost-level-confirm-yes').disabled = true;
+      overlay.querySelector('.boost-level-confirm-yes').textContent = '…';
+      try {
+        await fetch(SET_BOOST_LEVEL_URL(newLevel));
+        currentBoostLevel = newLevel;
+        const badge = document.getElementById('boostLevelBadge');
+        if (badge) badge.textContent = currentBoostLevel + ' Lvl';
+        overlay.remove();
+      } catch (e) {
+        console.error('Failed to set boost level', e);
+        overlay.querySelector('.boost-level-confirm-yes').disabled = false;
+        overlay.querySelector('.boost-level-confirm-yes').textContent = '✓ Confirm';
+      }
+    });
+
+    // Gear toggle
+    const gearBtn   = overlay.querySelector('.boost-level-gear');
+    const gearPanel = overlay.querySelector('.boost-level-gear-panel');
+    gearBtn?.addEventListener('click', e => {
+      e.stopPropagation();
+      gearPanel.style.display = gearPanel.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Downgrade buttons
+    overlay.querySelectorAll('.boost-level-down-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const newLevel = parseInt(btn.dataset.level);
+        btn.disabled = true; btn.textContent = '…';
+        try {
+          await fetch(SET_BOOST_LEVEL_URL(newLevel));
+          currentBoostLevel = newLevel;
+          const badge = document.getElementById('boostLevelBadge');
+          if (badge) badge.textContent = currentBoostLevel + ' Lvl';
+          overlay.remove();
+        } catch (e) {
+          console.error('Failed to set boost level', e);
+          btn.disabled = false;
+        }
+      });
+    });
+  }
+
+  rebind();
+}
+
+function wireBoostLevel() {
+  document.getElementById('boostLevelBadge')
+    ?.addEventListener('click', showBoostLevelModal);
 }
 
 function wireBoostSimulation() {
   const btn = document.getElementById("runBoostSimBtn");
   if (!btn) return;
   btn.addEventListener("click", async () => {
-    btn.disabled = true; btn.textContent = "Running…";
+    btn.disabled = true; btn.classList.add("spinning");
     try {
       await fetch(endpoint("run_boost_simulation"), { redirect: 'follow' });
-      await refreshDashboard();
+      await refreshDashboardFast();
     } catch (e) { console.error("Boost sim failed:", e); }
-    btn.textContent = "Run Boost Simulation"; btn.disabled = false;
+    btn.classList.remove("spinning"); btn.disabled = false;
   });
 }
 
@@ -1014,6 +1683,8 @@ function wireBuilderCardClicks() {
   document.addEventListener("click", async e => {
     if (e.target.closest("[data-apply-boost]")) { e.stopPropagation(); e.preventDefault(); return; }
     if (e.target.closest(".start-builder-btn")) return;
+    const finishBtn = e.target.closest(".finish-upgrade-btn");
+    if (finishBtn) { showFinishUpgradeModal(finishBtn.dataset.builder, finishBtn.dataset.upgrade, finishBtn.dataset.next); return; }
     const card = e.target.closest(".builder-card");
     if (!card) return;
     const builder = card.dataset.builder;
@@ -1049,8 +1720,51 @@ function wireBuilderCardClicks() {
   });
 }
 
+function setupPullToRefresh(onRefresh) {
+  const THRESHOLD = 80;
+  let startY = 0, dist = 0, active = false;
+
+  const bar = document.createElement('div');
+  bar.className = 'ptr-bar';
+  document.body.prepend(bar);
+
+  function onStart(clientY) {
+    if (window.scrollY !== 0) return;
+    startY = clientY; dist = 0; active = true;
+  }
+  function onMove(clientY) {
+    if (!active) return;
+    dist = Math.max(0, clientY - startY);
+    bar.style.setProperty('--ptr-p', Math.min(dist / THRESHOLD, 1));
+    bar.classList.toggle('ptr-ready', dist >= THRESHOLD);
+  }
+  async function onEnd() {
+    if (!active) return;
+    active = false;
+    if (dist < THRESHOLD) {
+      bar.style.setProperty('--ptr-p', 0);
+      bar.classList.remove('ptr-ready');
+      return;
+    }
+    bar.classList.remove('ptr-ready');
+    bar.classList.add('ptr-loading');
+    await onRefresh();
+    bar.classList.remove('ptr-loading');
+    bar.style.setProperty('--ptr-p', 0);
+    dist = 0;
+  }
+
+  document.addEventListener('touchstart', e => onStart(e.touches[0].clientY), { passive: true });
+  document.addEventListener('touchmove',  e => onMove(e.touches[0].clientY),  { passive: true });
+  document.addEventListener('touchend',   onEnd);
+
+  document.addEventListener('mousedown', e => onStart(e.clientY));
+  document.addEventListener('mousemove', e => { if (active) onMove(e.clientY); });
+  document.addEventListener('mouseup',   onEnd);
+}
+
 function startAutoRefresh() {
-  setInterval(refreshDashboard, 45 * 1000);
+  scheduleNextRefresh(); // resettable timer instead of fixed setInterval
   setInterval(softRefreshBuilderCards, 10 * 60 * 1000);
 }
 
@@ -1139,15 +1853,18 @@ function showUpgradeConfirmationModal(upgrades) {
 
 function buildTabContent(builderData, isActive) {
   const b = builderData.builder, bLabel = b.replace('_',' '), active = builderData.nowActive;
-  const m = active.totalDuration.match(/(\d+)\s*d\s*(\d+)\s*hr\s*(\d+)\s*min/);
+  const m = (active.totalDuration || '').match(/(\d+)\s*d\s*(\d+)\s*hr\s*(\d+)\s*min/);
   const prefillDays = m?m[1]:'0', prefillHours = m?m[2]:'0', prefillMins = m?m[3]:'0';
   const defaultDT = scheduledToDatetimeLocal(active.scheduledStart);
   return `
     <div class="ucm-tab-content ${isActive?'active':''}" data-builder="${b}">
-      ${builderData.finished.map(f => `
-        <div class="ucm-finished-row">✅ <strong>${f.upgradeName}</strong> finished &nbsp;·&nbsp; ${f.finishedTime}</div>
+      ${builderData.finished.map((f, i) => `
+        <div class="ucm-finished-row">
+          <span class="ucm-finished-text">✅ <strong>${f.upgradeName}</strong> finished <span class="ucm-finished-time">&nbsp;·&nbsp; ${f.finishedTime}</span></span>
+          ${i > 0 ? `<button class="ucm-resume-from-btn" data-builder="${b}" data-from-index="${i}" data-upgrade="${f.upgradeName.replace(/"/g,'&quot;')}">↩ Resume from here</button>` : ''}
+        </div>
       `).join('')}
-      ${builderData.finished.length > 1 ? `<div class="ucm-cascade-warn">⚠️ Multiple upgrades finished — if an earlier one didn't start, later ones couldn't have either.</div>` : ''}
+      ${builderData.finished.length > 1 ? `<div class="ucm-cascade-warn">⚠️ Multiple upgrades finished — if an earlier one didn't start, later ones couldn't have either. Use <strong>↩ Resume from here</strong> on the upgrade that didn't start.</div>` : ''}
       <div class="ucm-active-section">
         <div class="ucm-active-header">
           <img src="${getUpgradeImage(active.upgradeName)}" class="ucm-active-img"
@@ -1263,6 +1980,7 @@ function wireConfirmationModal(modal, upgrades) {
   modal.querySelectorAll('.ucm-show-queue').forEach(btn => btn.addEventListener('click', () => showUpgradeQueueModal(btn.dataset.builder, modal)));
   modal.querySelectorAll('.ucm-confirm-btn').forEach(btn => btn.addEventListener('click', () => handleBuilderConfirmation(btn, modal, upgrades)));
   modal.querySelectorAll('.ucm-pause-btn').forEach(btn => btn.addEventListener('click', () => handleBuilderPause(btn, modal, upgrades)));
+  modal.querySelectorAll('.ucm-resume-from-btn').forEach(btn => btn.addEventListener('click', () => handleResumeFrom(btn, modal, upgrades)));
   modal.querySelector('.ucm-confirm-all').addEventListener('click', async () => {
     modal.remove();
     const container = document.getElementById("builders-container");
@@ -1355,6 +2073,46 @@ async function handleBuilderPause(btn, modal, upgrades) {
   } catch (err) {
     console.error('Pause failed:', err); alert('Failed to pause builder');
     btn.disabled=false; btn.textContent=`⏸️ Not Started — Pause ${bLabel}`;
+  }
+}
+
+async function handleResumeFrom(btn, modal, upgrades) {
+  const b = btn.dataset.builder;
+  const fromIndex = parseInt(btn.dataset.fromIndex);
+  const bd = upgrades.find(u => u.builder === b);
+  if (!bd) return;
+  const resumeUpgrade = bd.finished[fromIndex].upgradeName;
+  const toRequeue = [
+    ...bd.finished.slice(fromIndex).map(f => f.upgradeName),
+    bd.nowActive.upgradeName
+  ];
+  if (!confirm(`"${resumeUpgrade}" didn't start?\n\nThis will requeue "${resumeUpgrade}" and everything after it so you can review from there.`)) return;
+  btn.disabled = true; btn.textContent = 'Rewinding…';
+  try {
+    const params = new URLSearchParams({
+      action: 'confirm_upgrade_start',
+      username: window.COC_USERNAME,
+      builder: b,
+      upgradeName: resumeUpgrade,
+      startTime: '',
+      confirmAction: 'rewind',
+      differentUpgrade: '',
+      requeueUpgrades: toRequeue.join(',')
+    });
+    const res  = await fetch(API_BASE + '?' + params.toString());
+    const data = await res.json();
+    if (data.error) { alert('Error: '+data.error); btn.disabled=false; btn.textContent='↩ Resume from here'; return; }
+    // Re-fetch only the finished upgrades state and rebuild the modal — no full page refresh
+    const res2 = await fetch(endpoint("check_finished_upgrades"));
+    const data2 = await res2.json();
+    console.log('[rewind] check_finished_upgrades response:', JSON.stringify(data2));
+    modal.remove();
+    if (data2.finishedUpgrades && data2.finishedUpgrades.length > 0) {
+      showUpgradeConfirmationModal(data2.finishedUpgrades);
+    }
+  } catch (err) {
+    console.error('Rewind failed:', err); alert('Failed to rewind builder');
+    btn.disabled=false; btn.textContent='↩ Resume from here';
   }
 }
 
@@ -1522,6 +2280,108 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
   });
 }
 
+/* =========================
+   FINISH UPGRADE (MANUAL)
+   ========================= */
+function showFinishUpgradeModal(builderNumber, currentUpgrade, nextUpgrade) {
+  document.querySelector('.fim-overlay')?.remove();
+  const imgSrc     = getUpgradeImage(currentUpgrade);
+  const nextImgSrc = getUpgradeImage(nextUpgrade);
+  const overlay = document.createElement('div');
+  overlay.className = 'fim-overlay';
+  overlay.innerHTML = `
+    <div class="fim-modal">
+      <div class="fim-header">
+        <h3>Finish Upgrade?</h3>
+      </div>
+      <div class="fim-body">
+        <div class="fim-upgrade-row">
+          <img src="${imgSrc}" class="fim-upgrade-img" onerror="this.src='Images/Upgrades/PH.png'" alt="${currentUpgrade}" />
+          <div class="fim-upgrade-name">${formatUpgradeName(currentUpgrade)}</div>
+        </div>
+        <div class="fim-toggle-row">
+          <div class="fim-next-info">
+            <img src="${nextImgSrc}" class="fim-next-img" onerror="this.src='Images/Upgrades/PH.png'" alt="${nextUpgrade}" />
+            <span>Start <strong>${formatUpgradeName(nextUpgrade)}</strong> immediately?</span>
+          </div>
+          <label class="fim-toggle-switch">
+            <input type="checkbox" id="fim-start-next" checked />
+            <span class="fim-toggle-slider"></span>
+          </label>
+        </div>
+        <div class="fim-toggle-label" id="fim-toggle-label">Next upgrade will start immediately ✓</div>
+      </div>
+      <div class="fim-footer">
+        <button class="fim-cancel-btn">Cancel</button>
+        <button class="fim-confirm-btn">Finish Upgrade ✅</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const toggle = overlay.querySelector('#fim-start-next');
+  const label  = overlay.querySelector('#fim-toggle-label');
+  toggle.addEventListener('change', () => {
+    label.textContent = toggle.checked
+      ? 'Next upgrade will start immediately ✓'
+      : 'Next upgrade will be paused ⏸';
+    label.style.color = toggle.checked ? '#81c784' : '#ffb74d';
+  });
+
+  overlay.querySelector('.fim-cancel-btn').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('.fim-confirm-btn').addEventListener('click', () => {
+    const startNext = toggle.checked;
+    overlay.remove();
+    // Instant DOM feedback — swap card to show next upgrade immediately
+    const card = document.querySelector(`.builder-card[data-builder="${builderNumber}"]`);
+    if (card) {
+      const nextImg = getUpgradeImage(nextUpgrade);
+      const iconEl = card.querySelector('.current-upgrade-icon');
+      if (iconEl) { iconEl.src = nextImg; iconEl.alt = nextUpgrade; }
+      const upgradeEl = card.querySelector('.builder-upgrade');
+      if (upgradeEl) upgradeEl.innerHTML = formatUpgradeName(nextUpgrade);
+      const durationEl = card.querySelector('.editable-card-duration');
+      if (durationEl) durationEl.textContent = 'Syncing…';
+      const finishEl = card.querySelector('.builder-finish');
+      if (finishEl) finishEl.textContent = 'Syncing…';
+      const nextEl = card.querySelector('.builder-next');
+      if (nextEl) nextEl.textContent = 'Syncing…';
+      const finishBtn = card.querySelector('.finish-upgrade-btn');
+      if (finishBtn) finishBtn.style.display = 'none';
+    }
+    showRefreshIndicator('refreshing');
+    finishUpgradeNow(builderNumber, currentUpgrade, startNext)
+      .then(data => {
+        // Patch card immediately from API response — no extra fetch
+        if (card && data?.newActive) {
+          const { durationHr, finishTime, nextUpgrade: nextInQueue } = data.newActive;
+          const durationEl = card.querySelector('.editable-card-duration');
+          if (durationEl) durationEl.textContent = durationHr;
+          const finishEl = card.querySelector('.builder-finish');
+          if (finishEl) finishEl.textContent = 'Finishes: ' + formatFinishTime(finishTime);
+          const nextEl = card.querySelector('.builder-next');
+          if (nextEl) nextEl.innerHTML = `<img src="${getUpgradeImage(nextInQueue)}" class="next-upgrade-icon" alt="${nextInQueue}" onerror="this.src='Images/Upgrades/PH.png'" /> ▶ Next: ${nextInQueue}`;
+          const finishBtn = card.querySelector('.finish-upgrade-btn');
+          if (finishBtn) finishBtn.style.display = '';
+        }
+      })
+      .catch(err => console.error('Finish upgrade API failed:', err))
+      .finally(() => refreshDashboardFast());
+  });
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+async function finishUpgradeNow(builderNumber, currentUpgrade, startNext) {
+  const params = new URLSearchParams({
+    action:      'finish_upgrade',
+    username:    window.COC_USERNAME,
+    builder:     `Builder_${builderNumber}`,
+    upgradeName: currentUpgrade,
+    startNext:   startNext ? 'true' : 'false'
+  });
+  const res  = await fetch(API_BASE + '?' + params.toString());
+  return await res.json();
+}
+
 function wirePausedBuilderButtons() {
   document.querySelectorAll('.start-builder-btn').forEach(btn => {
     btn.addEventListener('click', e => {
@@ -1567,30 +2427,397 @@ async function bootApp() {
   renderSkeletonCards(6);
   await refreshDashboard();
   startAutoRefresh();
+  setupPullToRefresh(refreshDashboard);
   startLiveCountdown();
   wireApprenticeBoost();
   wireBoostSimulation();
+  wireBoostLevel();
   wireBoostFocusNavigation();
   wireBuilderCardClicks();
   wireImageButtons();
+  wireSearchFeature();
   setTimeout(() => checkForFinishedUpgrades(true), 1500);
+
+  // Jump to a specific upgrade if navigated here from the Buildings page
+  const pendingJump = localStorage.getItem('bldg_jump');
+  if (pendingJump) {
+    localStorage.removeItem('bldg_jump');
+    try {
+      const { builder, upgrade } = JSON.parse(pendingJump);
+      waitForBuilderCard(builder).then(() => jumpToUpgrade(builder, upgrade)).catch(() => {});
+    } catch(e) {}
+  }
 }
 
 function switchUser() {
-  localStorage.removeItem("coc_username");
-  window.COC_USERNAME = null;
-  // Clear the page then show login — avoids reload race condition
-  document.getElementById("builders-container").innerHTML = "";
-  document.querySelector('.upgrade-confirmation-modal-overlay')?.remove();
-  showLoginScreen(async (confirmedUsername) => {
-    window.COC_USERNAME = confirmedUsername;
-    location.reload(); // reload fresh with new username now stored
+  // Remove any existing profile popup first (toggle behaviour)
+  const existing = document.getElementById("profile-popup");
+  if (existing) { existing.remove(); return; }
+
+  const username = window.COC_USERNAME || localStorage.getItem("coc_username") || "—";
+  const tag      = localStorage.getItem("coc_tag");
+  const thLevel  = localStorage.getItem("coc_th_level");
+
+  const popup = document.createElement("div");
+  popup.id = "profile-popup";
+  popup.style.cssText = [
+    "position:fixed", "top:64px", "right:16px", "z-index:99990",
+    "background:#1e1e2e", "border:1px solid #333", "border-radius:12px",
+    "padding:20px 22px", "min-width:200px", "max-width:260px",
+    "box-shadow:0 8px 24px rgba(0,0,0,0.6)", "font-family:sans-serif",
+    "color:#fff", "text-align:left"
+  ].join(";");
+
+  const tagLine    = tag      ? `<div style="color:#aaa;font-size:0.8rem;margin-top:4px">${tag}</div>` : "";
+  const thLine     = thLevel  ? `<div style="color:#f5c842;font-size:0.8rem;margin-top:2px">Town Hall ${thLevel}</div>` : "";
+
+  popup.innerHTML = `
+    <div style="font-weight:700;font-size:1rem;margin-bottom:2px">${username}</div>
+    ${tagLine}
+    ${thLine}
+    <hr style="border:none;border-top:1px solid #333;margin:14px 0;">
+    <button id="profile-logout-btn" style="
+      width:100%;padding:10px;border-radius:8px;border:none;
+      background:#ef4444;color:#fff;font-size:0.9rem;
+      font-weight:600;cursor:pointer;font-family:sans-serif;
+    ">Log Out</button>
+  `;
+
+  document.body.appendChild(popup);
+
+  popup.querySelector("#profile-logout-btn").addEventListener("click", () => {
+    popup.remove();
+    localStorage.removeItem("coc_username");
+    localStorage.removeItem("coc_tag");
+    localStorage.removeItem("coc_th_level");
+    window.COC_USERNAME = null;
+    document.getElementById("builders-container").innerHTML = "";
+    document.querySelector('.upgrade-confirmation-modal-overlay')?.remove();
+    showLoginScreen(async (confirmedUsername) => {
+      window.COC_USERNAME = confirmedUsername;
+      location.reload();
+    });
   });
-} 
+
+  // Close when clicking outside
+  function onOutsideClick(e) {
+    const switchBtn = document.querySelector('[onclick="switchUser()"]');
+    if (!popup.contains(e.target) && e.target !== switchBtn) {
+      popup.remove();
+      document.removeEventListener("click", onOutsideClick, true);
+    }
+  }
+  // Defer listener to avoid catching the current click
+  setTimeout(() => document.addEventListener("click", onOutsideClick, true), 0);
+
+  // Close on Escape
+  function onEsc(e) {
+    if (e.key === "Escape") {
+      popup.remove();
+      document.removeEventListener("keydown", onEsc);
+    }
+  }
+  document.addEventListener("keydown", onEsc);
+}
+/* =========================
+   SEARCH FEATURE
+   ========================= */
+let searchDebounceTimer = null;
+
+function openSearchModal() {
+  document.getElementById('searchModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('searchInput')?.focus(), 50);
+}
+
+function closeSearchModal() {
+  document.getElementById('searchModal').style.display = 'none';
+  const input = document.getElementById('searchInput');
+  const results = document.getElementById('searchResults');
+  if (input) input.value = '';
+  if (results) results.innerHTML = '<div class="search-hint">Start typing to search upgrades across all builders</div>';
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escapeAttr(str) {
+  if (!str) return '';
+  return str.replace(/"/g, '&quot;');
+}
+
+async function performSearch(query) {
+  const resultsEl = document.getElementById('searchResults');
+  if (!resultsEl) return;
+  if (!query || query.trim().length < 2) {
+    resultsEl.innerHTML = '<div class="search-hint">Type at least 2 characters to search</div>';
+    return;
+  }
+
+  resultsEl.innerHTML = '<div class="search-loading">Searching all builders...</div>';
+
+  const q = query.trim().toLowerCase();
+  const allResults = [];
+
+  // Fetch all 6 builders in parallel for speed
+  const fetches = Array.from({ length: 6 }, (_, i) =>
+    fetchBuilderDetails((i + 1).toString()).catch(e => {
+      console.warn(`Search: failed to fetch builder ${i + 1}:`, e);
+      return null;
+    })
+  );
+  const results = await Promise.all(fetches);
+
+  results.forEach((data, idx) => {
+    if (!data?.upgrades) return;
+    const builderNum = (idx + 1).toString();
+    data.upgrades.forEach(upg => {
+      // Normalise query: treat SC icons as * so "lvl *" matches "Lvl *"
+      const name = (upg.upgrade || '').toLowerCase();
+      if (name.includes(q)) {
+        allResults.push({
+          builder: builderNum,
+          upgradeName: upg.upgrade,
+          start: upg.start,
+          end: upg.end,
+          duration: upg.duration
+        });
+      }
+    });
+  });
+
+  if (allResults.length === 0) {
+    resultsEl.innerHTML = `<div class="search-no-results">No upgrades found for "<strong style="color:#ccc">${escapeHtml(query)}</strong>"</div>`;
+    return;
+  }
+
+  resultsEl.innerHTML = allResults.map(r => {
+    const isSC   = r.upgradeName && r.upgradeName.includes('*');
+    const imgSrc = isSC ? getSuperchargeImage(r.upgradeName) : getUpgradeImage(r.upgradeName);
+    const nameHtml = isSC
+      ? `<span style="color:#093DBA">${formatUpgradeName(escapeHtml(r.upgradeName))}</span>`
+      : escapeHtml(r.upgradeName);
+    return `
+    <div class="search-result-item">
+      <div class="search-result-main">
+        <img src="${imgSrc}" class="search-result-icon"
+             onerror="this.src='Images/Upgrades/PH.png'" alt="" />
+        <div class="search-result-info">
+          <div class="search-result-name">${nameHtml}</div>
+          <div class="search-result-meta">
+            <span class="search-builder-tag">Builder ${r.builder}</span>
+            <span class="search-duration">${escapeHtml(r.duration)}</span>
+          </div>
+          <div class="search-result-dates">${escapeHtml(r.start)} → ${escapeHtml(r.end)}</div>
+        </div>
+      </div>
+      <div class="search-result-footer">
+        <button class="search-jump-btn"
+                data-builder="${r.builder}"
+                data-upgrade-name="${escapeAttr(r.upgradeName)}">
+          Jump to ↗
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function findUpgradeItemByName(upgradeName) {
+  return Array.from(document.querySelectorAll('.upgrade-item'))
+    .find(el => el.dataset.upgradeName === upgradeName);
+}
+
+function waitForUpgradeItem(upgradeName, timeout = 6000) {
+  return new Promise((resolve, reject) => {
+    const existing = findUpgradeItemByName(upgradeName);
+    if (existing) { resolve(existing); return; }
+
+    const container = document.getElementById('builders-container');
+    const observer = new MutationObserver(() => {
+      const el = findUpgradeItemByName(upgradeName);
+      if (el) { observer.disconnect(); clearTimeout(timer); resolve(el); }
+    });
+    observer.observe(container, { childList: true, subtree: true });
+
+    const timer = setTimeout(() => {
+      observer.disconnect();
+      reject(new Error('Upgrade item not found: ' + upgradeName));
+    }, timeout);
+  });
+}
+
+function waitForBuilderCard(builderNumber, timeout = 10000) {
+  return new Promise((resolve, reject) => {
+    const container = document.getElementById('builders-container');
+    const existing = container?.querySelector(`.builder-card[data-builder="${builderNumber}"]`);
+    if (existing) { resolve(existing); return; }
+
+    const observer = new MutationObserver(() => {
+      const el = container?.querySelector(`.builder-card[data-builder="${builderNumber}"]`);
+      if (el) { observer.disconnect(); clearTimeout(timer); resolve(el); }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    const timer = setTimeout(() => {
+      observer.disconnect();
+      reject(new Error('Builder card not found: ' + builderNumber));
+    }, timeout);
+  });
+}
+
+async function jumpToUpgrade(builderNumber, upgradeName) {
+  closeSearchModal();
+
+  const container = document.getElementById('builders-container');
+  const card = container.querySelector(`.builder-card[data-builder="${builderNumber}"]`);
+  if (!card) return;
+
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  if (!openBuilders.includes(builderNumber)) {
+    card.click();
+  }
+
+  try {
+    await waitForUpgradeItem(upgradeName, 6000);
+  } catch (e) {
+    console.warn('Search jump: could not find upgrade item:', e);
+    return;
+  }
+
+  await new Promise(r => setTimeout(r, 200));
+
+  const upgradeItem = findUpgradeItemByName(upgradeName);
+  if (upgradeItem) {
+    upgradeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    upgradeItem.classList.add('search-highlight');
+    setTimeout(() => upgradeItem.classList.remove('search-highlight'), 3000);
+  }
+}
+
+function wireSearchFeature() {
+  const btn     = document.getElementById('searchBtn');
+  const modal   = document.getElementById('searchModal');
+  const closeBtn = document.getElementById('searchModalClose');
+  const input   = document.getElementById('searchInput');
+  const results = document.getElementById('searchResults');
+
+  btn?.addEventListener('click', openSearchModal);
+  closeBtn?.addEventListener('click', closeSearchModal);
+
+  modal?.addEventListener('click', e => {
+    if (e.target === modal) closeSearchModal();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && modal?.style.display !== 'none') closeSearchModal();
+  });
+
+  input?.addEventListener('input', () => {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => performSearch(input.value), 300);
+  });
+
+  results?.addEventListener('click', e => {
+    const jumpBtn = e.target.closest('.search-jump-btn');
+    if (!jumpBtn) return;
+    const builder = jumpBtn.dataset.builder;
+    const upgradeName = jumpBtn.dataset.upgradeName;
+    if (builder && upgradeName) jumpToUpgrade(builder, upgradeName);
+  });
+}
+
+/* =========================
+   REGISTRATION
+   Called from the "New User" tab in showLoginScreen().
+   Parses village JSON, extracts tag + TH level, POSTs to register_user.
+   ========================= */
+async function doRegister(nameInput, jsonInput, errEl, loadingEl, btn, overlay, onConfirm) {
+  const rawName = nameInput.value.replace(/[^a-zA-Z0-9_ ]/g, "").trim();
+  const name = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+  if (!name) {
+    errEl.textContent = "Please enter your in-game name.";
+    errEl.style.display = "block";
+    nameInput.focus();
+    return;
+  }
+
+  const rawJson = jsonInput.value.trim();
+  if (!rawJson) {
+    errEl.textContent = "Please paste your village JSON or upload a file.";
+    errEl.style.display = "block";
+    return;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(rawJson);
+  } catch (e) {
+    errEl.textContent = "Invalid JSON — make sure you copied it fully.";
+    errEl.style.display = "block";
+    return;
+  }
+
+  if (!parsed.tag) {
+    errEl.textContent = "JSON does not contain a player tag. Is this a village export?";
+    errEl.style.display = "block";
+    return;
+  }
+
+  // Extract TH level: Town Hall is dataId 1000001
+  let thLevel = null;
+  if (Array.isArray(parsed.buildings)) {
+    const thBuilding = parsed.buildings.find(b => b.data === 1000001);
+    if (thBuilding) thLevel = thBuilding.lvl;
+  }
+
+  errEl.style.display = "none";
+  loadingEl.style.display = "block";
+  btn.disabled = true;
+  btn.style.opacity = "0.6";
+
+  try {
+    const body = new URLSearchParams({
+      action: "register_user",
+      username: name,
+      tag: parsed.tag,
+      th_level: thLevel !== null ? String(thLevel) : "",
+      raw_json: rawJson,
+    });
+
+    const res = await fetch(REGISTER_USER_URL(), { method: "POST", body });
+    const data = await res.json();
+
+    if (data.error) {
+      loadingEl.style.display = "none";
+      btn.disabled = false;
+      btn.style.opacity = "1";
+      errEl.textContent = data.error;
+      errEl.style.display = "block";
+      return;
+    }
+
+    // Success — store session data
+    localStorage.setItem("coc_username", name);
+    if (parsed.tag)    localStorage.setItem("coc_tag", parsed.tag);
+    if (thLevel !== null) localStorage.setItem("coc_th_level", String(thLevel));
+
+    overlay.remove();
+    onConfirm(name);
+  } catch (e) {
+    loadingEl.style.display = "none";
+    btn.disabled = false;
+    btn.style.opacity = "1";
+    errEl.textContent = "Network error — please try again.";
+    errEl.style.display = "block";
+  }
+}
+
 /* =========================
    LOGIN SCREEN
-   — Shows password field only for usernames that have
-     a password set in USER_PASSWORDS above.
+   — Two tabs: "Existing User" (username + optional password)
+               "New User"      (in-game name + village JSON upload)
    ========================= */
 function showLoginScreen(onConfirm) {
   const overlay = document.createElement("div");
@@ -1601,7 +2828,7 @@ function showLoginScreen(onConfirm) {
     "display:flex", "align-items:center", "justify-content:center",
     "padding:24px", "box-sizing:border-box"
   ].join(";");
-   
+
   const sharedInputStyle = `
     width:100%; box-sizing:border-box;
     padding:14px 16px; border-radius:10px;
@@ -1613,62 +2840,148 @@ function showLoginScreen(onConfirm) {
   overlay.innerHTML = `
     <div style="
       background:#1e1e2e; border-radius:16px; padding:32px 28px;
-      width:100%; max-width:360px; box-shadow:0 8px 32px rgba(0,0,0,0.6);
+      width:100%; max-width:380px; box-shadow:0 8px 32px rgba(0,0,0,0.6);
       font-family:sans-serif; color:#fff; text-align:center;
     ">
       <div style="font-size:48px; margin-bottom:8px">⚒️</div>
-      <h2 style="margin:0 0 6px; font-size:1.3rem">Builder Tracker</h2>
-      <p style="margin:0 0 24px; color:#aaa; font-size:0.9rem">Enter your credentials to continue</p>
-      <input
-        id="login-username-input"
-        type="text"
-        placeholder="Username"
-        autocomplete="username"
-        autocapitalize="off"
-        style="${sharedInputStyle} margin-bottom:10px;"
-      />
-      <div id="login-password-wrap" style="margin-bottom:10px;">
-        <input
-          id="login-password-input"
-          type="password"
-          placeholder="Password"
-          autocomplete="current-password"
-          style="${sharedInputStyle}"
-        />
+      <h2 style="margin:0 0 20px; font-size:1.3rem">Builder Tracker</h2>
+
+      <!-- Tabs -->
+      <div style="display:flex; gap:8px; margin-bottom:24px; background:#2a2a3e; border-radius:10px; padding:4px;">
+        <button id="tab-existing" style="
+          flex:1; padding:10px; border-radius:8px; border:none; cursor:pointer;
+          font-size:0.9rem; font-weight:600; font-family:sans-serif;
+          background:#f5c842; color:#1e1e2e; transition:all 0.2s;
+        ">Existing User</button>
+        <button id="tab-new" style="
+          flex:1; padding:10px; border-radius:8px; border:none; cursor:pointer;
+          font-size:0.9rem; font-weight:600; font-family:sans-serif;
+          background:transparent; color:#aaa; transition:all 0.2s;
+        ">New User</button>
       </div>
-      <button id="login-confirm-btn" style="
-        width:100%; padding:14px; border-radius:10px;
-        border:none; background:#5865f2; color:#fff;
-        font-size:1rem; font-weight:600; cursor:pointer;
-        transition:background 0.2s; font-family:sans-serif;
-        margin-top:6px;
-      ">Continue →</button>
-      <p id="login-error" style="color:#f87171; font-size:0.85rem; margin:12px 0 0; display:none">
-        Please enter a username.
-      </p>
+
+      <!-- Existing User Panel -->
+      <div id="panel-existing">
+        <p style="margin:0 0 16px; color:#aaa; font-size:0.9rem">Enter your credentials to continue</p>
+        <input
+          id="login-username-input"
+          type="text"
+          placeholder="Username"
+          autocomplete="username"
+          autocapitalize="off"
+          style="${sharedInputStyle} margin-bottom:10px;"
+        />
+        <div id="login-password-wrap" style="margin-bottom:10px;">
+          <input
+            id="login-password-input"
+            type="password"
+            placeholder="Password"
+            autocomplete="current-password"
+            style="${sharedInputStyle}"
+          />
+        </div>
+        <button id="login-confirm-btn" style="
+          width:100%; padding:14px; border-radius:10px;
+          border:none; background:#5865f2; color:#fff;
+          font-size:1rem; font-weight:600; cursor:pointer;
+          transition:background 0.2s; font-family:sans-serif;
+          margin-top:6px;
+        ">Continue →</button>
+        <p id="login-error" style="color:#f87171; font-size:0.85rem; margin:12px 0 0; display:none">
+          Please enter a username.
+        </p>
+      </div>
+
+      <!-- New User Panel -->
+      <div id="panel-new" style="display:none;">
+        <p style="margin:0 0 16px; color:#aaa; font-size:0.9rem">
+          Upload your village data to create an account
+        </p>
+        <input
+          id="reg-name-input"
+          type="text"
+          placeholder="Your in-game name"
+          autocapitalize="words"
+          style="${sharedInputStyle} margin-bottom:10px;"
+        />
+        <textarea
+          id="reg-json-input"
+          placeholder="Paste your village JSON here..."
+          rows="6"
+          style="${sharedInputStyle} margin-bottom:6px; resize:vertical; font-family:monospace; font-size:0.8rem; line-height:1.4;"
+        ></textarea>
+        <label id="reg-file-label" style="
+          display:block; padding:10px; border-radius:8px; border:2px dashed #444;
+          color:#aaa; font-size:0.85rem; cursor:pointer; margin-bottom:12px;
+          transition:border-color 0.2s; box-sizing:border-box;
+        ">
+          Or upload a .json file
+          <input id="reg-file-input" type="file" accept=".json,application/json" style="display:none;" />
+        </label>
+        <button id="reg-confirm-btn" style="
+          width:100%; padding:14px; border-radius:10px;
+          border:none; background:#f5c842; color:#1e1e2e;
+          font-size:1rem; font-weight:600; cursor:pointer;
+          transition:background 0.2s; font-family:sans-serif;
+        ">Create Account</button>
+        <p id="reg-error" style="color:#f87171; font-size:0.85rem; margin:12px 0 0; display:none">
+          Please fill in all fields.
+        </p>
+        <p id="reg-loading" style="color:#aaa; font-size:0.85rem; margin:12px 0 0; display:none">
+          Registering...
+        </p>
+      </div>
     </div>
   `;
 
   document.body.appendChild(overlay);
 
+  // --- Tab switching ---
+  const tabExisting   = overlay.querySelector("#tab-existing");
+  const tabNew        = overlay.querySelector("#tab-new");
+  const panelExisting = overlay.querySelector("#panel-existing");
+  const panelNew      = overlay.querySelector("#panel-new");
+
+  function activateTab(tab) {
+    if (tab === "existing") {
+      tabExisting.style.background = "#f5c842";
+      tabExisting.style.color = "#1e1e2e";
+      tabNew.style.background = "transparent";
+      tabNew.style.color = "#aaa";
+      panelExisting.style.display = "block";
+      panelNew.style.display = "none";
+      setTimeout(() => overlay.querySelector("#login-username-input")?.focus(), 50);
+    } else {
+      tabNew.style.background = "#f5c842";
+      tabNew.style.color = "#1e1e2e";
+      tabExisting.style.background = "transparent";
+      tabExisting.style.color = "#aaa";
+      panelNew.style.display = "block";
+      panelExisting.style.display = "none";
+      setTimeout(() => overlay.querySelector("#reg-name-input")?.focus(), 50);
+    }
+  }
+
+  tabExisting.addEventListener("click", () => activateTab("existing"));
+  tabNew.addEventListener("click", () => activateTab("new"));
+
+  // --- Existing user login ---
   const usernameInput = overlay.querySelector("#login-username-input");
   const passwordWrap  = overlay.querySelector("#login-password-wrap");
   const passwordInput = overlay.querySelector("#login-password-input");
   const btn           = overlay.querySelector("#login-confirm-btn");
   const err           = overlay.querySelector("#login-error");
 
-  // Password field is always visible
-
   setTimeout(() => usernameInput.focus(), 100);
 
-  function doLogin() {
-    const val = usernameInput.value.replace(/[^a-zA-Z0-9_]/g, "").trim();
+  async function doLogin() {
+    const raw = usernameInput.value.replace(/[^a-zA-Z0-9_]/g, "").trim();
+    const val = raw.charAt(0).toUpperCase() + raw.slice(1);
     if (!val) {
       err.textContent = "Please enter a username.";
       err.style.display = "block";
       return;
     }
-    // Check password if this username has one configured
     if (USER_PASSWORDS[val] !== undefined) {
       passwordWrap.style.display = "block";
       if (passwordInput.value !== USER_PASSWORDS[val]) {
@@ -1682,6 +2995,15 @@ function showLoginScreen(onConfirm) {
     }
     err.style.display = "none";
     localStorage.setItem("coc_username", val);
+
+    // Fetch stored profile data (th_level, tag) from the Registrations sheet
+    try {
+      const res  = await fetch(`${API_BASE}?action=get_town_hall_level&username=${encodeURIComponent(val)}`);
+      const data = await res.json();
+      if (data.th_level) localStorage.setItem("coc_th_level", String(data.th_level));
+      if (data.tag)      localStorage.setItem("coc_tag", data.tag);
+    } catch { /* non-blocking — proceed without it */ }
+
     overlay.remove();
     onConfirm(val);
   }
@@ -1691,4 +3013,54 @@ function showLoginScreen(onConfirm) {
   passwordInput.addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
   btn.addEventListener("mouseenter", () => btn.style.background = "#4752c4");
   btn.addEventListener("mouseleave", () => btn.style.background = "#5865f2");
+
+  // --- New user registration ---
+  const regNameInput  = overlay.querySelector("#reg-name-input");
+  const regJsonInput  = overlay.querySelector("#reg-json-input");
+  const regFileInput  = overlay.querySelector("#reg-file-input");
+  const regFileLabel  = overlay.querySelector("#reg-file-label");
+  const regBtn        = overlay.querySelector("#reg-confirm-btn");
+  const regErr        = overlay.querySelector("#reg-error");
+  const regLoading    = overlay.querySelector("#reg-loading");
+
+  // File upload → fill textarea
+  regFileInput.addEventListener("change", () => {
+    const file = regFileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      regJsonInput.value = e.target.result;
+      regFileLabel.style.borderColor = "#f5c842";
+      regFileLabel.style.color = "#f5c842";
+    };
+    reader.onerror = () => {
+      regErr.textContent = "Could not read file.";
+      regErr.style.display = "block";
+    };
+    reader.readAsText(file);
+  });
+
+  regFileLabel.addEventListener("dragover", e => {
+    e.preventDefault();
+    regFileLabel.style.borderColor = "#f5c842";
+  });
+  regFileLabel.addEventListener("dragleave", () => {
+    regFileLabel.style.borderColor = "#444";
+  });
+  regFileLabel.addEventListener("drop", e => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      regJsonInput.value = ev.target.result;
+      regFileLabel.style.borderColor = "#f5c842";
+      regFileLabel.style.color = "#f5c842";
+    };
+    reader.readAsText(file);
+  });
+
+  regBtn.addEventListener("click", () => doRegister(regNameInput, regJsonInput, regErr, regLoading, regBtn, overlay, onConfirm));
+  regBtn.addEventListener("mouseenter", () => regBtn.style.background = "#d4a800");
+  regBtn.addEventListener("mouseleave", () => regBtn.style.background = "#f5c842");
 }

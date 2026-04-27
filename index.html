@@ -10,45 +10,42 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h2>COC PLANNER</h2>
-  <button onclick="switchUser()" style="
+  <header class="site-header">
+    <h2>COC PLANNER</h2>
+    <button onclick="switchUser()" style="
   display:inline-flex; align-items:center; gap:6px;
   background:rgba(255,255,255,0.06);
-  border:1.5px solid rgba(255,255,255,0.12);
+  border:1px solid rgba(245,208,76,0.5);
   border-radius:10px; padding:8px 14px;
   color:#9999a8; font-family:'Lexend',sans-serif;
   font-size:13px; font-weight:600; cursor:pointer;
   transition:all .18s;
-" onmouseover="this.style.borderColor='rgba(245,208,76,0.4)';this.style.color='#f5d04c'"
-   onmouseout="this.style.borderColor='rgba(255,255,255,0.12)';this.style.color='#9999a8'">
+" onmouseover="this.style.borderColor='rgba(245,208,76,0.9)';this.style.color='#f5d04c'"
+   onmouseout="this.style.borderColor='rgba(245,208,76,0.5)';this.style.color='#9999a8'">
   ⇄ Switch User
 </button>
-  
+  </header>
+
   <!-- IMAGE ACTION BUTTONS -->
   <div class="action-button">
-    <a href="schedule.html" style="
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(245,208,76,0.12);
-  border: 1.5px solid rgba(245,208,76,0.35);
-  border-radius: 10px;
-  padding: 8px 16px;
-  color: #f5d04c;
-  font-family: 'Lexend', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  text-decoration: none;
-  transition: background 0.18s;
-" onmouseover="this.style.background='rgba(245,208,76,0.22)'" 
-   onmouseout="this.style.background='rgba(245,208,76,0.12)'">
-  📅
-</a>
+    <a href="schedule.html">
+      <img src="Images/calendar.png" class="image-button" width="50" height="50">
+    </a>
+
     <!-- Builder Snack -->
     <img
       src="Images/BuilderSnack.png"
       alt="Apply 1-Hour Boost"
       id="oneHourBoostBtn"
+      class="image-button"
+      width="50"
+      height="50"
+    />
+    <!-- Builder Potion -->
+    <img
+      src="Images/BuilderPotion.png"
+      alt="Apply Builder Potion"
+      id="builderPotionBtn"
       class="image-button"
       width="50"
       height="50"
@@ -63,14 +60,58 @@
       height="50"
       title="Battle Pass Reduction"
     />
+    <!-- Buildings -->
+    <img
+      src="Images/Buildings.png"
+      alt="Buildings"
+      id="buildingBtn"
+      class="image-button"
+      width="50"
+      height="50"
+    />
+    <!-- Search -->
+    <img
+      src="Images/search.png"
+      alt="Search Upgrades"
+      id="searchBtn"
+      class="image-button"
+      width="50"
+      height="50"
+      title="Search Upgrades"
+    />
   </div>
+
+  <!-- SEARCH MODAL -->
+  <div id="searchModal" class="search-modal-overlay" style="display:none;">
+    <div class="search-modal-content">
+      <div class="search-modal-header">
+        <h3>Search Upgrades</h3>
+        <button id="searchModalClose" class="search-close-btn">✕</button>
+      </div>
+      <input type="text" id="searchInput" class="search-input" placeholder="e.g. Super Wizard Tower #1 Lvl 2" autocomplete="off" spellcheck="false" />
+      <div class="search-sc-hint">
+        Supercharges: search <code>Lvl *</code>, <code>Lvl **</code>, <code>Lvl ***</code>
+        &nbsp;<span style="color:#093DBA;font-weight:700">Archer Tower #1 Lvl <img src="Images/SCicon.png" style="height:1em;vertical-align:middle;margin:0 1px;" alt="SC"></span>
+      </div>
+      <div id="searchResults" class="search-results">
+        <div class="search-hint">Start typing to search upgrades across all builders</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOWN HALL INFO SECTION -->
+  <div id="th-info-section" class="th-info-section"></div>
 
   <!-- BUILDERS GRID -->
   <section id="builders-container" class="builders-container">
     <!-- Builder cards injected here by JS -->
   </section>
 
-  <h4>Boost Plan</h4>
+  <div class="boost-plan-header">
+    <span id="boostLevelBadge" class="boost-level-badge">8 Lvl</span>
+    <h4>Boost Plan</h4>
+    <button id="runBoostSimBtn" title="Run Boost Simulation">⟳</button>
+  </div>
   <div id="boostFocusWrapper">
     <button class="boost-nav" id="boostPrev" disabled>
       ←
@@ -112,15 +153,13 @@
     </button>
   </div>
 
-  <button id="runBoostSimBtn">
-    Run Boost Simulation
-  </button>
 
-  <div id="lastRefreshed" style="margin: 10px 0; font-size: 13px; color: #555;">
+  <div id="lastRefreshed" style="margin: 5px 0; font-size: 9px; color: #555;">
     Last refreshed: —
   </div>
 
   <!-- SCRIPT MUST BE LAST -->
+  <script src="imagemap.js"></script>
   <script src="script.js"></script>
   
   <!-- Vercel Speed Insights -->
@@ -128,5 +167,8 @@
     window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
   </script>
   <script defer src="/_vercel/speed-insights/script.js"></script>
+  <div id="refresh-indicator" class="refresh-indicator hidden">
+    <span class="refresh-indicator-icon"></span>
+  </div>
 </body>
 </html>
