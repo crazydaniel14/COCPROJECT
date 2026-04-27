@@ -374,12 +374,17 @@
     .prog-card-body { padding: 10px 14px 14px; display: flex; flex-direction: column; gap: 9px; }
     .prog-instance-row { display: flex; align-items: center; gap: 8px; }
     .prog-inst-label {
-      font-size: 11px; font-weight: 800; color: var(--gold);
-      width: 22px; flex-shrink: 0; text-align: right;
+      font-size: 10px; font-weight: 900; color: var(--gold);
+      width: 20px; height: 20px; flex-shrink: 0;
+      background: rgba(245,208,76,0.12); border: 1.5px solid rgba(245,208,76,0.3);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
     }
     .prog-bar-wrap {
       flex: 1; height: 12px; background: rgba(255,255,255,0.07); border-radius: 6px; overflow: hidden;
+      cursor: pointer; transition: box-shadow .15s;
     }
+    .prog-bar-wrap:hover  { box-shadow: 0 0 0 1.5px rgba(245,208,76,0.3); }
+    .prog-bar-wrap:active { box-shadow: 0 0 0 2px rgba(245,208,76,0.55); opacity: .85; }
     .prog-bar-fill {
       height: 100%; border-radius: 6px;
       background: linear-gradient(90deg, rgba(245,208,76,0.7), var(--gold));
@@ -397,6 +402,23 @@
       font-size: 11px; color: var(--text-dim); font-weight: 600;
       padding: 2px 0; text-align: center; font-style: italic;
     }
+
+    /* ── PROGRESS SCHEDULE SHEET ── */
+    .prog-sched-sheet {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
+      background: linear-gradient(160deg, #2a2a2f, #1e1e24);
+      border: 1.5px solid rgba(245,208,76,.3); border-bottom: none;
+      border-radius: 20px 20px 0 0; padding: 20px 20px 36px;
+      box-shadow: 0 -8px 40px rgba(0,0,0,.7); animation: sheetSlideUp .2s ease;
+    }
+    @keyframes sheetSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .prog-sheet-handle  { width: 36px; height: 4px; background: rgba(255,255,255,.2); border-radius: 2px; margin: 0 auto 16px; }
+    .prog-sheet-title   { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 14px; }
+    .prog-sheet-row     { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .prog-sheet-label   { font-size: 10px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; }
+    .prog-sheet-value   { font-size: 12px; color: #fff; font-weight: 600; text-align: right; max-width: 62%; }
+    .prog-sheet-divider { border: none; border-top: 1px solid rgba(255,255,255,.08); margin: 10px 0; }
+    .prog-sheet-none    { font-size: 12px; color: var(--text-dim); font-weight: 600; padding: 6px 0; text-align: center; font-style: italic; }
 
     /* MAX badge (compact cards only) */
     .prog-max-badge {
@@ -1184,11 +1206,11 @@
           const fillClass = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
           const valClass  = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
           const valText   = isUnknown ? `? / ${bldg.maxLevel}` : `${curLvl} / ${bldg.maxLevel}`;
-          const labelHtml = bldg.count > 1 ? `<span class="prog-inst-label">#${i + 1}</span>` : '';
+          const labelHtml = bldg.count > 1 ? `<span class="prog-inst-label">${i + 1}</span>` : '';
           return `
             <div class="prog-instance-row">
               ${labelHtml}
-              <div class="prog-bar-wrap"><div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div></div>
+              <div class="prog-bar-wrap" data-prog-bldg="${esc(bldg.name)}" data-prog-inst="${i}" data-prog-lvl="${curLvl ?? ''}" data-prog-max="${bldg.maxLevel}"><div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div></div>
               <span class="prog-inst-val ${valClass}">${valText}</span>
             </div>`;
         }).join('');
@@ -1241,7 +1263,7 @@
             </div>
             <div class="prog-card-body">
               <div class="prog-instance-row">
-                <div class="prog-bar-wrap"><div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div></div>
+                <div class="prog-bar-wrap" data-prog-bldg="${esc(hero.name)}" data-prog-inst="0" data-prog-lvl="${isUnknown ? '' : curLvl}" data-prog-max="${hero.maxLevel}"><div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div></div>
                 <span class="prog-inst-val ${valClass}">${valText}</span>
               </div>
               ${noJsonNote}
@@ -1304,6 +1326,69 @@
         localStorage.setItem('coc_prog_keep_expanded', e.target.checked);
         if (e.target.checked) pg.querySelectorAll('.prog-section').forEach(s => s.classList.add('open'));
       });
+
+      // ── Progress bar click → schedule sheet (delegated, added once) ──
+      if (!pg.dataset.hasProgListener) {
+        pg.dataset.hasProgListener = '1';
+        pg.addEventListener('click', e => {
+          const bar = e.target.closest('.prog-bar-wrap[data-prog-bldg]');
+          if (!bar) return;
+          e.stopPropagation();
+          const bldgName = bar.dataset.progBldg;
+          const instIdx  = parseInt(bar.dataset.progInst  ?? '0');
+          const curLvl   = bar.dataset.progLvl !== '' ? parseInt(bar.dataset.progLvl) : null;
+          const maxLevel = parseInt(bar.dataset.progMax   ?? '0');
+          showProgressSheet(bldgName, instIdx, curLvl, maxLevel);
+        });
+      }
+    }
+
+    /* ── PROGRESS SCHEDULE SHEET ── */
+    function showProgressSheet(bldgName, instIdx, curLvl, maxLevel) {
+      document.querySelector('.prog-sched-sheet')?.remove();
+
+      const allForBldg = allUpgrades.filter(u => {
+        const info = parseBuildingInfo(u.upgrade || '');
+        return info && info.base === bldgName;
+      });
+
+      // Narrow to specific instance when upgrade names carry instance numbers
+      const hasInstNums = allForBldg.some(u => parseBuildingInfo(u.upgrade || '')?.instance !== null);
+      let matches = allForBldg;
+      if (hasInstNums) {
+        const specific = allForBldg.filter(u =>
+          parseBuildingInfo(u.upgrade || '')?.instance === String(instIdx + 1)
+        );
+        if (specific.length > 0) matches = specific;
+      }
+
+      const instLabel = hasInstNums ? ` #${instIdx + 1}` : '';
+      const lvlText   = curLvl !== null && curLvl !== undefined ? `Lvl ${curLvl}` : '?';
+
+      let bodyHtml;
+      if (matches.length === 0) {
+        bodyHtml = `<div class="prog-sheet-none">Not currently scheduled</div>`;
+      } else {
+        bodyHtml = [...matches]
+          .sort((a, b) => a.queueIdx - b.queueIdx)
+          .map((u, idx) => `
+            ${idx > 0 ? '<hr class="prog-sheet-divider">' : ''}
+            <div class="prog-sheet-row"><span class="prog-sheet-label">Upgrade</span><span class="prog-sheet-value">${esc(u.upgrade || '—')}</span></div>
+            <div class="prog-sheet-row"><span class="prog-sheet-label">Builder</span><span class="prog-sheet-value">B${u.builderNum}</span></div>
+            <div class="prog-sheet-row"><span class="prog-sheet-label">Starts</span><span class="prog-sheet-value">${esc(u.start || '—')}</span></div>
+            <div class="prog-sheet-row"><span class="prog-sheet-label">Ends</span><span class="prog-sheet-value">${esc(u.end || '—')}</span></div>
+            <div class="prog-sheet-row"><span class="prog-sheet-label">Duration</span><span class="prog-sheet-value">${esc(u.duration || '—')}</span></div>
+          `).join('');
+      }
+
+      const s = document.createElement('div');
+      s.className = 'prog-sched-sheet';
+      s.innerHTML = `
+        <div class="prog-sheet-handle"></div>
+        <div class="prog-sheet-title">${esc(bldgName)}${esc(instLabel)} · ${esc(lvlText)} / ${maxLevel || '?'}</div>
+        ${bodyHtml}`;
+      document.body.appendChild(s);
+      setTimeout(() => document.addEventListener('click', () => document.querySelector('.prog-sched-sheet')?.remove(), { once: true }), 100);
     }
 
     /* ── INIT ── */
