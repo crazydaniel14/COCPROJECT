@@ -398,6 +398,13 @@
       padding: 2px 0; text-align: center; font-style: italic;
     }
 
+    /* MAX badge (compact cards only) */
+    .prog-max-badge {
+      flex-shrink: 0; font-size: 10px; font-weight: 800;
+      padding: 2px 7px; border-radius: 20px; line-height: 1.6;
+      background: rgba(76,175,80,0.15); color: #4caf50; border: 1.5px solid rgba(76,175,80,0.35);
+    }
+
     /* Compact maxed card */
     .prog-card--compact {
       border-top: 3px solid #4caf50; border-color: rgba(76,175,80,0.25);
@@ -1160,6 +1167,7 @@
                   <span class="prog-compact-name">${esc(bldg.name)}</span>
                   ${countTag}
                 </div>
+                <span class="prog-max-badge">MAX</span>
               </div>
             </div>`;
         }
@@ -1211,6 +1219,7 @@
               <div class="prog-compact-inner">
                 <img src="${esc(imgSrc)}" class="prog-compact-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
                 <div class="prog-compact-info"><span class="prog-compact-name">${esc(hero.name)}</span></div>
+                <span class="prog-max-badge">MAX</span>
               </div>
             </div>`;
         }
