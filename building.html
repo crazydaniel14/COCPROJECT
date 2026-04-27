@@ -379,12 +379,10 @@
       background: rgba(245,208,76,0.12); border: 1.5px solid rgba(245,208,76,0.3);
       border-radius: 50%; display: flex; align-items: center; justify-content: center;
     }
-    .prog-bar-wrap {
-      flex: 1; height: 12px; background: rgba(255,255,255,0.07); border-radius: 6px; overflow: hidden;
-      cursor: pointer; transition: box-shadow .15s;
-    }
-    .prog-bar-wrap:hover  { box-shadow: 0 0 0 1.5px rgba(245,208,76,0.3); }
-    .prog-bar-wrap:active { box-shadow: 0 0 0 2px rgba(245,208,76,0.55); opacity: .85; }
+    .prog-bar-wrap { flex: 1; height: 12px; background: rgba(255,255,255,0.07); border-radius: 6px; overflow: hidden; }
+    .prog-bar-wrap[data-prog-bldg] { cursor: pointer; transition: box-shadow .15s; }
+    .prog-bar-wrap[data-prog-bldg]:hover  { box-shadow: 0 0 0 1.5px rgba(245,208,76,0.3); }
+    .prog-bar-wrap[data-prog-bldg]:active { box-shadow: 0 0 0 2px rgba(245,208,76,0.55); opacity: .85; }
     .prog-bar-fill {
       height: 100%; border-radius: 6px;
       background: linear-gradient(90deg, rgba(245,208,76,0.7), var(--gold));
@@ -405,20 +403,41 @@
 
     /* ── PROGRESS SCHEDULE SHEET ── */
     .prog-sched-sheet {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999;
+      position: fixed; bottom: 20px;
+      left: 50%; transform: translateX(-50%);
+      width: fit-content; min-width: 260px; max-width: min(90vw, 360px);
+      z-index: 9999;
       background: linear-gradient(160deg, #2a2a2f, #1e1e24);
-      border: 1.5px solid rgba(245,208,76,.3); border-bottom: none;
-      border-radius: 20px 20px 0 0; padding: 20px 20px 36px;
-      box-shadow: 0 -8px 40px rgba(0,0,0,.7); animation: sheetSlideUp .2s ease;
+      border: 1.5px solid rgba(245,208,76,.3);
+      border-radius: 20px; padding: 20px 24px 24px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.7); animation: sheetSlideUp .2s ease;
     }
-    @keyframes sheetSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    @keyframes sheetSlideUp {
+      from { transform: translateX(-50%) translateY(30px); opacity: 0; }
+      to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+    }
     .prog-sheet-handle  { width: 36px; height: 4px; background: rgba(255,255,255,.2); border-radius: 2px; margin: 0 auto 16px; }
-    .prog-sheet-title   { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 14px; }
-    .prog-sheet-row     { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
-    .prog-sheet-label   { font-size: 10px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; }
-    .prog-sheet-value   { font-size: 12px; color: #fff; font-weight: 600; text-align: right; max-width: 62%; }
+    .prog-sheet-title   { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 14px; white-space: nowrap; }
+    .prog-sheet-row     { display: flex; justify-content: space-between; align-items: baseline; gap: 18px; margin-bottom: 8px; }
+    .prog-sheet-label   { font-size: 10px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; flex-shrink: 0; }
+    .prog-sheet-value   { font-size: 12px; color: #fff; font-weight: 600; text-align: right; }
+    .prog-sheet-value--upgrade  { color: var(--gold); font-weight: 700; }
+    .prog-sheet-value--time     { color: #a8c8f0; }
+    .prog-sheet-value--duration { color: #c4a8e8; }
+    .prog-sheet-value--builder  { font-weight: 800; }
+    .prog-sheet-value--builder[data-b="1"] { color: #A9B7A9; }
+    .prog-sheet-value--builder[data-b="2"] { color: #B18EA9; }
+    .prog-sheet-value--builder[data-b="3"] { color: #508B8B; }
+    .prog-sheet-value--builder[data-b="4"] { color: #CC7A6F; }
+    .prog-sheet-value--builder[data-b="5"] { color: #A899E6; }
+    .prog-sheet-value--builder[data-b="6"] { color: #C5A86E; }
     .prog-sheet-divider { border: none; border-top: 1px solid rgba(255,255,255,.08); margin: 10px 0; }
     .prog-sheet-none    { font-size: 12px; color: var(--text-dim); font-weight: 600; padding: 6px 0; text-align: center; font-style: italic; }
+    .prog-sheet-active-block {
+      background: rgba(76,175,80,0.08); border: 1px solid rgba(76,175,80,0.3);
+      border-radius: 10px; padding: 10px 12px; margin-bottom: 6px;
+    }
+    .prog-sheet-active-badge { font-size: 10px; font-weight: 800; color: #4caf50; letter-spacing: .5px; margin-bottom: 8px; }
 
     /* MAX badge (compact cards only) */
     .prog-max-badge {
@@ -1207,10 +1226,11 @@
           const valClass  = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
           const valText   = isUnknown ? `? / ${bldg.maxLevel}` : `${curLvl} / ${bldg.maxLevel}`;
           const labelHtml = bldg.count > 1 ? `<span class="prog-inst-label">${i + 1}</span>` : '';
+          const barAttrs  = !isMaxed ? `data-prog-bldg="${esc(bldg.name)}" data-prog-inst="${i}" data-prog-lvl="${curLvl ?? ''}" data-prog-max="${bldg.maxLevel}"` : '';
           return `
             <div class="prog-instance-row">
               ${labelHtml}
-              <div class="prog-bar-wrap" data-prog-bldg="${esc(bldg.name)}" data-prog-inst="${i}" data-prog-lvl="${curLvl ?? ''}" data-prog-max="${bldg.maxLevel}"><div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div></div>
+              <div class="prog-bar-wrap" ${barAttrs}><div class="prog-bar-fill ${fillClass}" style="width:${pct}%"></div></div>
               <span class="prog-inst-val ${valClass}">${valText}</span>
             </div>`;
         }).join('');
@@ -1344,16 +1364,27 @@
     }
 
     /* ── PROGRESS SCHEDULE SHEET ── */
+
+    // Renders an upgrade name, replacing Lvl * sequences with SC icons
+    function renderUpgradeName(name) {
+      if (!name) return '—';
+      return esc(name).replace(/Lvl\s+(\*+)/gi, (_, stars) =>
+        `Lvl ${stars.split('').map(() =>
+          `<img src="Images/SCicon.png" style="height:1em;vertical-align:middle;margin:0 1px;" alt="SC">`
+        ).join('')}`
+      );
+    }
+
     function showProgressSheet(bldgName, instIdx, curLvl, maxLevel) {
       document.querySelector('.prog-sched-sheet')?.remove();
 
-      const allForBldg = allUpgrades.filter(u => {
+      const allForBldg  = allUpgrades.filter(u => {
         const info = parseBuildingInfo(u.upgrade || '');
         return info && info.base === bldgName;
       });
-
-      // Narrow to specific instance when upgrade names carry instance numbers
       const hasInstNums = allForBldg.some(u => parseBuildingInfo(u.upgrade || '')?.instance !== null);
+
+      // Narrow queued upgrades to this specific instance
       let matches = allForBldg;
       if (hasInstNums) {
         const specific = allForBldg.filter(u =>
@@ -1362,24 +1393,66 @@
         if (specific.length > 0) matches = specific;
       }
 
+      // Find any currently active upgrade for this building/instance
+      const actives = Object.entries(currentWorkMap)
+        .filter(([, work]) => {
+          const info = parseBuildingInfo(work.upgrade || '');
+          if (!info || info.base !== bldgName) return false;
+          if (hasInstNums && info.instance !== null) return info.instance === String(instIdx + 1);
+          return true;
+        })
+        .map(([bNum, work]) => ({ ...work, builderNum: parseInt(bNum) }));
+
       const instLabel = hasInstNums ? ` #${instIdx + 1}` : '';
       const lvlText   = curLvl !== null && curLvl !== undefined ? `Lvl ${curLvl}` : '?';
 
-      let bodyHtml;
-      if (matches.length === 0) {
-        bodyHtml = `<div class="prog-sheet-none">Not currently scheduled</div>`;
-      } else {
-        bodyHtml = [...matches]
-          .sort((a, b) => a.queueIdx - b.queueIdx)
-          .map((u, idx) => `
-            ${idx > 0 ? '<hr class="prog-sheet-divider">' : ''}
-            <div class="prog-sheet-row"><span class="prog-sheet-label">Upgrade</span><span class="prog-sheet-value">${esc(u.upgrade || '—')}</span></div>
-            <div class="prog-sheet-row"><span class="prog-sheet-label">Builder</span><span class="prog-sheet-value">B${u.builderNum}</span></div>
-            <div class="prog-sheet-row"><span class="prog-sheet-label">Starts</span><span class="prog-sheet-value">${esc(u.start || '—')}</span></div>
-            <div class="prog-sheet-row"><span class="prog-sheet-label">Ends</span><span class="prog-sheet-value">${esc(u.end || '—')}</span></div>
-            <div class="prog-sheet-row"><span class="prog-sheet-label">Duration</span><span class="prog-sheet-value">${esc(u.duration || '—')}</span></div>
-          `).join('');
-      }
+      // ── Active block ──
+      const activeHtml = actives.map(a => `
+        <div class="prog-sheet-active-block">
+          <div class="prog-sheet-active-badge">▶ UPGRADING NOW</div>
+          <div class="prog-sheet-row">
+            <span class="prog-sheet-label">Upgrade</span>
+            <span class="prog-sheet-value prog-sheet-value--upgrade">${renderUpgradeName(a.upgrade)}</span>
+          </div>
+          <div class="prog-sheet-row">
+            <span class="prog-sheet-label">Builder</span>
+            <span class="prog-sheet-value prog-sheet-value--builder" data-b="${a.builderNum}">B${a.builderNum}</span>
+          </div>
+          <div class="prog-sheet-row">
+            <span class="prog-sheet-label">Finishes</span>
+            <span class="prog-sheet-value prog-sheet-value--time">${esc(a.finishTimeStr || '—')}</span>
+          </div>
+        </div>`).join('');
+
+      // ── Queued block ──
+      const queuedHtml = [...matches]
+        .sort((a, b) => a.queueIdx - b.queueIdx)
+        .map((u, idx) => `
+          ${idx > 0 || actives.length > 0 ? '<hr class="prog-sheet-divider">' : ''}
+          <div class="prog-sheet-row">
+            <span class="prog-sheet-label">Upgrade</span>
+            <span class="prog-sheet-value prog-sheet-value--upgrade">${renderUpgradeName(u.upgrade)}</span>
+          </div>
+          <div class="prog-sheet-row">
+            <span class="prog-sheet-label">Builder</span>
+            <span class="prog-sheet-value prog-sheet-value--builder" data-b="${u.builderNum}">B${u.builderNum}</span>
+          </div>
+          <div class="prog-sheet-row">
+            <span class="prog-sheet-label">Starts</span>
+            <span class="prog-sheet-value prog-sheet-value--time">${esc(u.start || '—')}</span>
+          </div>
+          <div class="prog-sheet-row">
+            <span class="prog-sheet-label">Ends</span>
+            <span class="prog-sheet-value prog-sheet-value--time">${esc(u.end || '—')}</span>
+          </div>
+          <div class="prog-sheet-row">
+            <span class="prog-sheet-label">Duration</span>
+            <span class="prog-sheet-value prog-sheet-value--duration">${esc(u.duration || '—')}</span>
+          </div>`).join('');
+
+      const bodyHtml = activeHtml || queuedHtml
+        ? activeHtml + queuedHtml
+        : `<div class="prog-sheet-none">Not currently scheduled</div>`;
 
       const s = document.createElement('div');
       s.className = 'prog-sched-sheet';

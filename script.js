@@ -431,11 +431,8 @@ function formatLastFinishDate(raw) {
     timeZone: "America/New_York",
     month: "short",
     day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true
+    year: "numeric"
   };
-  if (!sameYear) opts.year = "numeric";
   return d.toLocaleString("en-US", opts).replace(/,/g, "");
 }
 

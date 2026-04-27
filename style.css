@@ -1339,6 +1339,7 @@ button:disabled {
    BOOST FINISH INDICATOR
    ================================================== */
 .boost-finish-indicator {
+  display: none;
   margin-left: 8px;
   font-size: 10px;
   font-weight: 600;
