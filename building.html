@@ -71,6 +71,9 @@
     }
     .cat-tab:hover { color: var(--text); border-color: rgba(245,208,76,0.5); }
     .cat-tab.active { background: rgba(245,208,76,0.15); border-color: var(--gold); color: var(--gold); }
+    .cat-tab-divider {
+      width: 1px; height: 28px; background: var(--border); flex-shrink: 0; align-self: center; margin: 0 2px;
+    }
     .tab-icon {
       width: 20px; height: 20px; object-fit: contain; border-radius: 4px; flex-shrink: 0;
     }
@@ -494,6 +497,7 @@
   <!-- CATEGORY TABS -->
   <nav class="cat-tabs" id="catTabs">
     <button class="cat-tab" data-cat="progress">TH Progress</button>
+    <div class="cat-tab-divider"></div>
     <button class="cat-tab active" data-cat="all">All</button>
     <button class="cat-tab" data-cat="1"><img class="tab-icon" src="Images/Upgrades/Cannon Lvl 1.png" alt="">Defenses</button>
     <button class="cat-tab" data-cat="2"><img class="tab-icon" src="Images/ged.png" alt="">Resources</button>
@@ -738,25 +742,59 @@
         return;
       }
 
-      // Two-level grouping: base building name → instance key → upgrades
-      const baseOrder = [];
-      const baseMap   = new Map(); // baseName → { keyOrder: [], keyMap: Map }
+      if (activeTab === 'all') {
+        // Group by category first, then by building within each category
+        const CAT_ORDER = ['1','2','3','4','5','6','7','8'];
+        const catMap = new Map(); // catKey → { baseOrder, baseMap }
 
-      renderedList.forEach((u, idx) => {
-        const info = parseBuildingInfo(u.upgrade || '');
-        const base = info ? info.base : (u.upgrade || 'Unknown');
-        const key  = info ? info.key  : (u.upgrade || 'Unknown');
-        if (!baseMap.has(base)) { baseMap.set(base, { keyOrder: [], keyMap: new Map() }); baseOrder.push(base); }
-        const section = baseMap.get(base);
-        if (!section.keyMap.has(key)) { section.keyMap.set(key, []); section.keyOrder.push(key); }
-        section.keyMap.get(key).push({ u, idx });
-      });
+        renderedList.forEach((u, idx) => {
+          const catKey = u.typeB || 'other';
+          if (!catMap.has(catKey)) catMap.set(catKey, { baseOrder: [], baseMap: new Map() });
+          const catSection = catMap.get(catKey);
+          const info = parseBuildingInfo(u.upgrade || '');
+          const base = info ? info.base : (u.upgrade || 'Unknown');
+          const key  = info ? info.key  : (u.upgrade || 'Unknown');
+          if (!catSection.baseMap.has(base)) { catSection.baseMap.set(base, { keyOrder: [], keyMap: new Map() }); catSection.baseOrder.push(base); }
+          const section = catSection.baseMap.get(base);
+          if (!section.keyMap.has(key)) { section.keyMap.set(key, []); section.keyOrder.push(key); }
+          section.keyMap.get(key).push({ u, idx });
+        });
 
-      grid.innerHTML = baseOrder.map((base, si) => {
-        const { keyOrder, keyMap } = baseMap.get(base);
-        const cards = keyOrder.map(key => buildBuildingGroup(key, keyMap.get(key))).join('');
-        return `<div class="bldg-section-header${si === 0 ? ' first' : ''}"><span>${esc(base)}</span></div>${cards}`;
-      }).join('');
+        const catKeys = [...catMap.keys()].sort((a, b) => {
+          const ai = CAT_ORDER.indexOf(a); const bi = CAT_ORDER.indexOf(b);
+          return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+        });
+
+        grid.innerHTML = catKeys.map((catKey, ci) => {
+          const catName = catKey === 'other' ? 'Other' : (CATEGORIES[catKey] || 'Other');
+          const { baseOrder, baseMap } = catMap.get(catKey);
+          const cards = baseOrder.map(base => {
+            const { keyOrder, keyMap } = baseMap.get(base);
+            return keyOrder.map(key => buildBuildingGroup(key, keyMap.get(key))).join('');
+          }).join('');
+          return `<div class="bldg-section-header${ci === 0 ? ' first' : ''}"><span>${esc(catName)}</span></div>${cards}`;
+        }).join('');
+      } else {
+        // Per-building grouping for category-specific tabs
+        const baseOrder = [];
+        const baseMap   = new Map(); // baseName → { keyOrder: [], keyMap: Map }
+
+        renderedList.forEach((u, idx) => {
+          const info = parseBuildingInfo(u.upgrade || '');
+          const base = info ? info.base : (u.upgrade || 'Unknown');
+          const key  = info ? info.key  : (u.upgrade || 'Unknown');
+          if (!baseMap.has(base)) { baseMap.set(base, { keyOrder: [], keyMap: new Map() }); baseOrder.push(base); }
+          const section = baseMap.get(base);
+          if (!section.keyMap.has(key)) { section.keyMap.set(key, []); section.keyOrder.push(key); }
+          section.keyMap.get(key).push({ u, idx });
+        });
+
+        grid.innerHTML = baseOrder.map((base, si) => {
+          const { keyOrder, keyMap } = baseMap.get(base);
+          const cards = keyOrder.map(key => buildBuildingGroup(key, keyMap.get(key))).join('');
+          return `<div class="bldg-section-header${si === 0 ? ' first' : ''}"><span>${esc(base)}</span></div>${cards}`;
+        }).join('');
+      }
 
       grid.style.display = '';
     }
