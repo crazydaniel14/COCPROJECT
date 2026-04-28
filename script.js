@@ -6,8 +6,11 @@ console.log("Loaded script.js – v6-all-fixes");
 const API_BASE =
   "https://script.google.com/macros/s/AKfycbzaxmuwpTD9cUzrz4e4k75caCpQrTjEDefs-B5nuEaqlFoMrBHjrhDun3Iy7kPkc9j2/exec";
 
+function tok() {
+  return window.COC_TOKEN ? `&token=${encodeURIComponent(window.COC_TOKEN)}` : '';
+}
 function endpoint(action) {
-  return `${API_BASE}?action=${action}&username=${window.COC_USERNAME}`;
+  return `${API_BASE}?action=${action}&username=${window.COC_USERNAME}${tok()}`;
 }
 
 /* =========================
@@ -522,7 +525,7 @@ async function refreshDashboard() {
   showRefreshIndicator('refreshing');
   try {
     updateActiveStatusSmart();
-    await fetch(REFRESH_ENDPOINT);
+    await fetch(endpoint("refresh_sheet"));
     await Promise.all([
       loadCurrentWork(),
       loadTodaysBoost(),
@@ -888,7 +891,7 @@ async function updateCardDuration(builderName, newMinutes, newDurationHr, durati
 
   await enqueueMutation(async () => {
     try {
-      const res  = await fetch(`${API_BASE}?action=update_active_upgrade_time&username=${window.COC_USERNAME}&builder=${builderName}&remaining_minutes=${newMinutes}`);
+      const res  = await fetch(`${API_BASE}?action=update_active_upgrade_time&username=${window.COC_USERNAME}&builder=${builderName}&remaining_minutes=${newMinutes}${tok()}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       scheduleNextRefresh(); // push auto-refresh back so it doesn't race with our update
@@ -994,7 +997,7 @@ async function updateUpgradeDuration(builderName, row, newMinutes, newDurationHr
   durationEl.textContent = 'Saving...';
   await enqueueMutation(async () => {
     try {
-      const res  = await fetch(`${API_BASE}?action=update_upgrade_duration&username=${window.COC_USERNAME}&builder=${builderName}&row=${row}&minutes=${newMinutes}&duration_hr=${encodeURIComponent(newDurationHr)}`);
+      const res  = await fetch(`${API_BASE}?action=update_upgrade_duration&username=${window.COC_USERNAME}&builder=${builderName}&row=${row}&minutes=${newMinutes}&duration_hr=${encodeURIComponent(newDurationHr)}${tok()}`);
       const data = await res.json();
       if (data.error) { alert('Failed to update: ' + data.error); durationEl.textContent = originalText; return; }
       scheduleNextRefresh();
@@ -1080,7 +1083,7 @@ function showBuilderPicker(currentBuilder, callback) {
 
 async function transferUpgradeToBuilder(upgradeName, fromBuilder, row, toBuilder, detailsWrapper) {
   try {
-    const res  = await fetch(`${API_BASE}?action=transfer_upgrade&username=${window.COC_USERNAME}&upgrade=${encodeURIComponent(upgradeName)}&from_builder=${fromBuilder}&row=${row}&to_builder=${toBuilder}`);
+    const res  = await fetch(`${API_BASE}?action=transfer_upgrade&username=${window.COC_USERNAME}&upgrade=${encodeURIComponent(upgradeName)}&from_builder=${fromBuilder}&row=${row}&to_builder=${toBuilder}${tok()}`);
     const data = await res.json();
     if (data.error) { alert('Failed to transfer: ' + data.error); return; }
     alert(`✓ Moved "${upgradeName}" to ${toBuilder}`);
@@ -1183,7 +1186,7 @@ function setupDragAndDrop(detailsWrapper) {
     saveBtn.textContent = 'Saving...';
 
     try {
-      const url = `${API_BASE}?action=reorder_builder_upgrades&username=${encodeURIComponent(window.COC_USERNAME)}&builder=Builder_${builderNum}&order=${encodeURIComponent(newOrder)}`;
+      const url = `${API_BASE}?action=reorder_builder_upgrades&username=${encodeURIComponent(window.COC_USERNAME)}&builder=Builder_${builderNum}&order=${encodeURIComponent(newOrder)}${tok()}`;
       console.log("[SaveOrder] Fetching:", url);
       const res  = await fetch(url, { redirect: 'follow' });
       const data = await res.json();
@@ -1459,7 +1462,7 @@ function showBuilderBoostModal({ title, image, desc, minsPerUse, apiAction, erro
     showRefreshIndicator('refreshing');
 
     try {
-      const res = await fetch(`${API_BASE}?action=${apiAction}&username=${window.COC_USERNAME}&times=${times}`);
+      const res = await fetch(`${API_BASE}?action=${apiAction}&username=${window.COC_USERNAME}&times=${times}${tok()}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       if (Array.isArray(data.updatedBuilders) && data.updatedBuilders.length === 0) {
@@ -2047,7 +2050,7 @@ async function handleBuilderConfirmation(btn, modal, upgrades) {
   if (!startTime || isNaN(startTime)) { alert('Please enter a valid start time'); return; }
   btn.disabled = true; btn.textContent = 'Confirming…';
   try {
-    const params = new URLSearchParams({ action:'confirm_upgrade_start', username:window.COC_USERNAME, builder:b, upgradeName, startTime:startTime.toISOString(), confirmAction:choice==='different'?'different':'confirm', differentUpgrade:differentUpgrade||'' });
+    const params = new URLSearchParams({ action:'confirm_upgrade_start', username:window.COC_USERNAME, builder:b, upgradeName, startTime:startTime.toISOString(), confirmAction:choice==='different'?'different':'confirm', differentUpgrade:differentUpgrade||'', token:window.COC_TOKEN||'' });
     const res  = await fetch(API_BASE + '?' + params.toString());
     const data = await res.json();
     if (data.error) { alert('Error: '+data.error); btn.disabled=false; btn.textContent=`Confirm ${b.replace('_',' ')}`; return; }
@@ -2064,7 +2067,7 @@ async function handleBuilderPause(btn, modal, upgrades) {
   if (!confirm(`Pause ${bLabel}? This means the upgrade has not started yet.`)) return;
   btn.disabled = true; btn.textContent = 'Pausing…';
   try {
-    const params = new URLSearchParams({ action:'confirm_upgrade_start', username:window.COC_USERNAME, builder:b, upgradeName:'', startTime:'', confirmAction:'pause', differentUpgrade:'' });
+    const params = new URLSearchParams({ action:'confirm_upgrade_start', username:window.COC_USERNAME, builder:b, upgradeName:'', startTime:'', confirmAction:'pause', differentUpgrade:'', token:window.COC_TOKEN||'' });
     const res  = await fetch(API_BASE + '?' + params.toString());
     const data = await res.json();
     if (data.error) { alert('Error: '+data.error); btn.disabled=false; btn.textContent=`⏸️ Not Started — Pause ${bLabel}`; return; }
@@ -2097,7 +2100,8 @@ async function handleResumeFrom(btn, modal, upgrades) {
       startTime: '',
       confirmAction: 'rewind',
       differentUpgrade: '',
-      requeueUpgrades: toRequeue.join(',')
+      requeueUpgrades: toRequeue.join(','),
+      token: window.COC_TOKEN || ''
     });
     const res  = await fetch(API_BASE + '?' + params.toString());
     const data = await res.json();
@@ -2257,12 +2261,12 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
       if (method === 'exact') {
         const exactTime = new Date(modal.querySelector('.sp-exact-dt').value);
         if (!exactTime || isNaN(exactTime)) { alert('Please enter a valid start time'); startBtn.disabled=false; startBtn.textContent='▶️ Start Now'; return; }
-        params = new URLSearchParams({ action:'start_paused_builder', username:window.COC_USERNAME, builder:b, method:'exact', startTime:exactTime.toISOString() });
+        params = new URLSearchParams({ action:'start_paused_builder', username:window.COC_USERNAME, builder:b, method:'exact', startTime:exactTime.toISOString(), token:window.COC_TOKEN||'' });
       } else {
         const d = parseInt(document.getElementById('sp-rd').value)||0;
         const h = parseInt(document.getElementById('sp-rh').value)||0;
         const m = parseInt(document.getElementById('sp-rm').value)||0;
-        params = new URLSearchParams({ action:'start_paused_builder', username:window.COC_USERNAME, builder:b, method:'remaining', remainingMinutes:String(d*24*60+h*60+m) });
+        params = new URLSearchParams({ action:'start_paused_builder', username:window.COC_USERNAME, builder:b, method:'remaining', remainingMinutes:String(d*24*60+h*60+m), token:window.COC_TOKEN||'' });
       }
       const res  = await fetch(API_BASE + '?' + params.toString());
       const data = await res.json();
@@ -2376,7 +2380,8 @@ async function finishUpgradeNow(builderNumber, currentUpgrade, startNext) {
     username:    window.COC_USERNAME,
     builder:     `Builder_${builderNumber}`,
     upgradeName: currentUpgrade,
-    startNext:   startNext ? 'true' : 'false'
+    startNext:   startNext ? 'true' : 'false',
+    token:       window.COC_TOKEN || ''
   });
   const res  = await fetch(API_BASE + '?' + params.toString());
   return await res.json();
@@ -2405,6 +2410,9 @@ function toDatetimeLocal(d) {
    INIT
    ========================= */
 document.addEventListener("DOMContentLoaded", async () => {
+  // Restore session tokens from localStorage before any API call is made
+  window.COC_TOKEN = localStorage.getItem("coc_token") || '';
+
   let username = localStorage.getItem("coc_username");
   if (username && username.endsWith("_CURRENT_WORK")) {
     username = username.replace("_CURRENT_WORK", "");
@@ -2490,7 +2498,9 @@ function switchUser() {
     localStorage.removeItem("coc_username");
     localStorage.removeItem("coc_tag");
     localStorage.removeItem("coc_th_level");
+    localStorage.removeItem("coc_token");
     window.COC_USERNAME = null;
+    window.COC_TOKEN    = null;
     document.getElementById("builders-container").innerHTML = "";
     document.querySelector('.upgrade-confirmation-modal-overlay')?.remove();
     showLoginScreen(async (confirmedUsername) => {
@@ -2798,10 +2808,11 @@ async function doRegister(nameInput, jsonInput, errEl, loadingEl, btn, overlay, 
       return;
     }
 
-    // Success — store session data
+    // Success — store session data including the API token returned by the server
     localStorage.setItem("coc_username", name);
-    if (parsed.tag)    localStorage.setItem("coc_tag", parsed.tag);
+    if (parsed.tag)       localStorage.setItem("coc_tag", parsed.tag);
     if (thLevel !== null) localStorage.setItem("coc_th_level", String(thLevel));
+    if (data.token)       { localStorage.setItem("coc_token", data.token); window.COC_TOKEN = data.token; }
 
     overlay.remove();
     onConfirm(name);
@@ -2996,12 +3007,13 @@ function showLoginScreen(onConfirm) {
     err.style.display = "none";
     localStorage.setItem("coc_username", val);
 
-    // Fetch stored profile data (th_level, tag) from the Registrations sheet
+    // Fetch profile data + API token from the server (login action requires no prior token)
     try {
-      const res  = await fetch(`${API_BASE}?action=get_town_hall_level&username=${encodeURIComponent(val)}`);
+      const res  = await fetch(`${API_BASE}?action=login&username=${encodeURIComponent(val)}`);
       const data = await res.json();
       if (data.th_level) localStorage.setItem("coc_th_level", String(data.th_level));
       if (data.tag)      localStorage.setItem("coc_tag", data.tag);
+      if (data.token)    { localStorage.setItem("coc_token", data.token); window.COC_TOKEN = data.token; }
     } catch { /* non-blocking — proceed without it */ }
 
     overlay.remove();

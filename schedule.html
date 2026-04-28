@@ -602,6 +602,9 @@ function formatUpgradeName(name) {
 
 /* ── CONFIG ── */
 const API_BASE = "https://script.google.com/macros/s/AKfycbzaxmuwpTD9cUzrz4e4k75caCpQrTjEDefs-B5nuEaqlFoMrBHjrhDun3Iy7kPkc9j2/exec";
+function tok() {
+  return window.COC_TOKEN ? `&token=${encodeURIComponent(window.COC_TOKEN)}` : '';
+}
 
 /* Bright, harmonious palette */
 const BUILDER_COLORS = {
@@ -658,6 +661,7 @@ function jumpToNow() {
 
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded', () => {
+  window.COC_TOKEN = localStorage.getItem('coc_token') || '';
   let u = localStorage.getItem('coc_username');
   if (u && u.endsWith('_CURRENT_WORK')) u = u.replace('_CURRENT_WORK','');
   if (!u || u === 'null' || u.trim() === '') { window.location.href = 'index.html'; return; }
@@ -843,7 +847,7 @@ async function fetchAllBuilderDetails() {
   const results = [];
   await Promise.all([1,2,3,4,5,6].map(async n => {
     try {
-      const res  = await fetch(`${API_BASE}?action=builder_details&username=${window.COC_USERNAME}&builder=Builder_${n}`);
+      const res  = await fetch(`${API_BASE}?action=builder_details&username=${window.COC_USERNAME}&builder=Builder_${n}${tok()}`);
       const data = await res.json();
       if (data.builder && data.upgrades) results.push({ builderNum:n, upgrades:data.upgrades });
     } catch(e) { console.warn(`Builder ${n}:`, e); }
@@ -854,7 +858,7 @@ async function fetchAllBuilderDetails() {
 
 async function fetchBoostPlan() {
   try {
-    const res  = await fetch(`${API_BASE}?action=boost_plan&username=${window.COC_USERNAME}`);
+    const res  = await fetch(`${API_BASE}?action=boost_plan&username=${window.COC_USERNAME}${tok()}`);
     const data = await res.json();
     if (!data?.table || data.table.length <= 1) return [];
     return data.table.slice(1).map(row => ({ date:row[0], builderRaw:row[2], newFinish:row[4], mode:row[5] }));
@@ -863,7 +867,7 @@ async function fetchBoostPlan() {
 
 async function fetchCurrentWork() {
   try {
-    const res  = await fetch(`${API_BASE}?action=current_work_table&username=${window.COC_USERNAME}`);
+    const res  = await fetch(`${API_BASE}?action=current_work_table&username=${window.COC_USERNAME}${tok()}`);
     const data = await res.json();
     const map  = {};
     for (let i = 1; i < data.length; i++) {
@@ -2243,7 +2247,7 @@ async function saveOrder() {
     await Promise.all([...bySource.values()].map(async grp => {
       for (const t of grp) {
         console.log('Transferring:', t.upgrade, 'from', t.fromBuilder, 'row', t.row, '→', t.toBuilder);
-        const url = `${API_BASE}?action=transfer_upgrade&username=${encodeURIComponent(window.COC_USERNAME)}&upgrade=${encodeURIComponent(t.upgrade)}&from_builder=${encodeURIComponent(t.fromBuilder)}&row=${t.row}&to_builder=${encodeURIComponent(t.toBuilder)}`;
+        const url = `${API_BASE}?action=transfer_upgrade&username=${encodeURIComponent(window.COC_USERNAME)}&upgrade=${encodeURIComponent(t.upgrade)}&from_builder=${encodeURIComponent(t.fromBuilder)}&row=${t.row}&to_builder=${encodeURIComponent(t.toBuilder)}${tok()}`;
         const res = await fetch(url).then(r => r.json());
         if (res.status !== 'success') {
           console.error('transfer_upgrade failed:', res, t);
@@ -2285,7 +2289,7 @@ async function saveOrder() {
       if (newOrder.every((v, i) => v === i)) return;
 
       console.log(`Reordering Builder ${builderNum}:`, newOrder, '→', postQueue.map(u=>u.upgrade));
-      const url = `${API_BASE}?action=reorder_builder_upgrades&username=${encodeURIComponent(window.COC_USERNAME)}&builder=Builder_${builderNum}&order=${newOrder.join(',')}`;
+      const url = `${API_BASE}?action=reorder_builder_upgrades&username=${encodeURIComponent(window.COC_USERNAME)}&builder=Builder_${builderNum}&order=${newOrder.join(',')}${tok()}`;
       const res = await fetch(url).then(r => r.json());
       if (res.status !== 'success') {
         console.error('reorder_builder_upgrades failed:', res, { builderNum, newOrder });
