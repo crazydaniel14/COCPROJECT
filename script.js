@@ -278,8 +278,8 @@ function buildNextUpgradeHTML(upgradeName) {
   if (!upgradeName) return '';
   const imgSrc = getUpgradeImage(upgradeName);
   const meta   = getNextUpgradeMeta(upgradeName);
-  const RES_ICON = { gold: 'Images/Gold.png', elixir: 'Images/Elixir.png', de: 'Images/Dark Elixir.png' };
-  const RES_CLASS = { gold: 'next-meta-cost--gold', elixir: 'next-meta-cost--elixir', de: 'next-meta-cost--de' };
+  const RES_ICON  = { gold: 'Images/Gold.png', elixir: 'Images/Elixir.png', de: 'Images/Dark Elixir.png' };
+  const RES_CLASS = { gold: '', elixir: 'next-meta-cost--elixir', de: 'next-meta-cost--de' };
 
   let metaHTML = '';
   if (meta) {
@@ -292,7 +292,12 @@ function buildNextUpgradeHTML(upgradeName) {
     }
   }
 
-  return `<img src="${imgSrc}" class="next-upgrade-icon" alt="${upgradeName}" onerror="this.src='Images/Upgrades/PH.png'" /> ▶ Next: ${upgradeName}${metaHTML}`;
+  return `
+    <img src="${imgSrc}" class="next-upgrade-icon" alt="${upgradeName}" onerror="this.src='Images/Upgrades/PH.png'" />
+    <div class="next-upgrade-text">
+      <span class="next-upgrade-name">▶ Next: ${upgradeName}</span>
+      ${metaHTML}
+    </div>`;
 }
 
 let _riDoneTimer = null;

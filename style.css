@@ -493,8 +493,23 @@ button:disabled {
 .fim-confirm-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .builder-next {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 13px;
   opacity: 0.7;
+}
+.next-upgrade-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+.next-upgrade-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .apprentice-badge {
@@ -1308,8 +1323,7 @@ button:disabled {
   width: 24px;
   height: 24px;
   object-fit: contain;
-  vertical-align: middle;
-  margin-right: 6px;
+  flex-shrink: 0;
   border-radius: 4px;
   background: rgba(255,255,255,0.05);
   padding: 2px;
@@ -2306,7 +2320,6 @@ button:disabled {
   .builder-next   { font-size: 10px; }
 
   .editable-card-duration { padding: 0; margin-bottom: 7px; }
-  .next-upgrade-icon { margin-right: 5px; margin-left: 5px; }
 
   .current-upgrade-icon {
     left: 26%;
