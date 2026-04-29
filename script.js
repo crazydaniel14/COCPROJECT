@@ -211,6 +211,90 @@ const BUILDING_ID_MAP = {
 
 /* IMAGE_MAP, HERO_NAMES, getSuperchargeImage, getUpgradeImage → imagemap.js */
 
+/* =========================
+   NEXT UPGRADE META LOOKUP
+   Parses an upgrade name like "Archer Tower Lvl 15" and looks up
+   duration + cost from gamedata.js so the builder card can show
+   a subtle hint line without cluttering the main display.
+   ========================= */
+function parseUpgradeName(name) {
+  if (!name) return null;
+  const m = name.match(/^(.+?)\s*(?:#(\d+))?\s+(?:Lvl|Level)\s+(.+)$/i);
+  if (!m) return null;
+  const levelStr = m[3].replace(/\*/g, '').trim();
+  const level    = parseInt(levelStr) || null;
+  const isSC     = m[3].includes('*');
+  return { base: m[1].trim(), level, isSC };
+}
+
+function fmtDurShort(minutes) {
+  if (!minutes && minutes !== 0) return null;
+  minutes = Math.round(minutes);
+  const d = Math.floor(minutes / 1440);
+  const h = Math.floor((minutes % 1440) / 60);
+  const m = minutes % 60;
+  if (d > 0) { if (m === 0) return h > 0 ? `${d}d ${h}h` : `${d}d`; return `${d}d ${h}h ${m}m`; }
+  if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  return m > 0 ? `${m}m` : null;
+}
+
+function fmtCostShort(cost) {
+  if (!cost && cost !== 0) return null;
+  if (cost >= 1000000) return `${(cost / 1000000).toFixed(cost % 1000000 === 0 ? 0 : 1)}M`;
+  if (cost >= 1000)    return `${(cost / 1000).toFixed(0)}K`;
+  return String(cost);
+}
+
+/**
+ * Returns { durFmt, costFmt, resource } for a given upgrade name,
+ * or null if no gamedata entry is found.
+ */
+function getNextUpgradeMeta(upgradeName) {
+  const info = parseUpgradeName(upgradeName);
+  if (!info || info.isSC || info.level === null) return null;
+  const sources = [
+    typeof DEFENSE_GAME_DATA  !== 'undefined' ? DEFENSE_GAME_DATA  : null,
+    typeof RESOURCE_GAME_DATA !== 'undefined' ? RESOURCE_GAME_DATA : null,
+    typeof ARMY_GAME_DATA     !== 'undefined' ? ARMY_GAME_DATA     : null,
+    typeof TRAP_GAME_DATA     !== 'undefined' ? TRAP_GAME_DATA     : null,
+    typeof HERO_GAME_DATA     !== 'undefined' ? HERO_GAME_DATA     : null,
+  ].filter(Boolean);
+  for (const src of sources) {
+    const entry = src[info.base];
+    if (!entry) continue;
+    const lvl = entry.levels?.find(l => l.level === info.level);
+    if (!lvl) continue;
+    return {
+      durFmt:   fmtDurShort(lvl.duration_min),
+      costFmt:  fmtCostShort(lvl.cost),
+      resource: entry.resource || 'gold',
+    };
+  }
+  return null;
+}
+
+/** Builds the inner HTML for the .builder-next element. */
+function buildNextUpgradeHTML(upgradeName) {
+  if (!upgradeName) return '';
+  const imgSrc = getUpgradeImage(upgradeName);
+  const meta   = getNextUpgradeMeta(upgradeName);
+  const RES_ICON = { gold: 'Images/Gold.png', elixir: 'Images/Elixir.png', de: 'Images/Dark Elixir.png' };
+  const RES_CLASS = { gold: 'next-meta-cost--gold', elixir: 'next-meta-cost--elixir', de: 'next-meta-cost--de' };
+
+  let metaHTML = '';
+  if (meta) {
+    const resIcon  = RES_ICON[meta.resource]  ? `<img src="${RES_ICON[meta.resource]}" class="next-meta-res-icon" alt="">` : '';
+    const resClass = RES_CLASS[meta.resource] || '';
+    const durPart  = meta.durFmt  ? `<img src="Images/Clock vector.png" class="next-meta-clock-icon" alt=""><span class="next-meta-dur">${meta.durFmt}</span>` : '';
+    const costPart = meta.costFmt ? `${resIcon}<span class="next-meta-cost ${resClass}">${meta.costFmt}</span>` : '';
+    if (durPart || costPart) {
+      metaHTML = `<div class="next-upgrade-meta">${durPart}${durPart && costPart ? '<span class="next-meta-sep">·</span>' : ''}${costPart}</div>`;
+    }
+  }
+
+  return `<img src="${imgSrc}" class="next-upgrade-icon" alt="${upgradeName}" onerror="this.src='Images/Upgrades/PH.png'" /> ▶ Next: ${upgradeName}${metaHTML}`;
+}
+
 let _riDoneTimer = null;
 function showRefreshIndicator(state) {
   const el = document.getElementById('refresh-indicator');
@@ -811,11 +895,7 @@ function renderBuilderCards() {
             <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}</div>
             <button class="finish-upgrade-btn" data-builder="${builderNumber}" data-upgrade="${row[1]}" data-next="${row[4]}" title="Mark upgrade as finished"><img src="Images/Finished.png" alt="Finish" /></button>
           </div>
-          <div class="builder-next">
-            <img src="${getUpgradeImage(row[4])}" class="next-upgrade-icon"
-                 alt="${row[4]}" onerror="this.src='Images/Upgrades/PH.png'" />
-            ▶ Next: ${row[4]}
-          </div>
+          <div class="builder-next">${buildNextUpgradeHTML(row[4])}</div>
         </div>`;
       const durationEl = card.querySelector('.editable-card-duration');
       if (durationEl) setupCardDurationEditor(durationEl);
@@ -2348,7 +2428,7 @@ function showFinishUpgradeModal(builderNumber, currentUpgrade, nextUpgrade) {
           const finishEl = card.querySelector('.builder-finish');
           if (finishEl) finishEl.textContent = 'Finishes: ' + formatFinishTime(finishTime);
           const nextEl = card.querySelector('.builder-next');
-          if (nextEl) nextEl.innerHTML = `<img src="${getUpgradeImage(nextInQueue)}" class="next-upgrade-icon" alt="${nextInQueue}" onerror="this.src='Images/Upgrades/PH.png'" /> ▶ Next: ${nextInQueue}`;
+          if (nextEl) nextEl.innerHTML = buildNextUpgradeHTML(nextInQueue);
           const finishBtn = card.querySelector('.finish-upgrade-btn');
           if (finishBtn) finishBtn.style.display = '';
         }

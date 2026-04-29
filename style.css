@@ -1316,6 +1316,38 @@ button:disabled {
 }
 
 /* ==================================================
+   NEXT UPGRADE META LINE (duration + cost hint)
+   ================================================== */
+.next-upgrade-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  opacity: 0.55;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+.next-meta-clock-icon {
+  width: 11px;
+  height: 11px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: invert(79%) sepia(36%) saturate(476%) hue-rotate(165deg) brightness(104%) contrast(96%);
+}
+.next-meta-res-icon {
+  width: 11px;
+  height: 11px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.next-meta-dur  { color: #7ec8e3; }
+.next-meta-sep  { color: rgba(255,255,255,0.25); font-size: 10px; }
+.next-meta-cost { color: #f5d04c; }
+.next-meta-cost--elixir { color: #e87dbd; }
+.next-meta-cost--de     { color: #9b59b6; }
+
+/* ==================================================
    BOOST LOADING SPINNER
    ================================================== */
 .boost-loading-spinner {
