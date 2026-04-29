@@ -640,10 +640,10 @@ button:disabled {
   letter-spacing: 0.04em;
 }
 
-/* Desktop grid: icon col | name | duration | dates | controls */
+/* Desktop grid: icon col | name | duration | cost | dates | controls */
 .upgrade-headers {
   display: grid;
-  grid-template-columns: 52px 1fr 140px 280px 64px;
+  grid-template-columns: 52px 1fr 140px 110px 280px 64px;
   align-items: center;
   font-size: 13px;
   font-weight: 700;
@@ -664,10 +664,13 @@ button:disabled {
 .upgrade-headers span:nth-child(3) { /* Duration */
   text-align: center;
 }
-.upgrade-headers span:nth-child(4) { /* Start and End dates */
+.upgrade-headers span:nth-child(4) { /* Cost */
   text-align: center;
 }
-.upgrade-headers span:nth-child(5) { /* controls */
+.upgrade-headers span:nth-child(5) { /* Start and End dates */
+  text-align: center;
+}
+.upgrade-headers span:nth-child(6) { /* controls */
   text-align: center;
 }
 
@@ -679,7 +682,7 @@ button:disabled {
 
 .upgrade-item {
   display: grid;
-  grid-template-columns: 52px 1fr 140px 280px 64px;
+  grid-template-columns: 52px 1fr 140px 110px 280px 64px;
   align-items: center;
   font-size: 14px;
   color: #ffffff;
@@ -705,6 +708,14 @@ button:disabled {
   background-color: #4a4020;
   border-left: 3px solid #f5d04c;
 }
+
+/* Explicit column placement so DOM order can differ from grid order */
+.upgrade-item > .drag-handle   { grid-column: 1; }
+.upgrade-name                  { grid-column: 2; }
+.upgrade-duration              { grid-column: 3; }
+.upgrade-cost-col              { grid-column: 4; }
+.upgrade-time                  { grid-column: 5; }
+.upgrade-controls              { grid-column: 6; }
 
 /* The drag handle lives in the first grid column */
 .drag-handle {
@@ -818,6 +829,25 @@ button:disabled {
 /* Hide the duplicate drag handle inside upgrade-controls on desktop */
 .upgrade-controls .drag-handle {
   display: none;
+}
+
+/* ── UPGRADE COST COLUMN ── */
+.upgrade-cost-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+.upgrade-cost-res-icon {
+  width: 14px; height: 14px; object-fit: contain; flex-shrink: 0;
+}
+.upgrade-cost-val {
+  font-size: 13px; font-weight: 700;
+}
+.upgrade-cost-col--empty {
+  color: rgba(255,255,255,0.25); font-size: 13px;
 }
 
 /* Save/cancel row */
@@ -2427,6 +2457,14 @@ button:disabled {
   }
 
   .upgrade-icon { width: 30px; height: 30px; }
+
+  /* Cost col: appears after upgrade-name in flex column, aligned to the right */
+  .upgrade-cost-col {
+    align-self: flex-end;
+    justify-content: flex-end;
+    padding: 0;
+    grid-column: unset;
+  }
 
   .upgrade-duration {
     font-size: 13px;

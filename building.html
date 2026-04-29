@@ -158,6 +158,9 @@
     }
     .bbg-lvl-arrow { color: var(--gold); font-size: 12px; flex-shrink: 0; }
     .bbg-row-meta { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .bbg-cost-badge { display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0; }
+    .bbg-cost-icon  { width: 13px; height: 13px; object-fit: contain; flex-shrink: 0; }
+    .bbg-cost-val   { font-size: 11px; font-weight: 800; white-space: nowrap; }
 
     /* ── INDIVIDUAL CARD (kept for any fallback) ── */
     .bldg-card {
@@ -993,6 +996,15 @@
           : `<div class="bldg-builder-dot" data-b="${u.builderNum}">B${u.builderNum}</div>
               <span class="bldg-status-badge ${isNext ? 'next' : 'queued'}">${isNext ? 'Next Up' : 'Queued'}</span>`;
 
+        const bbgGd = (uInfo && uInfo.level !== null && !uIsSC) ? lookupUpgradeInGamedata(uInfo.base, uInfo.level) : null;
+        const BBG_RES_ICON  = { gold: 'Images/Gold.png', elixir: 'Images/Elixir.png', de: 'Images/Dark Elixir.png' };
+        const BBG_RES_COLOR = { gold: '#f5d04c', elixir: '#e87dbd', de: '#9b59b6' };
+        const bbgResKey = bbgGd?.resource || 'gold';
+        const bbgCostFmt = bbgGd?.cost != null ? fmtCostNum(bbgGd.cost) : null;
+        const costBadge = bbgCostFmt
+          ? `<span class="bbg-cost-badge"><img src="${BBG_RES_ICON[bbgResKey] || 'Images/Gold.png'}" class="bbg-cost-icon" alt=""><span class="bbg-cost-val" style="color:${BBG_RES_COLOR[bbgResKey] || '#f5d04c'}">${esc(bbgCostFmt)}</span></span>`
+          : '';
+
         return `
           <div class="bbg-upgrade-row${isNext ? ' next-row' : ''}${u.isUnassigned ? ' ua-row' : ''}" data-idx="${idx}">
             <div class="bbg-lvl-label">
@@ -1000,6 +1012,7 @@
               ${lvlDisplay}
             </div>
             <div class="bbg-row-meta">
+              ${costBadge}
               ${rowMeta}
             </div>
           </div>`;
@@ -1038,6 +1051,13 @@
         const imgSrc   = isSC ? getSuperchargeImage(name) : getUpgradeImage(name);
         const catLabel = u.typeB ? (CATEGORIES[u.typeB] || 'Other') : 'Uncategorized';
         const durFmt   = fmtDurationMin(u.durationMinutes) || '—';
+        const uaInfo = parseBuildingInfo(name);
+        const uaGd   = (uaInfo && uaInfo.level !== null && !isSC)
+          ? lookupUpgradeInGamedata(uaInfo.base, uaInfo.level) : null;
+        const uaCostFmt  = uaGd?.cost != null ? fmtCostNum(uaGd.cost) : null;
+        const uaResKey   = uaGd?.resource || 'gold';
+        const UA_RES_ICON  = { gold: 'Images/Gold.png', elixir: 'Images/Elixir.png', de: 'Images/Dark Elixir.png' };
+        const UA_RES_COLOR = { gold: '#f5d04c', elixir: '#e87dbd', de: '#9b59b6' };
         document.getElementById('detailContent').innerHTML = `
           <div class="detail-top">
             <img src="${esc(imgSrc)}" class="detail-big-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
@@ -1058,7 +1078,15 @@
           <div class="detail-row">
             <span class="detail-row-label">Duration</span>
             <span class="detail-row-val">${esc(durFmt)}</span>
-          </div>`;
+          </div>
+          ${uaCostFmt ? `
+          <div class="detail-row">
+            <span class="detail-row-label">Cost</span>
+            <span class="detail-row-val" style="display:flex;align-items:center;gap:5px;justify-content:flex-end;">
+              <img src="${UA_RES_ICON[uaResKey] || 'Images/Gold.png'}" style="width:14px;height:14px;object-fit:contain;" alt="">
+              <span style="color:${UA_RES_COLOR[uaResKey] || '#f5d04c'}">${esc(uaCostFmt)}</span>
+            </span>
+          </div>` : ''}`;
         document.getElementById('detailModal').style.display = 'flex';
         return;
       }
@@ -1068,6 +1096,23 @@
       const bNum   = u.builderNum;
       const isNext = u.queueIdx === 0;
       const catLabel = u.typeB ? (CATEGORIES[u.typeB] || 'Other') : 'Uncategorized';
+
+      /* Cost lookup */
+      const detailInfo = parseBuildingInfo(name);
+      const detailGd = (detailInfo && detailInfo.level !== null && !isSC)
+        ? lookupUpgradeInGamedata(detailInfo.base, detailInfo.level) : null;
+      const detailCostFmt = detailGd?.cost != null ? fmtCostNum(detailGd.cost) : null;
+      const detailResKey  = detailGd?.resource || 'gold';
+      const DETAIL_RES_ICON  = { gold: 'Images/Gold.png', elixir: 'Images/Elixir.png', de: 'Images/Dark Elixir.png' };
+      const DETAIL_RES_COLOR = { gold: '#f5d04c', elixir: '#e87dbd', de: '#9b59b6' };
+      const detailCostHtml = detailCostFmt ? `
+      <div class="detail-row">
+        <span class="detail-row-label">Cost</span>
+        <span class="detail-row-val" style="display:flex;align-items:center;gap:5px;justify-content:flex-end;">
+          <img src="${DETAIL_RES_ICON[detailResKey] || 'Images/Gold.png'}" style="width:14px;height:14px;object-fit:contain;" alt="">
+          <span style="color:${DETAIL_RES_COLOR[detailResKey] || '#f5d04c'}">${esc(detailCostFmt)}</span>
+        </span>
+      </div>` : '';
 
       /* Previous upgrade */
       let prevHtml = '';
@@ -1135,6 +1180,7 @@
           <span class="detail-row-label">Duration</span>
           <span class="detail-row-val">${esc(fmtDurationMin(u.durationMinutes) || u.duration || '—')}</span>
         </div>
+        ${detailCostHtml}
         ${timeUntil ? `
         <div class="detail-row">
           <span class="detail-row-label">Starts in</span>
@@ -1662,9 +1708,17 @@
         </div>`).join('');
 
       // ── Queued block ──
+      const PS_RES_ICON  = { gold: 'Images/Gold.png', elixir: 'Images/Elixir.png', de: 'Images/Dark Elixir.png' };
+      const PS_RES_COLOR = { gold: '#f5d04c', elixir: '#e87dbd', de: '#9b59b6' };
       const queuedHtml = [...matches]
         .sort((a, b) => a.queueIdx - b.queueIdx)
-        .map((u, idx) => `
+        .map((u, idx) => {
+          const psInfo = parseBuildingInfo(u.upgrade || '');
+          const psGd   = (psInfo && psInfo.level !== null && !u.upgrade?.includes('*'))
+            ? lookupUpgradeInGamedata(psInfo.base, psInfo.level) : null;
+          const psCostFmt = psGd?.cost != null ? fmtCostNum(psGd.cost) : null;
+          const psResKey  = psGd?.resource || 'gold';
+          return `
           ${idx > 0 || actives.length > 0 ? '<hr class="prog-sheet-divider">' : ''}
           <div class="prog-sheet-row">
             <span class="prog-sheet-label">Upgrade</span>
@@ -1685,7 +1739,16 @@
           <div class="prog-sheet-row">
             <span class="prog-sheet-label">Duration</span>
             <span class="prog-sheet-value prog-sheet-value--duration">${esc(fmtDurationMin(u.durationMinutes) || u.duration || '—')}</span>
-          </div>`).join('');
+          </div>
+          ${psCostFmt ? `
+          <div class="prog-sheet-row">
+            <span class="prog-sheet-label">Cost</span>
+            <span class="prog-sheet-value" style="display:flex;align-items:center;gap:5px;justify-content:flex-end;">
+              <img src="${PS_RES_ICON[psResKey] || 'Images/Gold.png'}" style="width:13px;height:13px;object-fit:contain;" alt="">
+              <span style="color:${PS_RES_COLOR[psResKey] || '#f5d04c'};font-weight:700;">${esc(psCostFmt)}</span>
+            </span>
+          </div>` : ''}`;
+        }).join('');
 
       const bodyHtml = activeHtml || queuedHtml
         ? activeHtml + queuedHtml
