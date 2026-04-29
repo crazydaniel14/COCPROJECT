@@ -497,6 +497,32 @@
     }
     /* unassigned tab red X */
     .unassigned-tab-x { color: #e53935; font-weight: 900; font-size: 14px; line-height: 1; }
+    /* UA badge in upgrade rows (builder grid) */
+    .ua-row-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 10px; font-weight: 800; letter-spacing: .4px;
+      color: #e53935; background: rgba(229,57,53,0.12);
+      border: 1px solid rgba(229,57,53,0.3); border-radius: 5px;
+      padding: 2px 6px;
+    }
+    .ua-row-x { font-size: 11px; font-weight: 900; }
+    /* UA badge in detail modal */
+    .ua-detail-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 800; letter-spacing: .4px;
+      color: #e53935; background: rgba(229,57,53,0.12);
+      border: 1px solid rgba(229,57,53,0.3); border-radius: 6px;
+      padding: 3px 8px;
+    }
+    .ua-detail-x { font-size: 13px; font-weight: 900; }
+    /* UA tag in search results */
+    .search-ua-tag {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 10px; font-weight: 700;
+      color: #e53935; background: rgba(229,57,53,0.1);
+      border: 1px solid rgba(229,57,53,0.25); border-radius: 4px;
+      padding: 1px 5px;
+    }
     /* card grid */
     .unassigned-grid {
       display: grid;
@@ -505,7 +531,7 @@
       padding: 14px 16px;
     }
     .unassigned-card {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      background: var(--surface); border: 1px solid rgba(229,57,53,0.35); border-radius: 14px;
       padding: 12px 10px 10px; display: flex; flex-direction: column; align-items: center; gap: 8px;
       transition: border-color .18s, transform .12s; position: relative;
     }
@@ -713,6 +739,7 @@
     let sortMode      = 'builder';
     let renderedList  = []; // the sorted+filtered list currently shown
     let dataReady     = false; // true once loadBuildings() has populated allUpgrades
+    let unassignedUpgrades = []; // raw unassigned entries from the sheet
 
     /* ── FETCH ── */
     async function fetchBuilderQueue(num) {
@@ -748,9 +775,10 @@
     async function loadBuildings() {
       showLoading(true);
       try {
-        const [queues, cwMap] = await Promise.all([
+        const [queues, cwMap, unassignedData] = await Promise.all([
           Promise.all([1,2,3,4,5,6].map(fetchBuilderQueue)),
-          fetchCurrentWork()
+          fetchCurrentWork(),
+          fetch(endpoint('get_unassigned_upgrades')).then(r => r.json()).catch(() => ({ upgrades: [] }))
         ]);
         currentWorkMap = cwMap;
         allUpgrades = [];
@@ -760,6 +788,21 @@
             allUpgrades.push({ ...u, typeB: typeB ? String(typeB) : null });
           });
         });
+        // Merge unassigned upgrades as synthetic entries
+        unassignedUpgrades = unassignedData.upgrades || [];
+        unassignedUpgrades.forEach(u => {
+          const info  = parseBuildingInfo(u.upgradeName || '');
+          const typeB = info ? getBuildingTypeBFrontend(info.base) : null;
+          allUpgrades.push({
+            upgrade: u.upgradeName,
+            builderNum: 'UA',
+            queueIdx: -1,
+            typeB: typeB ? String(typeB) : null,
+            durationMinutes: u.durationMinutes,
+            isUnassigned: true
+          });
+        });
+        unassignedLoaded = true;
         dataReady = true;
         updateTabCounts();
         renderGrid();
@@ -945,15 +988,19 @@
           lvlDisplay = esc(u.upgrade || '');
         }
 
+        const rowMeta = u.isUnassigned
+          ? `<span class="ua-row-badge"><span class="ua-row-x">✕</span>UA</span>`
+          : `<div class="bldg-builder-dot" data-b="${u.builderNum}">B${u.builderNum}</div>
+              <span class="bldg-status-badge ${isNext ? 'next' : 'queued'}">${isNext ? 'Next Up' : 'Queued'}</span>`;
+
         return `
-          <div class="bbg-upgrade-row${isNext ? ' next-row' : ''}" data-idx="${idx}">
+          <div class="bbg-upgrade-row${isNext ? ' next-row' : ''}${u.isUnassigned ? ' ua-row' : ''}" data-idx="${idx}">
             <div class="bbg-lvl-label">
               <span class="bbg-lvl-arrow">→</span>
               ${lvlDisplay}
             </div>
             <div class="bbg-row-meta">
-              <div class="bldg-builder-dot" data-b="${u.builderNum}">B${u.builderNum}</div>
-              <span class="bldg-status-badge ${isNext ? 'next' : 'queued'}">${isNext ? 'Next Up' : 'Queued'}</span>
+              ${rowMeta}
             </div>
           </div>`;
       }).join('');
@@ -985,6 +1032,36 @@
 
     function openDetail(u) {
       prefetchIndexResources();
+      if (u.isUnassigned) {
+        const name     = u.upgrade || '';
+        const isSC     = name.includes('*');
+        const imgSrc   = isSC ? getSuperchargeImage(name) : getUpgradeImage(name);
+        const catLabel = u.typeB ? (CATEGORIES[u.typeB] || 'Other') : 'Uncategorized';
+        const durFmt   = fmtDurationMin(u.durationMinutes) || '—';
+        document.getElementById('detailContent').innerHTML = `
+          <div class="detail-top">
+            <img src="${esc(imgSrc)}" class="detail-big-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
+            <div class="detail-header-info">
+              <div class="detail-name">${formatName(esc(name))}</div>
+              <div class="detail-badges">
+                <span class="ua-detail-badge"><span class="ua-detail-x">✕</span>UA</span>
+                <span class="detail-cat-badge">${esc(catLabel)}</span>
+              </div>
+            </div>
+          </div>
+          <div class="detail-divider"></div>
+          <div class="detail-section-label">Info</div>
+          <div class="detail-row">
+            <span class="detail-row-label">Status</span>
+            <span class="detail-row-val" style="color:#e53935">Unassigned</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-row-label">Duration</span>
+            <span class="detail-row-val">${esc(durFmt)}</span>
+          </div>`;
+        document.getElementById('detailModal').style.display = 'flex';
+        return;
+      }
       const name   = u.upgrade || '';
       const isSC   = name.includes('*');
       const imgSrc = isSC ? getSuperchargeImage(name) : getUpgradeImage(name);
@@ -1122,13 +1199,16 @@
       resultsEl.innerHTML = matches.map((u, i) => {
         const isSC  = u.upgrade?.includes('*');
         const img   = isSC ? getSuperchargeImage(u.upgrade) : getUpgradeImage(u.upgrade || '');
+        const builderTag = u.isUnassigned
+          ? `<span class="search-ua-tag"><span style="color:#e53935">✕</span> UA</span>`
+          : `<span class="search-builder-tag">Builder ${u.builderNum}</span>`;
         return `
           <div class="bldg-search-result" data-result-idx="${i}">
             <img src="${esc(img)}" class="bsr-icon" onerror="this.src='Images/Upgrades/PH.png'" alt="">
             <div class="bsr-info">
               <div class="bsr-name">${formatName(esc(u.upgrade || ''))}</div>
               <div class="bsr-meta">
-                <span class="search-builder-tag">Builder ${u.builderNum}</span>
+                ${builderTag}
                 <span>${esc(fmtDurationMin(u.durationMinutes) || u.duration || '')}</span>
               </div>
             </div>
@@ -1251,6 +1331,7 @@
         await loadProgress();
       } else if (activeTab === 'unassigned') {
         unassignedLoaded = false;
+        await loadBuildings();
         await loadUnassigned();
       } else {
         await loadBuildings();
@@ -1689,21 +1770,41 @@
 
     async function loadUnassigned() {
       const grid = document.getElementById('unassignedGrid');
-      grid.innerHTML = `<div class="bldg-status"><div class="bldg-spinner"></div><span>Loading unassigned upgrades…</span></div>`;
-      grid.style.display = '';
 
       let upgrades = [];
-      try {
-        const res  = await fetch(endpoint('get_unassigned_upgrades'));
-        const data = await res.json();
-        upgrades = data.upgrades || [];
-      } catch (err) {
-        grid.innerHTML = `<div class="unassigned-empty"><div class="unassigned-empty-icon">⚠️</div><span>Failed to load: ${esc(err.message)}</span></div>`;
-        return;
+      if (unassignedLoaded) {
+        upgrades = unassignedUpgrades;
+      } else {
+        grid.innerHTML = `<div class="bldg-status"><div class="bldg-spinner"></div><span>Loading unassigned upgrades…</span></div>`;
+        grid.style.display = '';
+        try {
+          const res  = await fetch(endpoint('get_unassigned_upgrades'));
+          const data = await res.json();
+          upgrades = data.upgrades || [];
+          unassignedUpgrades = upgrades;
+          // Sync into allUpgrades so search/tabs stay accurate
+          allUpgrades = allUpgrades.filter(u => !u.isUnassigned);
+          upgrades.forEach(u => {
+            const info  = parseBuildingInfo(u.upgradeName || '');
+            const typeB = info ? getBuildingTypeBFrontend(info.base) : null;
+            allUpgrades.push({
+              upgrade: u.upgradeName,
+              builderNum: 'UA',
+              queueIdx: -1,
+              typeB: typeB ? String(typeB) : null,
+              durationMinutes: u.durationMinutes,
+              isUnassigned: true
+            });
+          });
+          unassignedLoaded = true;
+        } catch (err) {
+          grid.innerHTML = `<div class="unassigned-empty"><div class="unassigned-empty-icon">⚠️</div><span>Failed to load: ${esc(err.message)}</span></div>`;
+          return;
+        }
       }
 
       if (upgrades.length === 0) {
-        grid.innerHTML = `<div class="unassigned-empty"><div class="unassigned-empty-icon">📋</div><span>No unassigned upgrades</span><span style="font-size:12px">Add upgrades to your Unassigned sheet to see them here</span></div>`;
+        grid.innerHTML = `<div class="unassigned-empty"><div class="unassigned-empty-icon">📋</div><span>No unassigned upgrades</span><span style="font-size:12px">Add upgrades to A34:B in your CURRENT_WORK sheet to see them here</span></div>`;
         return;
       }
 
