@@ -482,14 +482,21 @@
     /* ── UNASSIGNED UPGRADES TAB ── */
     #unassignedGrid { padding: 0 0 80px; }
     .unassigned-header {
-      display: flex; align-items: center; gap: 10px;
-      padding: 16px 20px 12px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 18px 20px 14px; border-bottom: 1px solid var(--border);
+      position: relative;
     }
-    .unassigned-title { font-size: 15px; font-weight: 900; color: var(--text); flex: 1; }
+    .unassigned-x-icon {
+      font-size: 22px; font-weight: 900; color: #e53935; line-height: 1; flex-shrink: 0;
+    }
+    .unassigned-title { font-size: 22px; font-weight: 900; color: var(--text); letter-spacing: .3px; }
     .unassigned-count {
       font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 20px;
       background: rgba(245,208,76,0.15); color: var(--gold); border: 1px solid rgba(245,208,76,0.3);
+      position: absolute; right: 20px;
     }
+    /* unassigned tab red X */
+    .unassigned-tab-x { color: #e53935; font-weight: 900; font-size: 14px; line-height: 1; }
     /* card grid */
     .unassigned-grid {
       display: grid;
@@ -522,10 +529,22 @@
     }
     /* divider */
     .unassigned-divider { width: 100%; height: 1px; background: var(--border); }
-    /* info row — duration + cost on one line */
+    /* info col — duration + cost stacked */
     .unassigned-info-row {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 6px; width: 100%;
+      display: flex; flex-direction: column; align-items: flex-start;
+      gap: 4px; width: 100%;
+    }
+    .unassigned-dur-row, .unassigned-cost-row {
+      display: flex; align-items: center; gap: 5px;
+    }
+    /* clock icon recolored to sky blue */
+    .unassigned-clock-icon {
+      width: 13px; height: 13px; object-fit: contain; flex-shrink: 0;
+      filter: invert(79%) sepia(36%) saturate(476%) hue-rotate(165deg) brightness(104%) contrast(96%);
+    }
+    /* resource icon */
+    .unassigned-res-icon {
+      width: 13px; height: 13px; object-fit: contain; flex-shrink: 0;
     }
     /* duration — sky blue, bold */
     .unassigned-dur {
@@ -577,7 +596,7 @@
     <button class="cat-tab" data-cat="7"><img class="tab-icon" src="Images/Upgrades/Hero Hall Lvl 1.png" alt="">Heroes</button>
     <button class="cat-tab" data-cat="8"><img class="tab-icon" src="Images/Army.png" alt="">Army</button>
     <div class="cat-tab-divider"></div>
-    <button class="cat-tab" data-cat="unassigned">Unassigned</button>
+    <button class="cat-tab" data-cat="unassigned"><span class="unassigned-tab-x">✕</span>Unassigned</button>
   </nav>
 
   <!-- SORT BAR -->
@@ -1623,8 +1642,9 @@
       const h = Math.floor((minutes % 1440) / 60);
       const m = minutes % 60;
       if (d > 0) {
-        if (h > 0) return m > 0 ? `${d}d ${h}h ${m}m` : `${d}d ${h}h`;
-        return `${d}d ${h}h ${m}m`;   // h=0: show all three (e.g. "7d 0h 0m")
+        if (h === 0 && m === 0) return `${d}d`;
+        if (m === 0) return `${d}d ${h}h`;
+        return `${d}d ${h}h ${m}m`;
       }
       if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
       return `${m}m`;
@@ -1682,28 +1702,31 @@
         // Duration: prefer gamedata, fall back to sheet column B
         const durMin = (gd && gd.duration_min != null) ? gd.duration_min : u.durationMinutes;
         const durFmt = fmtDurationMin(durMin);
+        const showDur = durFmt && durFmt !== '—';
 
         // Cost + resource for colour
         const resource  = gd?.resource || 'unknown';
         const resClass  = { gold: 'res-gold', elixir: 'res-elixir', de: 'res-de', gems: 'res-gems' }[resource] || 'res-unknown';
-        const resLabel  = { gold: 'Gold', elixir: 'Elixir', de: 'Dark Elixir', gems: 'Gems' }[resource] || '';
         const costFmt   = gd && gd.cost != null ? fmtCostNum(gd.cost) : '—';
+        const showCost  = costFmt && costFmt !== '—';
+        const resIconMap = { gold: 'Images/Gold.png', elixir: 'Images/Elixir.png', de: 'Images/Dark Elixir.png' };
+        const resIcon    = resIconMap[resource] || '';
+
+        const durRow  = showDur  ? `<div class="unassigned-dur-row"><img src="Images/Clock vector.png" class="unassigned-clock-icon" alt=""><span class="unassigned-dur">${esc(durFmt)}</span></div>` : '';
+        const costRow = showCost ? `<div class="unassigned-cost-row">${resIcon ? `<img src="${resIcon}" class="unassigned-res-icon" alt="">` : ''}<span class="unassigned-cost ${resClass}">${esc(costFmt)}</span></div>` : '';
 
         return `
           <div class="unassigned-card">
             <img src="${esc(imgSrc)}" class="unassigned-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
             <div class="unassigned-name">${formatName(esc(u.upgradeName || ''))}</div>
             ${catName ? `<div class="unassigned-badges"><span class="unassigned-cat-badge">${esc(catName)}</span></div>` : ''}
-            <div class="unassigned-divider"></div>
-            <div class="unassigned-info-row">
-              <span class="unassigned-dur">${esc(durFmt)}</span>
-              <span class="unassigned-cost ${resClass}">${esc(costFmt)}</span>
-            </div>
+            ${(showDur || showCost) ? `<div class="unassigned-divider"></div><div class="unassigned-info-row">${durRow}${costRow}</div>` : ''}
           </div>`;
       }).join('');
 
       grid.innerHTML = `
         <div class="unassigned-header">
+          <span class="unassigned-x-icon">✕</span>
           <span class="unassigned-title">Unassigned Upgrades</span>
           <span class="unassigned-count">${upgrades.length}</span>
         </div>
