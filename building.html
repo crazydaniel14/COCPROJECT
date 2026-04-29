@@ -478,6 +478,47 @@
       .prog-grid { grid-template-columns: 1fr; gap: 10px; }
       .prog-section-title { font-size: 13px; }
     }
+
+    /* ── UNASSIGNED UPGRADES TAB ── */
+    #unassignedGrid { padding: 0 0 80px; }
+    .unassigned-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 16px 20px 10px; border-bottom: 1px solid var(--border);
+    }
+    .unassigned-title { font-size: 15px; font-weight: 900; color: var(--text); flex: 1; }
+    .unassigned-count {
+      font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 20px;
+      background: rgba(245,208,76,0.15); color: var(--gold); border: 1px solid rgba(245,208,76,0.3);
+    }
+    .unassigned-list { display: flex; flex-direction: column; gap: 0; }
+    .unassigned-row {
+      display: flex; align-items: center; gap: 12px; padding: 12px 20px;
+      border-bottom: 1px solid var(--border); transition: background .12s; cursor: default;
+    }
+    .unassigned-row:hover { background: rgba(255,255,255,0.03); }
+    .unassigned-img { width: 44px; height: 44px; object-fit: contain; border-radius: 8px; flex-shrink: 0; }
+    .unassigned-info { flex: 1; min-width: 0; }
+    .unassigned-name {
+      font-size: 13px; font-weight: 700; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .unassigned-sub { display: flex; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
+    .unassigned-meta { font-size: 11px; font-weight: 600; color: var(--text-dim); }
+    .unassigned-meta.gold { color: var(--gold); }
+    .unassigned-cost {
+      font-size: 12px; font-weight: 700; color: var(--text); flex-shrink: 0; text-align: right;
+      white-space: nowrap;
+    }
+    .unassigned-cost-sub { font-size: 10px; font-weight: 600; color: var(--text-dim); text-align: right; }
+    .unassigned-empty {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 64px 20px; color: var(--text-dim); font-size: 14px; font-weight: 500; gap: 10px; text-align: center;
+    }
+    .unassigned-empty-icon { font-size: 36px; opacity: .4; }
+    .unassigned-cat-badge {
+      font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 5px;
+      background: rgba(255,255,255,0.06); color: var(--text-dim); text-transform: uppercase; letter-spacing: .3px;
+    }
   </style>
 </head>
 <body>
@@ -507,6 +548,8 @@
     <button class="cat-tab" data-cat="6"><img class="tab-icon" src="Images/Upgrades/Longshot.png" alt="">Guardians</button>
     <button class="cat-tab" data-cat="7"><img class="tab-icon" src="Images/Upgrades/Hero Hall Lvl 1.png" alt="">Heroes</button>
     <button class="cat-tab" data-cat="8"><img class="tab-icon" src="Images/Army.png" alt="">Army</button>
+    <div class="cat-tab-divider"></div>
+    <button class="cat-tab" data-cat="unassigned">Unassigned</button>
   </nav>
 
   <!-- SORT BAR -->
@@ -525,6 +568,7 @@
     </div>
     <div class="bldg-grid" id="bldgGrid" style="display:none;"></div>
     <div id="progressGrid" style="display:none;"></div>
+    <div id="unassignedGrid" style="display:none;"></div>
   </main>
 
   <!-- DETAIL MODAL -->
@@ -1051,8 +1095,9 @@
 
     /* ── UI HELPERS ── */
     function showLoading(on) {
-      document.getElementById('bldgStatus').style.display = on ? '' : 'none';
-      document.getElementById('bldgGrid').style.display   = on ? 'none' : '';
+      document.getElementById('bldgStatus').style.display    = on ? '' : 'none';
+      document.getElementById('bldgGrid').style.display      = on ? 'none' : '';
+      document.getElementById('unassignedGrid').style.display = 'none';
     }
 
     function showError(msg) {
@@ -1074,10 +1119,17 @@
       closeDetail();
       if (activeTab === 'progress') {
         document.getElementById('bldgGrid').style.display = 'none';
+        document.getElementById('unassignedGrid').style.display = 'none';
         document.querySelector('.sort-bar').style.display = 'none';
         loadProgress();
+      } else if (activeTab === 'unassigned') {
+        document.getElementById('bldgGrid').style.display = 'none';
+        document.getElementById('progressGrid').style.display = 'none';
+        document.querySelector('.sort-bar').style.display = 'none';
+        loadUnassigned();
       } else {
         document.getElementById('progressGrid').style.display = 'none';
+        document.getElementById('unassignedGrid').style.display = 'none';
         document.querySelector('.sort-bar').style.display = '';
         renderGrid();
       }
@@ -1503,6 +1555,138 @@
         ${bodyHtml}`;
       document.body.appendChild(s);
       setTimeout(() => document.addEventListener('click', () => document.querySelector('.prog-sched-sheet')?.remove(), { once: true }), 100);
+    }
+
+    /* ── GAMEDATA LOOKUP (for unassigned tab) ── */
+
+    /**
+     * Given a base building name and numeric level, search all gamedata
+     * objects and return { duration_min, cost, resource } or null.
+     */
+    function lookupUpgradeInGamedata(baseName, level) {
+      const sources = [
+        DEFENSE_GAME_DATA,
+        RESOURCE_GAME_DATA,
+        ARMY_GAME_DATA,
+        TRAP_GAME_DATA,
+        HERO_GAME_DATA,
+      ];
+      for (const src of sources) {
+        const entry = src[baseName];
+        if (!entry) continue;
+        const lvlData = entry.levels?.find(l => l.level === level);
+        if (lvlData) return { duration_min: lvlData.duration_min, cost: lvlData.cost, resource: entry.resource };
+      }
+      return null;
+    }
+
+    function fmtDurationMin(minutes) {
+      if (!minutes && minutes !== 0) return '—';
+      minutes = Math.round(minutes);
+      const d = Math.floor(minutes / 1440);
+      const h = Math.floor((minutes % 1440) / 60);
+      const m = minutes % 60;
+      if (d > 0) return `${d}d ${h}h ${m}m`;
+      if (h > 0) return `${h}h ${m}m`;
+      return `${m}m`;
+    }
+
+    function fmtCost(cost, resource) {
+      if (!cost && cost !== 0) return '—';
+      let n;
+      if (cost >= 1000000) n = `${(cost / 1000000).toFixed(cost % 1000000 === 0 ? 0 : 1)}M`;
+      else if (cost >= 1000) n = `${(cost / 1000).toFixed(0)}K`;
+      else n = String(cost);
+      const icons = { gold: 'Gold', de: 'Dark Elixir', elixir: 'Elixir', gems: 'Gems' };
+      return `${n} ${icons[resource] || resource || ''}`.trim();
+    }
+
+    /* ── UNASSIGNED UPGRADES ── */
+    let unassignedLoaded = false;
+
+    async function loadUnassigned() {
+      const grid = document.getElementById('unassignedGrid');
+      grid.innerHTML = `<div class="bldg-status"><div class="bldg-spinner"></div><span>Loading unassigned upgrades…</span></div>`;
+      grid.style.display = '';
+
+      let upgrades = [];
+      try {
+        const res  = await fetch(endpoint('get_unassigned_upgrades'));
+        const data = await res.json();
+        upgrades = data.upgrades || [];
+      } catch (err) {
+        grid.innerHTML = `<div class="unassigned-empty"><div class="unassigned-empty-icon">⚠️</div><span>Failed to load: ${esc(err.message)}</span></div>`;
+        return;
+      }
+
+      if (upgrades.length === 0) {
+        grid.innerHTML = `<div class="unassigned-empty"><div class="unassigned-empty-icon">📋</div><span>No unassigned upgrades</span><span style="font-size:12px">Add upgrades to your Unassigned sheet to see them here</span></div>`;
+        return;
+      }
+
+      const rows = upgrades.map(u => {
+        const info    = parseBuildingInfo(u.upgradeName || '');
+        const gd      = info ? lookupUpgradeInGamedata(info.base, info.level) : null;
+        const isSC    = u.upgradeName?.includes('*');
+        const imgSrc  = isSC ? getSuperchargeImage(u.upgradeName) : getUpgradeImage(u.upgradeName || '');
+        const catId   = getBuildingTypeBFrontend(info?.base);
+        const catName = catId ? (CATEGORIES[catId] || '') : '';
+
+        // Duration: prefer gamedata, fall back to sheet column B
+        const durMin  = (gd && gd.duration_min != null) ? gd.duration_min : u.durationMinutes;
+        const durFmt  = fmtDurationMin(durMin);
+
+        // Cost: gamedata only
+        const costFmt = gd ? fmtCost(gd.cost, gd.resource) : '—';
+
+        return `
+          <div class="unassigned-row">
+            <img src="${esc(imgSrc)}" class="unassigned-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
+            <div class="unassigned-info">
+              <div class="unassigned-name">${formatName(esc(u.upgradeName || ''))}</div>
+              <div class="unassigned-sub">
+                ${catName ? `<span class="unassigned-cat-badge">${esc(catName)}</span>` : ''}
+                <span class="unassigned-meta">⏱ ${esc(durFmt)}</span>
+              </div>
+            </div>
+            <div>
+              <div class="unassigned-cost">${esc(costFmt)}</div>
+            </div>
+          </div>`;
+      }).join('');
+
+      grid.innerHTML = `
+        <div class="unassigned-header">
+          <span class="unassigned-title">Unassigned Upgrades</span>
+          <span class="unassigned-count">${upgrades.length}</span>
+        </div>
+        <div class="unassigned-list">${rows}</div>`;
+      grid.style.display = '';
+      unassignedLoaded = true;
+    }
+
+    /**
+     * Frontend mirror of getBuildingTypeB_ from info.gs — derives category ID from base name.
+     */
+    function getBuildingTypeBFrontend(baseName) {
+      if (!baseName) return null;
+      const BCAT = {
+        "Cannon":"1","Archer Tower":"1","Mortar":"1","Air Defense":"1","Hidden Tesla":"1",
+        "X-Bow":"1","Inferno Tower":"1","Eagle Artillery":"1","Scattershot":"1","Monolith":"1",
+        "Wizard Tower":"1","Bomb Tower":"1","Firespitter":"1","Builder Hut":"1",
+        "Multi-Archer Tower":"1","Multi-Gear Tower":"1","Town Hall":"1","Giga Tesla":"1",
+        "Giga Bomb":"1","Super Wizard Tower":"1","Revenge Tower":"1","Ricochet Cannon":"1","Spell Tower":"1",
+        "Gold Mine":"2","Elixir Collector":"2","Dark Elixir Drill":"2",
+        "Gold Storage":"2","Elixir Storage":"2","Dark Elixir Storage":"2",
+        "Spring Trap":"4","Giant Bomb":"4","Air Bomb":"4","Seeking Air Mine":"4","Skeleton Trap":"4","Bomb":"4",
+        "Longshot":"6",
+        "Barbarian King":"7","Archer Queen":"7","Grand Warden":"7","Royal Champion":"7",
+        "Minion Prince":"7","Dragon Duke":"7","Hero Hall":"7",
+        "Laboratory":"8","Workshop":"8","Pet House":"8","Clan Castle":"8",
+        "Blacksmith":"8","Army Camp":"8","Barracks":"8","Spell Factory":"8",
+      };
+      if (/\s(?:DHP|CP|HP)$/.test(baseName)) return "3";
+      return BCAT[baseName] || null;
     }
 
     /* ── INIT ── */
