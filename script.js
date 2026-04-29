@@ -1355,14 +1355,18 @@ function wireApprenticeBoost() {
       // Patch currentWorkData with the boosted time so renderBuilderCards
       // doesn't overwrite the UI with stale server data if the backend
       // hasn't processed the boost yet by the time we re-fetch.
-      if (data.newEndTime && data.newDuration != null && builderNumber && currentWorkData) {
+      if (data.newEndTime && builderNumber && currentWorkData) {
         const dataRow = currentWorkData.find(r => r[0]?.toString().match(/(\d+)/)?.[1] === builderNumber);
         if (dataRow) {
           dataRow[2] = data.newEndTime;
-          const d = Math.floor(data.newDuration / (24 * 60));
-          const h = Math.floor((data.newDuration % (24 * 60)) / 60);
-          const m = data.newDuration % 60;
-          dataRow[3] = `${d} d ${h} hr ${m} min`;
+          const remainingMs = new Date(data.newEndTime).getTime() - Date.now();
+          if (remainingMs > 0) {
+            const totalMins = Math.floor(remainingMs / 60000);
+            const d = Math.floor(totalMins / (24 * 60));
+            const h = Math.floor((totalMins % (24 * 60)) / 60);
+            const m = totalMins % 60;
+            dataRow[3] = `${d} d ${h} hr ${m} min`;
+          }
         }
       }
 
