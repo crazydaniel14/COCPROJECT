@@ -65,20 +65,8 @@ const CATEGORY_META = {
   "8": { name: "Army",            permanent: true  },
 };
 
-/* =========================
-   USER PASSWORDS
-   Add passwords here for users that need protection.
-   Users NOT listed can log in with no password at all.
-
-   HOW TO SET A PASSWORD:
-   Remove the // from the example line and fill in the username and password.
-   Example:
-     "Daniel": "mypassword123",
-     "Player2": "abc456",
-   ========================= */
-const USER_PASSWORDS = {
-   "Daniel": "2304",
-};
+// Passwords are verified server-side via Script Properties (pwd_<username>).
+// To set or change a password, run setPassword() in the Apps Script editor.
 
 const REFRESH_ENDPOINT      = API_BASE + "?action=refresh_sheet";
 function TODAYS_BOOST_URL()       { return endpoint("todays_boost"); }
@@ -2993,28 +2981,42 @@ function showLoginScreen(onConfirm) {
       err.style.display = "block";
       return;
     }
-    if (USER_PASSWORDS[val] !== undefined) {
-      passwordWrap.style.display = "block";
-      if (passwordInput.value !== USER_PASSWORDS[val]) {
-        err.textContent = "Incorrect password.";
+
+    err.style.display = "none";
+    btn.disabled = true;
+    btn.textContent = "Checking…";
+
+    // Password is verified server-side — send it along with the login request.
+    // Users without a password simply leave the field blank.
+    try {
+      const password = passwordInput.value;
+      const res  = await fetch(`${API_BASE}?action=login&username=${encodeURIComponent(val)}&password=${encodeURIComponent(password)}`);
+      const data = await res.json();
+
+      if (data.error) {
+        err.textContent = data.error;
         err.style.display = "block";
-        passwordInput.style.borderColor = "#f87171";
-        setTimeout(() => { passwordInput.style.borderColor = "#444"; }, 2000);
-        passwordInput.focus();
+        if (data.error === "Incorrect password.") {
+          passwordInput.style.borderColor = "#f87171";
+          setTimeout(() => { passwordInput.style.borderColor = "#444"; }, 2000);
+          passwordInput.focus();
+        }
+        btn.disabled = false;
+        btn.textContent = "Continue →";
         return;
       }
-    }
-    err.style.display = "none";
-    localStorage.setItem("coc_username", val);
 
-    // Fetch profile data + API token from the server (login action requires no prior token)
-    try {
-      const res  = await fetch(`${API_BASE}?action=login&username=${encodeURIComponent(val)}`);
-      const data = await res.json();
+      localStorage.setItem("coc_username", val);
       if (data.th_level) localStorage.setItem("coc_th_level", String(data.th_level));
       if (data.tag)      localStorage.setItem("coc_tag", data.tag);
       if (data.token)    { localStorage.setItem("coc_token", data.token); window.COC_TOKEN = data.token; }
-    } catch { /* non-blocking — proceed without it */ }
+    } catch {
+      err.textContent = "Connection error. Try again.";
+      err.style.display = "block";
+      btn.disabled = false;
+      btn.textContent = "Continue →";
+      return;
+    }
 
     overlay.remove();
     onConfirm(val);
