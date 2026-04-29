@@ -522,31 +522,22 @@
     }
     /* divider */
     .unassigned-divider { width: 100%; height: 1px; background: var(--border); }
-    /* duration — sky blue */
+    /* info row — duration + cost on one line */
+    .unassigned-info-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 6px; width: 100%;
+    }
+    /* duration — sky blue, bold */
     .unassigned-dur {
-      font-size: 11px; font-weight: 700; color: #7ec8e3;
-      text-align: center; width: 100%;
+      font-size: 12px; font-weight: 800; color: #7ec8e3; white-space: nowrap;
     }
-    .unassigned-dur-label {
-      font-size: 9px; font-weight: 600; color: rgba(126,200,227,0.6);
-      text-transform: uppercase; letter-spacing: .4px; text-align: center;
-    }
-    /* cost colours */
-    .unassigned-cost { font-size: 12px; font-weight: 800; text-align: center; width: 100%; }
-    .unassigned-cost.res-gold    { color: #f5d04c; }          /* gold — yellow */
-    .unassigned-cost.res-elixir  { color: #e87dbd; }          /* elixir — pink */
-    .unassigned-cost.res-de      { color: #9b59b6; }          /* dark elixir — dark purple */
-    .unassigned-cost.res-gems    { color: #2ecc71; }          /* gems — green */
+    /* cost colours, bold */
+    .unassigned-cost { font-size: 12px; font-weight: 800; white-space: nowrap; }
+    .unassigned-cost.res-gold    { color: #f5d04c; }
+    .unassigned-cost.res-elixir  { color: #e87dbd; }
+    .unassigned-cost.res-de      { color: #9b59b6; }
+    .unassigned-cost.res-gems    { color: #2ecc71; }
     .unassigned-cost.res-unknown { color: var(--text-dim); }
-    .unassigned-cost-label {
-      font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px;
-      text-align: center; width: 100%;
-    }
-    .unassigned-cost-label.res-gold    { color: rgba(245,208,76,0.55); }
-    .unassigned-cost-label.res-elixir  { color: rgba(232,125,189,0.55); }
-    .unassigned-cost-label.res-de      { color: rgba(155,89,182,0.6); }
-    .unassigned-cost-label.res-gems    { color: rgba(46,204,113,0.55); }
-    .unassigned-cost-label.res-unknown { color: var(--text-dim); }
     /* empty */
     .unassigned-empty {
       display: flex; flex-direction: column; align-items: center;
@@ -1046,7 +1037,7 @@
         </div>
         <div class="detail-row">
           <span class="detail-row-label">Duration</span>
-          <span class="detail-row-val">${esc(u.duration || '—')}</span>
+          <span class="detail-row-val">${esc(fmtDurationMin(u.durationMinutes) || u.duration || '—')}</span>
         </div>
         ${timeUntil ? `
         <div class="detail-row">
@@ -1119,7 +1110,7 @@
               <div class="bsr-name">${formatName(esc(u.upgrade || ''))}</div>
               <div class="bsr-meta">
                 <span class="search-builder-tag">Builder ${u.builderNum}</span>
-                <span>${esc(u.duration || '')}</span>
+                <span>${esc(fmtDurationMin(u.durationMinutes) || u.duration || '')}</span>
               </div>
             </div>
             <button class="bsr-open-btn" data-result-idx="${i}">Open ↗</button>
@@ -1577,7 +1568,7 @@
           </div>
           <div class="prog-sheet-row">
             <span class="prog-sheet-label">Duration</span>
-            <span class="prog-sheet-value prog-sheet-value--duration">${esc(u.duration || '—')}</span>
+            <span class="prog-sheet-value prog-sheet-value--duration">${esc(fmtDurationMin(u.durationMinutes) || u.duration || '—')}</span>
           </div>`).join('');
 
       const bodyHtml = activeHtml || queuedHtml
@@ -1617,14 +1608,25 @@
       return null;
     }
 
+    /**
+     * Format minutes into a compact duration string.
+     * Rules (match user examples):
+     *   8h 0m  → "8h"       (trailing 0m dropped when h > 0)
+     *   10d 12h 0m → "10d 12h" (same, trailing 0m dropped when h > 0)
+     *   7d 0h 0m   → "7d 0h 0m" (hours = 0, keep all three parts)
+     *   8h 30m → "8h 30m"   (non-zero minutes always shown)
+     */
     function fmtDurationMin(minutes) {
       if (!minutes && minutes !== 0) return '—';
       minutes = Math.round(minutes);
       const d = Math.floor(minutes / 1440);
       const h = Math.floor((minutes % 1440) / 60);
       const m = minutes % 60;
-      if (d > 0) return `${d}d ${h}h ${m}m`;
-      if (h > 0) return `${h}h ${m}m`;
+      if (d > 0) {
+        if (h > 0) return m > 0 ? `${d}d ${h}h ${m}m` : `${d}d ${h}h`;
+        return `${d}d ${h}h ${m}m`;   // h=0: show all three (e.g. "7d 0h 0m")
+      }
+      if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
       return `${m}m`;
     }
 
@@ -1693,11 +1695,10 @@
             <div class="unassigned-name">${formatName(esc(u.upgradeName || ''))}</div>
             ${catName ? `<div class="unassigned-badges"><span class="unassigned-cat-badge">${esc(catName)}</span></div>` : ''}
             <div class="unassigned-divider"></div>
-            <div class="unassigned-dur-label">Duration</div>
-            <div class="unassigned-dur">${esc(durFmt)}</div>
-            <div class="unassigned-divider"></div>
-            ${resLabel ? `<div class="unassigned-cost-label ${resClass}">${esc(resLabel)}</div>` : ''}
-            <div class="unassigned-cost ${resClass}">${esc(costFmt)}</div>
+            <div class="unassigned-info-row">
+              <span class="unassigned-dur">${esc(durFmt)}</span>
+              <span class="unassigned-cost ${resClass}">${esc(costFmt)}</span>
+            </div>
           </div>`;
       }).join('');
 
