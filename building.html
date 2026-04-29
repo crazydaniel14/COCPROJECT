@@ -1168,12 +1168,20 @@
         document.getElementById('bldgGrid').style.display = 'none';
         document.getElementById('unassignedGrid').style.display = 'none';
         document.querySelector('.sort-bar').style.display = 'none';
-        loadProgress();
+        if (progressLoaded) {
+          document.getElementById('progressGrid').style.display = '';
+        } else {
+          loadProgress();
+        }
       } else if (activeTab === 'unassigned') {
         document.getElementById('bldgGrid').style.display = 'none';
         document.getElementById('progressGrid').style.display = 'none';
         document.querySelector('.sort-bar').style.display = 'none';
-        loadUnassigned();
+        if (unassignedLoaded) {
+          document.getElementById('unassignedGrid').style.display = '';
+        } else {
+          loadUnassigned();
+        }
       } else {
         document.getElementById('progressGrid').style.display = 'none';
         document.getElementById('unassignedGrid').style.display = 'none';
@@ -1238,7 +1246,15 @@
     document.getElementById('refreshBtn').addEventListener('click', async () => {
       const btn = document.getElementById('refreshBtn');
       btn.classList.add('loading'); btn.textContent = '…';
-      await loadBuildings();
+      if (activeTab === 'progress') {
+        progressLoaded = false;
+        await loadProgress();
+      } else if (activeTab === 'unassigned') {
+        unassignedLoaded = false;
+        await loadUnassigned();
+      } else {
+        await loadBuildings();
+      }
       btn.classList.remove('loading'); btn.textContent = '⟳ Refresh';
     });
 
