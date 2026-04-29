@@ -483,41 +483,78 @@
     #unassignedGrid { padding: 0 0 80px; }
     .unassigned-header {
       display: flex; align-items: center; gap: 10px;
-      padding: 16px 20px 10px; border-bottom: 1px solid var(--border);
+      padding: 16px 20px 12px; border-bottom: 1px solid var(--border);
     }
     .unassigned-title { font-size: 15px; font-weight: 900; color: var(--text); flex: 1; }
     .unassigned-count {
       font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 20px;
       background: rgba(245,208,76,0.15); color: var(--gold); border: 1px solid rgba(245,208,76,0.3);
     }
-    .unassigned-list { display: flex; flex-direction: column; gap: 0; }
-    .unassigned-row {
-      display: flex; align-items: center; gap: 12px; padding: 12px 20px;
-      border-bottom: 1px solid var(--border); transition: background .12s; cursor: default;
+    /* card grid */
+    .unassigned-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+      padding: 14px 16px;
     }
-    .unassigned-row:hover { background: rgba(255,255,255,0.03); }
-    .unassigned-img { width: 44px; height: 44px; object-fit: contain; border-radius: 8px; flex-shrink: 0; }
-    .unassigned-info { flex: 1; min-width: 0; }
+    .unassigned-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      padding: 12px 10px 10px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+      transition: border-color .18s, transform .12s; position: relative;
+    }
+    .unassigned-card:hover { border-color: rgba(245,208,76,0.35); transform: translateY(-1px); }
+    .unassigned-img {
+      width: 54px; height: 54px; object-fit: contain; border-radius: 8px;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+    }
+    /* name — white */
     .unassigned-name {
-      font-size: 13px; font-weight: 700; color: var(--text);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      font-size: 11px; font-weight: 700; color: #ffffff;
+      text-align: center; line-height: 1.35; word-break: break-word;
+      width: 100%;
     }
-    .unassigned-sub { display: flex; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
-    .unassigned-meta { font-size: 11px; font-weight: 600; color: var(--text-dim); }
-    .unassigned-meta.gold { color: var(--gold); }
-    .unassigned-cost {
-      font-size: 12px; font-weight: 700; color: var(--text); flex-shrink: 0; text-align: right;
-      white-space: nowrap;
+    /* badge row */
+    .unassigned-badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; width: 100%; }
+    .unassigned-cat-badge {
+      font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 5px;
+      background: rgba(255,255,255,0.06); color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: .3px;
     }
-    .unassigned-cost-sub { font-size: 10px; font-weight: 600; color: var(--text-dim); text-align: right; }
+    /* divider */
+    .unassigned-divider { width: 100%; height: 1px; background: var(--border); }
+    /* duration — sky blue */
+    .unassigned-dur {
+      font-size: 11px; font-weight: 700; color: #7ec8e3;
+      text-align: center; width: 100%;
+    }
+    .unassigned-dur-label {
+      font-size: 9px; font-weight: 600; color: rgba(126,200,227,0.6);
+      text-transform: uppercase; letter-spacing: .4px; text-align: center;
+    }
+    /* cost colours */
+    .unassigned-cost { font-size: 12px; font-weight: 800; text-align: center; width: 100%; }
+    .unassigned-cost.res-gold    { color: #f5d04c; }          /* gold — yellow */
+    .unassigned-cost.res-elixir  { color: #e87dbd; }          /* elixir — pink */
+    .unassigned-cost.res-de      { color: #9b59b6; }          /* dark elixir — dark purple */
+    .unassigned-cost.res-gems    { color: #2ecc71; }          /* gems — green */
+    .unassigned-cost.res-unknown { color: var(--text-dim); }
+    .unassigned-cost-label {
+      font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px;
+      text-align: center; width: 100%;
+    }
+    .unassigned-cost-label.res-gold    { color: rgba(245,208,76,0.55); }
+    .unassigned-cost-label.res-elixir  { color: rgba(232,125,189,0.55); }
+    .unassigned-cost-label.res-de      { color: rgba(155,89,182,0.6); }
+    .unassigned-cost-label.res-gems    { color: rgba(46,204,113,0.55); }
+    .unassigned-cost-label.res-unknown { color: var(--text-dim); }
+    /* empty */
     .unassigned-empty {
       display: flex; flex-direction: column; align-items: center;
       padding: 64px 20px; color: var(--text-dim); font-size: 14px; font-weight: 500; gap: 10px; text-align: center;
     }
     .unassigned-empty-icon { font-size: 36px; opacity: .4; }
-    .unassigned-cat-badge {
-      font-size: 9px; font-weight: 800; padding: 2px 7px; border-radius: 5px;
-      background: rgba(255,255,255,0.06); color: var(--text-dim); text-transform: uppercase; letter-spacing: .3px;
+    @media (max-width: 480px) {
+      .unassigned-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; padding: 12px; }
     }
   </style>
 </head>
@@ -1601,6 +1638,14 @@
       return `${n} ${icons[resource] || resource || ''}`.trim();
     }
 
+    /** Number-only cost string (resource label shown separately in the card). */
+    function fmtCostNum(cost) {
+      if (!cost && cost !== 0) return '—';
+      if (cost >= 1000000) return `${(cost / 1000000).toFixed(cost % 1000000 === 0 ? 0 : 1)}M`;
+      if (cost >= 1000)    return `${(cost / 1000).toFixed(0)}K`;
+      return String(cost);
+    }
+
     /* ── UNASSIGNED UPGRADES ── */
     let unassignedLoaded = false;
 
@@ -1624,7 +1669,7 @@
         return;
       }
 
-      const rows = upgrades.map(u => {
+      const cards = upgrades.map(u => {
         const info    = parseBuildingInfo(u.upgradeName || '');
         const gd      = info ? lookupUpgradeInGamedata(info.base, info.level) : null;
         const isSC    = u.upgradeName?.includes('*');
@@ -1633,25 +1678,26 @@
         const catName = catId ? (CATEGORIES[catId] || '') : '';
 
         // Duration: prefer gamedata, fall back to sheet column B
-        const durMin  = (gd && gd.duration_min != null) ? gd.duration_min : u.durationMinutes;
-        const durFmt  = fmtDurationMin(durMin);
+        const durMin = (gd && gd.duration_min != null) ? gd.duration_min : u.durationMinutes;
+        const durFmt = fmtDurationMin(durMin);
 
-        // Cost: gamedata only
-        const costFmt = gd ? fmtCost(gd.cost, gd.resource) : '—';
+        // Cost + resource for colour
+        const resource  = gd?.resource || 'unknown';
+        const resClass  = { gold: 'res-gold', elixir: 'res-elixir', de: 'res-de', gems: 'res-gems' }[resource] || 'res-unknown';
+        const resLabel  = { gold: 'Gold', elixir: 'Elixir', de: 'Dark Elixir', gems: 'Gems' }[resource] || '';
+        const costFmt   = gd && gd.cost != null ? fmtCostNum(gd.cost) : '—';
 
         return `
-          <div class="unassigned-row">
+          <div class="unassigned-card">
             <img src="${esc(imgSrc)}" class="unassigned-img" onerror="this.src='Images/Upgrades/PH.png'" alt="">
-            <div class="unassigned-info">
-              <div class="unassigned-name">${formatName(esc(u.upgradeName || ''))}</div>
-              <div class="unassigned-sub">
-                ${catName ? `<span class="unassigned-cat-badge">${esc(catName)}</span>` : ''}
-                <span class="unassigned-meta">⏱ ${esc(durFmt)}</span>
-              </div>
-            </div>
-            <div>
-              <div class="unassigned-cost">${esc(costFmt)}</div>
-            </div>
+            <div class="unassigned-name">${formatName(esc(u.upgradeName || ''))}</div>
+            ${catName ? `<div class="unassigned-badges"><span class="unassigned-cat-badge">${esc(catName)}</span></div>` : ''}
+            <div class="unassigned-divider"></div>
+            <div class="unassigned-dur-label">Duration</div>
+            <div class="unassigned-dur">${esc(durFmt)}</div>
+            <div class="unassigned-divider"></div>
+            ${resLabel ? `<div class="unassigned-cost-label ${resClass}">${esc(resLabel)}</div>` : ''}
+            <div class="unassigned-cost ${resClass}">${esc(costFmt)}</div>
           </div>`;
       }).join('');
 
@@ -1660,7 +1706,7 @@
           <span class="unassigned-title">Unassigned Upgrades</span>
           <span class="unassigned-count">${upgrades.length}</span>
         </div>
-        <div class="unassigned-list">${rows}</div>`;
+        <div class="unassigned-grid">${cards}</div>`;
       grid.style.display = '';
       unassignedLoaded = true;
     }
