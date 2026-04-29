@@ -841,9 +841,10 @@ function renderBuilderCards() {
 
   let cardCount = 0;
   for (let i = 1; i < currentWorkData.length && cardCount < 6; i++) {
-    const row               = currentWorkData[i];
+    const row           = currentWorkData[i];
+    const builderNumber = row[0].toString().match(/(\d+)/)?.[1];
+    if (!builderNumber) continue; // skip "Not Active Yet" rows
     cardCount++;
-    const builderNumber     = row[0].toString().match(/(\d+)/)?.[1];
     const finishMs          = new Date(row[2]).getTime();
     const currentUpgradeImg = getUpgradeImage(row[1]);
 
@@ -2879,6 +2880,11 @@ async function doRegister(nameInput, jsonInput, errEl, loadingEl, btn, overlay, 
     if (thBuilding) thLevel = thBuilding.lvl;
   }
 
+  // Extract builder count: Builder Hut is dataId 1000015, cnt = number owned (min 1)
+  const builderBuilding = Array.isArray(parsed.buildings)
+    ? parsed.buildings.find(b => b.data === 1000015) : null;
+  const builderCount = Math.max(1, builderBuilding?.cnt ?? 1);
+
   errEl.style.display = "none";
   loadingEl.style.display = "block";
   btn.disabled = true;
@@ -2890,6 +2896,7 @@ async function doRegister(nameInput, jsonInput, errEl, loadingEl, btn, overlay, 
       username: name,
       tag: parsed.tag,
       th_level: thLevel !== null ? String(thLevel) : "",
+      builder_count: String(builderCount),
       raw_json: rawJson,
     });
 
@@ -2909,6 +2916,7 @@ async function doRegister(nameInput, jsonInput, errEl, loadingEl, btn, overlay, 
     localStorage.setItem("coc_username", name);
     if (parsed.tag)       localStorage.setItem("coc_tag", parsed.tag);
     if (thLevel !== null) localStorage.setItem("coc_th_level", String(thLevel));
+    localStorage.setItem("coc_builder_count", String(builderCount));
     if (data.token)       { localStorage.setItem("coc_token", data.token); window.COC_TOKEN = data.token; }
 
     overlay.remove();
