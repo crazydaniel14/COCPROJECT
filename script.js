@@ -65,9 +65,6 @@ const CATEGORY_META = {
   "8": { name: "Army",            permanent: true  },
 };
 
-// Passwords are verified server-side via Script Properties (pwd_<username>).
-// To set or change a password, run setPassword() in the Apps Script editor.
-
 const REFRESH_ENDPOINT      = API_BASE + "?action=refresh_sheet";
 function TODAYS_BOOST_URL()       { return endpoint("todays_boost"); }
 function BOOST_PLAN_URL()         { return endpoint("boost_plan"); }
@@ -2984,7 +2981,7 @@ function showLoginScreen(onConfirm) {
 
     err.style.display = "none";
     btn.disabled = true;
-    btn.textContent = "Checking…";
+    btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="animation:spin 0.7s linear infinite;vertical-align:middle"><path d="M12 2a10 10 0 0 1 10 10"/></svg>`;
 
     // Password is verified server-side — send it along with the login request.
     // Users without a password simply leave the field blank.
@@ -3002,7 +2999,7 @@ function showLoginScreen(onConfirm) {
           passwordInput.focus();
         }
         btn.disabled = false;
-        btn.textContent = "Continue →";
+        btn.innerHTML = "Continue →";
         return;
       }
 
