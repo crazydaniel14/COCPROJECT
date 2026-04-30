@@ -2557,15 +2557,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Restore session tokens from localStorage before any API call is made
   window.COC_TOKEN = localStorage.getItem("coc_token") || '';
 
-  let username = localStorage.getItem("coc_username");
+  let username = (localStorage.getItem("coc_username") || "").toLowerCase() || null;
   if (username && username.endsWith("_CURRENT_WORK")) {
     username = username.replace("_CURRENT_WORK", "");
     localStorage.setItem("coc_username", username);
   }
   if (!username || username === "null" || username === "undefined" || username.trim() === "") {
     showLoginScreen(async (confirmedUsername) => {
-      window.COC_USERNAME = confirmedUsername;
-      console.log("[Init] Username set to:", confirmedUsername);
+      window.COC_USERNAME = confirmedUsername.toLowerCase();
+      console.log("[Init] Username set to:", window.COC_USERNAME);
       await bootApp();
     });
     return;
@@ -2648,7 +2648,7 @@ function switchUser() {
     document.getElementById("builders-container").innerHTML = "";
     document.querySelector('.upgrade-confirmation-modal-overlay')?.remove();
     showLoginScreen(async (confirmedUsername) => {
-      window.COC_USERNAME = confirmedUsername;
+      window.COC_USERNAME = confirmedUsername.toLowerCase();
       location.reload();
     });
   });
@@ -2959,7 +2959,7 @@ async function doRegister(nameInput, jsonInput, errEl, loadingEl, btn, overlay, 
     }
 
     // Success — store session data including the API token returned by the server
-    localStorage.setItem("coc_username", name);
+    localStorage.setItem("coc_username", name.toLowerCase());
     if (parsed.tag)       localStorage.setItem("coc_tag", parsed.tag);
     if (thLevel !== null) localStorage.setItem("coc_th_level", String(thLevel));
     localStorage.setItem("coc_builder_count", String(builderCount));
@@ -3169,7 +3169,7 @@ function showLoginScreen(onConfirm) {
         return;
       }
 
-      localStorage.setItem("coc_username", val);
+      localStorage.setItem("coc_username", val.toLowerCase());
       if (data.th_level) localStorage.setItem("coc_th_level", String(data.th_level));
       if (data.tag)      localStorage.setItem("coc_tag", data.tag);
       if (data.token)    { localStorage.setItem("coc_token", data.token); window.COC_TOKEN = data.token; }
