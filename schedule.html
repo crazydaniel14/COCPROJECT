@@ -662,7 +662,7 @@ function jumpToNow() {
 /* ── INIT ── */
 document.addEventListener('DOMContentLoaded', () => {
   window.COC_TOKEN = localStorage.getItem('coc_token') || '';
-  let u = (localStorage.getItem('coc_username') || '').toLowerCase() || null;
+  let u = localStorage.getItem('coc_username');
   if (u && u.endsWith('_CURRENT_WORK')) u = u.replace('_CURRENT_WORK','');
   if (!u || u === 'null' || u.trim() === '') { window.location.href = 'index.html'; return; }
   window.COC_USERNAME = u;

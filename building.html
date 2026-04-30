@@ -1937,7 +1937,7 @@
     /* ── INIT ── */
     document.addEventListener('DOMContentLoaded', () => {
       window.COC_TOKEN = localStorage.getItem('coc_token') || '';
-      const username = (localStorage.getItem('coc_username') || '').toLowerCase() || null;
+      const username = localStorage.getItem('coc_username');
       if (!username) { window.location.href = 'index.html'; return; }
       window.COC_USERNAME = username;
       loadBuildings();

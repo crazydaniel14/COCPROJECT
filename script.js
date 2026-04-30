@@ -2557,7 +2557,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Restore session tokens from localStorage before any API call is made
   window.COC_TOKEN = localStorage.getItem("coc_token") || '';
 
-  let username = (localStorage.getItem("coc_username") || "").toLowerCase() || null;
+  let username = localStorage.getItem("coc_username");
   if (username && username.endsWith("_CURRENT_WORK")) {
     username = username.replace("_CURRENT_WORK", "");
     localStorage.setItem("coc_username", username);
