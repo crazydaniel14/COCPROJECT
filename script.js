@@ -449,8 +449,13 @@ async function softRefreshBuilderCards() {
    DATA LOADERS
    ========================= */
 async function loadCurrentWork() {
-  const res = await fetch(endpoint("current_work_table"));
-  currentWorkData = await res.json();
+  try {
+    const res = await fetch(endpoint("current_work_table"));
+    currentWorkData = await res.json();
+  } catch (e) {
+    console.error("loadCurrentWork failed", e);
+    currentWorkData = null;
+  }
 }
 
 async function loadTodaysBoost() {
@@ -828,9 +833,15 @@ function renderSkeletonCards(count = 6) {
 
 function renderBuilderCards() {
   console.log("[Render] renderBuilderCards called");
-  if (!currentWorkData) { console.log("[Render] No currentWorkData"); return; }
   const container = document.getElementById("builders-container");
   if (!container) { console.log("[Render] No container found"); return; }
+
+  if (!currentWorkData) {
+    console.log("[Render] No currentWorkData — showing empty state");
+    container.innerHTML = `<div style="color:#aaa;text-align:center;padding:30px;width:100%;font-size:14px;">No data available — try refreshing.</div>`;
+    return;
+  }
+
   console.log("[Render] Proceeding to render cards");
 
   let earliestFinish = Infinity;
@@ -842,8 +853,24 @@ function renderBuilderCards() {
   let cardCount = 0;
   for (let i = 1; i < currentWorkData.length && cardCount < 6; i++) {
     const row           = currentWorkData[i];
-    const builderNumber = row[0].toString().match(/(\d+)/)?.[1];
-    if (!builderNumber) continue; // skip "Not Active Yet" rows
+    const builderNumber = row[0]?.toString().match(/(\d+)/)?.[1];
+    if (!builderNumber) {
+      // Builder slot exists but has no active upgrade — show idle card
+      const idleNum = String(i);
+      const card = document.createElement("div");
+      card.className = "builder-card";
+      card.dataset.builder = idleNum;
+      card.innerHTML = `
+        <img src="Images/Builders/Builder ${idleNum}.png"
+             class="builder-character" alt="Builder ${idleNum}" />
+        <div class="builder-text">
+          <div class="builder-name">BUILDER ${idleNum}</div>
+          <div class="builder-upgrade">No active upgrade</div>
+        </div>`;
+      container.appendChild(card);
+      cardCount++;
+      continue;
+    }
     cardCount++;
     const finishMs          = new Date(row[2]).getTime();
     const _remMs            = finishMs - Date.now();
