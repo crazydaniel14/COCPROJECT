@@ -842,6 +842,28 @@ function renderBuilderCards() {
     return;
   }
 
+  // If the backend returned only the header row (new user with no sheet rows yet),
+  // fall back to showing idle cards for the builder count stored at registration.
+  if (currentWorkData.length <= 1) {
+    const storedCount = parseInt(localStorage.getItem("coc_builder_count") || "1", 10);
+    const count = Math.min(Math.max(storedCount, 1), 6);
+    console.log("[Render] No builder rows in data — rendering", count, "idle cards from stored builder count");
+    for (let i = 1; i <= count; i++) {
+      const card = document.createElement("div");
+      card.className = "builder-card";
+      card.dataset.builder = String(i);
+      card.innerHTML = `
+        <img src="Images/Builders/Builder ${i}.png"
+             class="builder-character" alt="Builder ${i}" />
+        <div class="builder-text">
+          <div class="builder-name">BUILDER ${i}</div>
+          <div class="builder-upgrade">No active upgrade</div>
+        </div>`;
+      container.appendChild(card);
+    }
+    return;
+  }
+
   console.log("[Render] Proceeding to render cards");
 
   let earliestFinish = Infinity;
