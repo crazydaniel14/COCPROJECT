@@ -73,6 +73,7 @@ function SET_BOOST_BUILDER_URL(b) { return endpoint("set_todays_boost_builder") 
 
 function BOOST_LEVEL_URL()        { return endpoint("get_boost_level"); }
 function SET_BOOST_LEVEL_URL(lvl) { return endpoint("set_boost_level") + "&level=" + lvl; }
+function SET_BUILDER_COUNT_URL(n) { return endpoint("set_builder_count") + "&count=" + n; }
 
 function BUILDER_SNACK_URL()  { return endpoint("apply_one_hour_boost"); }
 function BATTLE_PASS_URL()    { return endpoint("apply_battle_pass"); }
@@ -339,6 +340,7 @@ let boostPlanData = [];
 let currentBoostIndex = 0;
 let currentBoostLevel = 8;
 const MAX_BOOST_LEVEL = 8; // update when a new level is added to the game
+let currentBuilderCount = 0;
 let openBuilders = [];
 let loadingBuilders = new Set();
 let lastActiveStatusUpdate = 0;
@@ -874,8 +876,21 @@ function renderBuilderCards() {
 
   let cardCount = 0;
   for (let i = 1; i < currentWorkData.length && cardCount < 6; i++) {
-    const row           = currentWorkData[i];
-    const builderNumber = row[0]?.toString().match(/Builder_?(\d+)/i)?.[1];
+    const row    = currentWorkData[i];
+    const rowVal = row[0]?.toString() || '';
+
+    if (rowVal.includes('Not Active Yet')) {
+      const nextNum    = i;
+      const unlockCard = document.createElement('div');
+      unlockCard.className            = 'unlock-builder-btn';
+      unlockCard.dataset.builderNum   = String(nextNum);
+      unlockCard.innerHTML            = `Unlock<br>Builder ${nextNum}`;
+      unlockCard.addEventListener('click', () => showUnlockBuilderConfirm(nextNum));
+      container.appendChild(unlockCard);
+      break;
+    }
+
+    const builderNumber = rowVal.match(/Builder_?(\d+)/i)?.[1];
     if (!builderNumber) {
       // Builder slot exists but has no active upgrade — show idle card
       const idleNum = String(i);
@@ -972,6 +987,8 @@ function renderBuilderCards() {
     container.appendChild(card);
   }
 
+  currentBuilderCount = cardCount;
+  updateBuilderCountBadge();
   wirePausedBuilderButtons();
 }
 
@@ -1772,6 +1789,101 @@ function showBoostLevelModal() {
 function wireBoostLevel() {
   document.getElementById('boostLevelBadge')
     ?.addEventListener('click', showBoostLevelModal);
+}
+
+function updateBuilderCountBadge() {
+  const badge = document.getElementById('builderCountBadge');
+  if (badge && currentBuilderCount > 0) badge.textContent = currentBuilderCount + ' Bldrs';
+}
+
+function showUnlockBuilderConfirm(num) {
+  document.querySelector('.unlock-confirm-overlay')?.remove();
+  const overlay = document.createElement('div');
+  overlay.className = 'bs-modal-overlay unlock-confirm-overlay';
+  overlay.style.cssText = 'display:flex;';
+  overlay.innerHTML = `
+    <div class="bs-modal unlock-confirm-modal">
+      <button class="boost-level-close unlock-confirm-close">✕</button>
+      <div class="unlock-confirm-body">
+        <div class="unlock-confirm-title">Did you unlock Builder ${num}?</div>
+        <div class="unlock-confirm-sub">Can be corrected at the bottom of the page</div>
+        <div class="unlock-confirm-actions">
+          <button class="unlock-confirm-yes">Yes, unlocked!</button>
+          <button class="unlock-confirm-no">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('.unlock-confirm-close').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('.unlock-confirm-no').addEventListener('click',   () => overlay.remove());
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  overlay.querySelector('.unlock-confirm-yes').addEventListener('click', async () => {
+    const btn = overlay.querySelector('.unlock-confirm-yes');
+    btn.disabled = true; btn.textContent = '…';
+    try {
+      await fetch(SET_BUILDER_COUNT_URL(num));
+      currentBuilderCount = num;
+      updateBuilderCountBadge();
+      overlay.remove();
+      await refreshDashboardFast();
+    } catch (e) {
+      console.error('Failed to set builder count', e);
+      btn.disabled = false; btn.textContent = 'Yes, unlocked!';
+    }
+  });
+}
+
+function showBuilderCountModal() {
+  document.querySelector('.builder-count-overlay')?.remove();
+  const overlay = document.createElement('div');
+  overlay.className = 'bs-modal-overlay builder-count-overlay';
+  overlay.style.cssText = 'display:flex;';
+
+  function buildContent() {
+    const opts = Array.from({length: 6}, (_, i) => i + 1).map(n =>
+      `<button class="builder-count-opt-btn${n === currentBuilderCount ? ' active' : ''}" data-count="${n}">${n}</button>`
+    ).join('');
+    return `
+      <div class="bs-modal builder-count-modal">
+        <button class="boost-level-close builder-count-close">✕</button>
+        <div class="builder-count-body">
+          <div class="builder-count-title">Active Builders</div>
+          <div class="builder-count-current">Currently: <strong>${currentBuilderCount || '—'}</strong></div>
+          <div class="builder-count-hint">Set to correct a mistake</div>
+          <div class="builder-count-opts">${opts}</div>
+        </div>
+      </div>`;
+  }
+
+  overlay.innerHTML = buildContent();
+  document.body.appendChild(overlay);
+  overlay.querySelector('.builder-count-close').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  overlay.querySelectorAll('.builder-count-opt-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const n = parseInt(btn.dataset.count);
+      if (n === currentBuilderCount) { overlay.remove(); return; }
+      btn.disabled = true; btn.textContent = '…';
+      try {
+        await fetch(SET_BUILDER_COUNT_URL(n));
+        currentBuilderCount = n;
+        updateBuilderCountBadge();
+        overlay.remove();
+        const container = document.getElementById('builders-container');
+        if (container) container.innerHTML = '';
+        await Promise.all([loadCurrentWork(), loadPausedBuilders()]);
+        renderBuilderCards();
+      } catch (e) {
+        console.error('Failed to set builder count', e);
+        overlay.remove();
+      }
+    });
+  });
+}
+
+function wireBuilderCountBadge() {
+  document.getElementById('builderCountBadge')
+    ?.addEventListener('click', showBuilderCountModal);
 }
 
 function wireBoostSimulation() {
@@ -2584,6 +2696,7 @@ async function bootApp() {
   wireApprenticeBoost();
   wireBoostSimulation();
   wireBoostLevel();
+  wireBuilderCountBadge();
   wireBoostFocusNavigation();
   wireBuilderCardClicks();
   wireImageButtons();

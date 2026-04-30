@@ -3045,3 +3045,162 @@ button:disabled {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.35; }
 }
+
+/* ==================================================
+   UNLOCK BUILDER BUTTON
+   ================================================== */
+.unlock-builder-btn {
+  height: 100px;
+  background: rgba(30,30,36,0.4);
+  border-radius: 16px;
+  border: 2px dashed rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #7a7a8a;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.5;
+  transition: all 0.18s;
+  user-select: none;
+}
+.unlock-builder-btn:hover {
+  border-color: rgba(245,208,76,0.35);
+  color: #f5d04c;
+  background: rgba(30,30,36,0.7);
+}
+
+/* ==================================================
+   BUILDER COUNT BADGE (bottom-right, very subtle)
+   ================================================== */
+.builder-count-badge {
+  position: fixed;
+  bottom: 12px;
+  right: 12px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #444455;
+  cursor: pointer;
+  padding: 2px 5px;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 4px;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  user-select: none;
+  line-height: 1.4;
+  z-index: 100;
+  background: rgba(15,15,20,0.5);
+}
+.builder-count-badge:hover {
+  color: #f5d04c;
+  border-color: rgba(245,208,76,0.3);
+}
+
+/* ==================================================
+   UNLOCK CONFIRM MODAL
+   ================================================== */
+.unlock-confirm-modal {
+  min-width: 240px;
+  max-width: 300px;
+  text-align: center;
+  position: relative;
+}
+.unlock-confirm-body { padding-top: 8px; }
+.unlock-confirm-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.unlock-confirm-sub {
+  font-size: 11px;
+  color: #666677;
+  margin-bottom: 16px;
+}
+.unlock-confirm-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.unlock-confirm-yes {
+  background: #5865f2;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-family: 'Lexend', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.unlock-confirm-yes:hover { opacity: 0.85; }
+.unlock-confirm-yes:disabled { opacity: 0.5; cursor: default; }
+.unlock-confirm-no {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: #9999a8;
+  font-family: 'Lexend', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.unlock-confirm-no:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+
+/* ==================================================
+   BUILDER COUNT MODAL
+   ================================================== */
+.builder-count-modal {
+  min-width: 220px;
+  max-width: 280px;
+  text-align: center;
+  position: relative;
+}
+.builder-count-body { padding-top: 4px; }
+.builder-count-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.builder-count-current {
+  font-size: 12px;
+  color: #9999a8;
+  margin-bottom: 4px;
+}
+.builder-count-hint {
+  font-size: 10px;
+  color: #555566;
+  margin-bottom: 14px;
+}
+.builder-count-opts {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.builder-count-opt-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: #9999a8;
+  font-family: 'Lexend', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-width: 36px;
+}
+.builder-count-opt-btn:hover,
+.builder-count-opt-btn.active {
+  background: rgba(245,208,76,0.15);
+  border-color: rgba(245,208,76,0.5);
+  color: #f5d04c;
+}
+.builder-count-opt-btn:disabled { opacity: 0.5; cursor: default; }
