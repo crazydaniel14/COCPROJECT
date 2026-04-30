@@ -805,7 +805,6 @@
             isUnassigned: true
           });
         });
-        unassignedLoaded = true;
         dataReady = true;
         updateTabCounts();
         renderGrid();
@@ -1303,11 +1302,7 @@
         document.getElementById('bldgGrid').style.display = 'none';
         document.getElementById('progressGrid').style.display = 'none';
         document.querySelector('.sort-bar').style.display = 'none';
-        if (unassignedLoaded) {
-          document.getElementById('unassignedGrid').style.display = '';
-        } else {
-          loadUnassigned();
-        }
+        loadUnassigned();
       } else {
         document.getElementById('progressGrid').style.display = 'none';
         document.getElementById('unassignedGrid').style.display = 'none';
