@@ -874,7 +874,8 @@ async function fetchCurrentWork() {
       const row = data[i];
       const num = row[0]?.toString().match(/(\d+)/)?.[1];
       if (!num) continue;
-      map[parseInt(num)] = { upgrade:row[1], finishTime:parseDate(row[2]), timeLeftMs:parseTimeLeftMs(row[3]||'') };
+      const ft = parseDate(row[2]);
+      map[parseInt(num)] = { upgrade:row[1], finishTime:ft, timeLeftMs:ft ? Math.max(0, ft.getTime() - Date.now()) : 0 };
     }
     return map;
   } catch(e) { return {}; }

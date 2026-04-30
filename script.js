@@ -846,6 +846,11 @@ function renderBuilderCards() {
     if (!builderNumber) continue; // skip "Not Active Yet" rows
     cardCount++;
     const finishMs          = new Date(row[2]).getTime();
+    const _remMs            = finishMs - Date.now();
+    const _remMins          = _remMs > 0 ? Math.floor(_remMs / 60000) : 0;
+    const timeLeft          = _remMs > 0
+      ? `${Math.floor(_remMins / (24*60))} d ${Math.floor((_remMins % (24*60)) / 60)} hr ${_remMins % 60} min`
+      : '0 d 0 hr 0 min';
     const currentUpgradeImg = getUpgradeImage(row[1]);
 
     const builderKey = `${window.COC_USERNAME}_Builder_${builderNumber}`;
@@ -904,12 +909,12 @@ function renderBuilderCards() {
           <div class="builder-upgrade">${row[1]}</div>
           <div class="builder-time-left editable-card-duration"
                data-builder="Builder_${builderNumber}" data-upgrade="${row[1]}"
-               data-row="2" title="Click to edit duration">${row[3]}</div>
+               data-row="2" title="Click to edit duration">${timeLeft}</div>
           <div class="builder-finish-row">
             <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}</div>
-            <button class="finish-upgrade-btn" data-builder="${builderNumber}" data-upgrade="${row[1]}" data-next="${row[4]}" title="Mark upgrade as finished"><img src="Images/Finished.png" alt="Finish" /></button>
+            <button class="finish-upgrade-btn" data-builder="${builderNumber}" data-upgrade="${row[1]}" data-next="${row[3]}" title="Mark upgrade as finished"><img src="Images/Finished.png" alt="Finish" /></button>
           </div>
-          <div class="builder-next">${buildNextUpgradeHTML(row[4])}</div>
+          <div class="builder-next">${buildNextUpgradeHTML(row[3])}</div>
         </div>`;
       const durationEl = card.querySelector('.editable-card-duration');
       if (durationEl) setupCardDurationEditor(durationEl);
@@ -1368,14 +1373,6 @@ function wireApprenticeBoost() {
         const dataRow = currentWorkData.find(r => r[0]?.toString().match(/(\d+)/)?.[1] === builderNumber);
         if (dataRow) {
           dataRow[2] = data.newEndTime;
-          const remainingMs = new Date(data.newEndTime).getTime() - Date.now();
-          if (remainingMs > 0) {
-            const totalMins = Math.floor(remainingMs / 60000);
-            const d = Math.floor(totalMins / (24 * 60));
-            const h = Math.floor((totalMins % (24 * 60)) / 60);
-            const m = totalMins % 60;
-            dataRow[3] = `${d} d ${h} hr ${m} min`;
-          }
         }
       }
 
