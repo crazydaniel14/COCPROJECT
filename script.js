@@ -703,7 +703,7 @@ async function fetchBuilderDetails(builderNumber) {
 function renderBuilderDetails(details) {
   const wrapper = document.createElement("div");
   wrapper.className = "builder-details";
-  const match = details.builder.toString().match(/(\d+)/);
+  const match = details.builder.toString().match(/Builder_?(\d+)/i) || details.builder.toString().match(/(\d+)/);
   wrapper.dataset.builder = match ? match[1] : "";
   const originalOrder = details.upgrades.map((_, i) => i);
   wrapper.innerHTML = `
@@ -875,7 +875,7 @@ function renderBuilderCards() {
   let cardCount = 0;
   for (let i = 1; i < currentWorkData.length && cardCount < 6; i++) {
     const row           = currentWorkData[i];
-    const builderNumber = row[0]?.toString().match(/(\d+)/)?.[1];
+    const builderNumber = row[0]?.toString().match(/Builder_?(\d+)/i)?.[1];
     if (!builderNumber) {
       // Builder slot exists but has no active upgrade — show idle card
       const idleNum = String(i);
@@ -1419,7 +1419,7 @@ function wireApprenticeBoost() {
       // doesn't overwrite the UI with stale server data if the backend
       // hasn't processed the boost yet by the time we re-fetch.
       if (data.newEndTime && builderNumber && currentWorkData) {
-        const dataRow = currentWorkData.find(r => r[0]?.toString().match(/(\d+)/)?.[1] === builderNumber);
+        const dataRow = currentWorkData.find(r => r[0]?.toString().match(/Builder_?(\d+)/i)?.[1] === builderNumber);
         if (dataRow) {
           dataRow[2] = data.newEndTime;
         }
