@@ -1426,6 +1426,28 @@ button:disabled {
 
 .builder-card:hover .boost-finish-indicator { opacity: 0.9; }
 
+/* Boost card loading skeleton overlay */
+.boost-card-skeleton {
+  position: absolute;
+  inset: 0;
+  background: #2f2f2f;
+  border-radius: 16px;
+  flex-direction: column;
+  justify-content: center;
+  padding: 20px 28px;
+  z-index: 5;
+}
+
+/* Spinner inside the boost-level-badge while loading */
+.boost-badge-spinner {
+  display: inline-block;
+  animation: boostBadgeSpin 0.8s linear infinite;
+}
+@keyframes boostBadgeSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 /* Builder Apprentice locked banner (shown inside boostFocusCard for TH < 10) */
 .boost-apprentice-locked {
   display: flex;

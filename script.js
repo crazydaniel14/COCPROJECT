@@ -548,6 +548,24 @@ async function loadBoostLevel() {
   } catch (e) { console.error("loadBoostLevel failed", e); }
 }
 
+function setBoostLoadingState(loading) {
+  const skeleton = document.getElementById("boostCardSkeleton");
+  const badge    = document.getElementById("boostLevelBadge");
+  if (loading) {
+    if (skeleton) skeleton.style.display = "flex";
+    if (badge) { badge.style.display = ""; badge.innerHTML = '<span class="boost-badge-spinner">⟳</span>'; }
+    const simBtn  = document.getElementById("runBoostSimBtn");
+    const nextBtn = document.getElementById("boostNext");
+    const prevBtn = document.getElementById("boostPrev");
+    if (simBtn)  simBtn.disabled  = true;
+    if (nextBtn) nextBtn.disabled = true;
+    if (prevBtn) prevBtn.disabled = true;
+  } else {
+    if (skeleton) skeleton.style.display = "none";
+    // badge text and button states are restored by updateApprenticeDisplay() + renderBoostFocusCard()
+  }
+}
+
 function updateApprenticeDisplay() {
   const badge  = document.getElementById("boostLevelBadge");
   const locked = document.getElementById("boostApprenticeLocked");
@@ -565,16 +583,22 @@ function updateApprenticeDisplay() {
     if (menuBtn) menuBtn.style.display = "none";
     const nextBtn = document.getElementById("boostNext");
     if (nextBtn) nextBtn.disabled = true;
+    const simBtn = document.getElementById("runBoostSimBtn");
+    if (simBtn) simBtn.disabled = true;
   } else if (townHallLevel !== null && townHallLevel >= BUILDER_APPRENTICE.unlock_th) {
     badge.style.display = "";
     if (locked) locked.style.display = "none";
     const lvl = parseInt(localStorage.getItem("coc_apprentice_level"), 10);
     if (!isNaN(lvl)) badge.textContent = lvl + " Lvl";
+    const simBtn = document.getElementById("runBoostSimBtn");
+    if (simBtn) simBtn.disabled = false;
   } else {
     // TH unknown — fall back to server-side boost level
     badge.style.display = "";
     if (locked) locked.style.display = "none";
     badge.textContent = currentBoostLevel + " Lvl";
+    const simBtn = document.getElementById("runBoostSimBtn");
+    if (simBtn) simBtn.disabled = false;
   }
 }
 
@@ -600,6 +624,7 @@ async function refreshDashboardFast() {
   if (isRefreshing) { _pendingRefresh = true; return; }
   isRefreshing = true;
   showRefreshIndicator('refreshing');
+  setBoostLoadingState(true);
   try {
     updateActiveStatusSmart();
     await Promise.all([
@@ -616,11 +641,13 @@ async function refreshDashboardFast() {
       if (container) container.innerHTML = "";
       renderBuilderCards();
     }
+    setBoostLoadingState(false);
     renderTownHallSection();
     updateApprenticeDisplay();
     updateLastRefreshed();
     showRefreshIndicator('done');
   } catch (e) {
+    setBoostLoadingState(false);
     console.error("Fast refresh failed", e);
     showRefreshIndicator('hidden');
   } finally {
@@ -633,6 +660,7 @@ async function refreshDashboard() {
   if (isRefreshing) { _pendingRefresh = true; return; }
   isRefreshing = true;
   showRefreshIndicator('refreshing');
+  setBoostLoadingState(true);
   try {
     updateActiveStatusSmart();
     await fetch(endpoint("refresh_sheet"));
@@ -650,11 +678,13 @@ async function refreshDashboard() {
       if (container) container.innerHTML = "";
       renderBuilderCards();
     }
+    setBoostLoadingState(false);
     renderTownHallSection();
     updateApprenticeDisplay();
     updateLastRefreshed();
     showRefreshIndicator('done');
   } catch (e) {
+    setBoostLoadingState(false);
     console.error("Refresh failed", e);
     showRefreshIndicator('hidden');
   } finally {
