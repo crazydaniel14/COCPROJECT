@@ -490,9 +490,13 @@ async function loadTownHallLevel() {
     console.log("[TH] raw response:", data);
     const parsed = parseInt(data.th_level, 10);
     townHallLevel = isNaN(parsed) ? null : parsed;
+    if (townHallLevel) localStorage.setItem("coc_th_level", String(townHallLevel));
+    if (data.tag) localStorage.setItem("coc_tag", data.tag);
+    return data;
   } catch (e) {
     console.error("loadTownHallLevel failed", e);
     townHallLevel = null;
+    return null;
   }
 }
 
@@ -2779,6 +2783,36 @@ async function bootApp() {
       const { builder, upgrade } = JSON.parse(pendingJump);
       waitForBuilderCard(builder).then(() => jumpToUpgrade(builder, upgrade)).catch(() => {});
     } catch(e) {}
+  }
+}
+
+async function refreshUserJsonData() {
+  const btn = document.getElementById("jsonRefreshBtn");
+  if (btn?.disabled) return;
+
+  btn.disabled = true;
+  btn.classList.add("spinning");
+  showRefreshIndicator('refreshing');
+
+  try {
+    localStorage.removeItem("coc_th_level");
+    await fetch(endpoint("refresh_sheet") + "&_=" + Date.now(), { cache: "no-store" });
+    await refreshDashboard();
+
+    const popup = document.getElementById("profile-popup");
+    if (popup) {
+      popup.remove();
+      switchUser();
+    }
+
+    showRefreshIndicator('done');
+  } catch (e) {
+    console.error("User JSON refresh failed", e);
+    showRefreshIndicator('hidden');
+    alert("Could not refresh the user JSON yet. Try again in a moment.");
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove("spinning");
   }
 }
 

@@ -12,6 +12,14 @@
 <body>
   <header class="site-header">
     <h2>COC PLANNER</h2>
+    <div class="site-header-actions">
+    <button
+      id="jsonRefreshBtn"
+      class="json-refresh-btn"
+      onclick="refreshUserJsonData()"
+      title="Refresh user JSON"
+      aria-label="Refresh user JSON"
+    >⟳</button>
     <button onclick="switchUser()" style="
   display:inline-flex; align-items:center; gap:6px;
   background:rgba(255,255,255,0.06);
@@ -24,6 +32,7 @@
    onmouseout="this.style.borderColor='rgba(245,208,76,0.5)';this.style.color='#9999a8'">
   ⇄ Switch User
 </button>
+    </div>
   </header>
 
   <!-- IMAGE ACTION BUTTONS -->
