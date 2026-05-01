@@ -1506,7 +1506,7 @@
           const pct       = isUnknown ? 0 : Math.min(100, Math.round((curLvl / bldg.maxLevel) * 100));
           const fillClass = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
           const valClass  = isUnknown ? 'unknown' : isMaxed ? 'maxed' : '';
-          const valText   = isUnknown ? `? / ${bldg.maxLevel}` : `${curLvl} / ${bldg.maxLevel}`;
+          const valText   = isUnknown ? `0 / ${bldg.maxLevel}` : `${curLvl} / ${bldg.maxLevel}`;
           const labelHtml = bldg.count > 1 ? `<span class="prog-inst-label">${i + 1}</span>` : '';
           const barAttrs  = !isMaxed ? `data-prog-bldg="${esc(bldg.name)}" data-prog-inst="${i}" data-prog-lvl="${curLvl ?? ''}" data-prog-max="${bldg.maxLevel}"` : '';
           return `
@@ -1551,7 +1551,7 @@
         const pct       = isUnknown ? 0 : Math.min(100, Math.round((curLvl / hero.maxLevel) * 100));
         const fillClass = isUnknown ? 'unknown' : '';
         const valClass  = isUnknown ? 'unknown' : '';
-        const valText   = isUnknown ? `? / ${hero.maxLevel}` : `${curLvl} / ${hero.maxLevel}`;
+        const valText   = isUnknown ? `0 / ${hero.maxLevel}` : `${curLvl} / ${hero.maxLevel}`;
         const badgeClass = isUnknown ? 'unknown' : 'partial';
         const badgeText  = isUnknown ? '?' : `${pct}%`;
         const noJsonNote = !hasVillageData
