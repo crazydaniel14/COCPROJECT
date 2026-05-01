@@ -883,7 +883,7 @@ async function fetchCurrentWork() {
     const map  = {};
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
-      const num = row[0]?.toString().match(/(\d+)/)?.[1];
+      const num = row[0]?.toString().match(/Builder_?(\d+)/i)?.[1] ?? row[0]?.toString().match(/(\d+)\s*$/)?.[1];
       if (!num) continue;
       const ft = parseDate(row[2]);
       map[parseInt(num)] = { upgrade:row[1], finishTime:ft, timeLeftMs:ft ? Math.max(0, ft.getTime() - Date.now()) : 0 };
