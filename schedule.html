@@ -799,6 +799,15 @@ function applyMobileZoom() {
   renderMobile();
 }
   
+/* ── ACTIVE BUILDER SYNC ── */
+function syncActiveBuilderUI(activeNums) {
+  activeBuilders = new Set(activeNums);
+  document.querySelectorAll('#builderToggles .toggle-btn[data-b]').forEach(btn => {
+    const n = parseInt(btn.dataset.b);
+    btn.style.display = activeBuilders.has(n) ? '' : 'none';
+  });
+}
+
 /* ── LOAD ── */
 async function loadGantt() {
   if (hasPendingChanges) {
@@ -817,6 +826,8 @@ async function loadGantt() {
     ganttData   = details;
     boostPlan   = boosts;
     currentWork = work;
+    const activeNums = Object.keys(work).map(Number).sort((a,b) => a-b);
+    if (activeNums.length > 0) syncActiveBuilderUI(activeNums);
     stitchTimelines();
     annotateOriginalPositions();
     computeRange();
