@@ -814,6 +814,7 @@
     /* ── STATE ── */
     let allUpgrades   = [];
     let currentWorkMap = {}; // builderNum(int) → { upgrade, finishTimeStr }
+    let totalBuilderCount = 0; // total unlocked builders (including idle ones)
     let activeTab     = 'all';
     let sortMode      = 'builder';
     let renderedList  = []; // the sorted+filtered list currently shown
@@ -834,11 +835,14 @@
         const rows = await res.json();
         if (!Array.isArray(rows)) return {};
         const map = {};
+        let unlockedCount = 0;
         for (let i = 1; i < rows.length; i++) {
-          const row = rows[i];
-          if (!row || !row[0]) continue;
-          const m = String(row[0]).match(/(\d+)/);
-          if (!m) continue;
+          const row    = rows[i];
+          const rowVal = String(row?.[0] || '');
+          if (rowVal.includes('Not Active Yet')) continue; // locked slot
+          unlockedCount++; // this slot is unlocked (busy or idle)
+          const m = rowVal.match(/(\d+)/);
+          if (!m) continue; // idle builder — no active work entry
           const bNum = parseInt(m[1]);
           const finishDate = row[2] ? new Date(row[2]) : null;
           let finishStr = '—';
@@ -847,6 +851,7 @@
           }
           map[bNum] = { upgrade: String(row[1] || ''), finishTimeStr: finishStr };
         }
+        totalBuilderCount = unlockedCount;
         return map;
       } catch { return {}; }
     }
@@ -2171,10 +2176,8 @@
       // Use the live builder map (populated from current_work_table) to get the
       // actual number of unlocked builders for this account. Falls back to
       // localStorage only if the map hasn't loaded yet.
-      const mapKeys      = Object.keys(currentWorkMap).map(Number);
-      const mapCount     = mapKeys.length > 0 ? Math.max(...mapKeys) : 0;
-      const builderCount = mapCount > 0
-        ? mapCount
+      const builderCount = totalBuilderCount > 0
+        ? totalBuilderCount
         : Math.min(Math.max(parseInt(localStorage.getItem('coc_builder_count') || '1', 10), 1), 6);
       const clampedCount = Math.min(Math.max(builderCount, 1), 6);
 
