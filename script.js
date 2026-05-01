@@ -545,9 +545,28 @@ async function loadBoostLevel() {
     const res  = await fetch(BOOST_LEVEL_URL());
     const data = await res.json();
     currentBoostLevel = data.level ?? 8;
-    const badge = document.getElementById("boostLevelBadge");
-    if (badge) badge.textContent = currentBoostLevel + " Lvl";
   } catch (e) { console.error("loadBoostLevel failed", e); }
+}
+
+function updateApprenticeDisplay() {
+  const badge  = document.getElementById("boostLevelBadge");
+  const locked = document.getElementById("boostApprenticeLocked");
+  if (!badge) return;
+
+  if (townHallLevel !== null && townHallLevel < BUILDER_APPRENTICE.unlock_th) {
+    badge.style.display = "none";
+    if (locked) locked.style.display = "flex";
+  } else if (townHallLevel !== null && townHallLevel >= BUILDER_APPRENTICE.unlock_th) {
+    badge.style.display = "";
+    if (locked) locked.style.display = "none";
+    const lvl = parseInt(localStorage.getItem("coc_apprentice_level"), 10);
+    if (!isNaN(lvl)) badge.textContent = lvl + " Lvl";
+  } else {
+    // TH unknown — fall back to server-side boost level
+    badge.style.display = "";
+    if (locked) locked.style.display = "none";
+    badge.textContent = currentBoostLevel + " Lvl";
+  }
 }
 
 async function loadBoostPlan() {
@@ -589,6 +608,7 @@ async function refreshDashboardFast() {
       renderBuilderCards();
     }
     renderTownHallSection();
+    updateApprenticeDisplay();
     updateLastRefreshed();
     showRefreshIndicator('done');
   } catch (e) {
@@ -622,6 +642,7 @@ async function refreshDashboard() {
       renderBuilderCards();
     }
     renderTownHallSection();
+    updateApprenticeDisplay();
     updateLastRefreshed();
     showRefreshIndicator('done');
   } catch (e) {
@@ -1750,9 +1771,8 @@ function showBoostLevelModal() {
       try {
         await fetch(SET_BOOST_LEVEL_URL(newLevel));
         currentBoostLevel = newLevel;
-        const badge = document.getElementById('boostLevelBadge');
-        if (badge) badge.textContent = currentBoostLevel + ' Lvl';
         overlay.remove();
+        updateApprenticeDisplay();
       } catch (e) {
         console.error('Failed to set boost level', e);
         overlay.querySelector('.boost-level-confirm-yes').disabled = false;
@@ -1776,9 +1796,8 @@ function showBoostLevelModal() {
         try {
           await fetch(SET_BOOST_LEVEL_URL(newLevel));
           currentBoostLevel = newLevel;
-          const badge = document.getElementById('boostLevelBadge');
-          if (badge) badge.textContent = currentBoostLevel + ' Lvl';
           overlay.remove();
+          updateApprenticeDisplay();
         } catch (e) {
           console.error('Failed to set boost level', e);
           btn.disabled = false;
@@ -3053,6 +3072,13 @@ async function doRegister(nameInput, jsonInput, errEl, loadingEl, btn, overlay, 
     ? parsed.buildings.find(b => b.data === 1000015) : null;
   const builderCount = Math.max(1, builderBuilding?.cnt ?? 1);
 
+  // Extract Builder Apprentice level from helpers array
+  let apprenticeLevel = null;
+  if (Array.isArray(parsed.helpers)) {
+    const apprentice = parsed.helpers.find(h => h.data === BUILDER_APPRENTICE.data_id);
+    if (apprentice) apprenticeLevel = apprentice.lvl;
+  }
+
   errEl.style.display = "none";
   loadingEl.style.display = "block";
   btn.disabled = true;
@@ -3082,10 +3108,11 @@ async function doRegister(nameInput, jsonInput, errEl, loadingEl, btn, overlay, 
 
     // Success — store session data including the API token returned by the server
     localStorage.setItem("coc_username", name.toLowerCase());
-    if (parsed.tag)       localStorage.setItem("coc_tag", parsed.tag);
-    if (thLevel !== null) localStorage.setItem("coc_th_level", String(thLevel));
+    if (parsed.tag)           localStorage.setItem("coc_tag", parsed.tag);
+    if (thLevel !== null)     localStorage.setItem("coc_th_level", String(thLevel));
     localStorage.setItem("coc_builder_count", String(builderCount));
-    if (data.token)       { localStorage.setItem("coc_token", data.token); window.COC_TOKEN = data.token; }
+    if (apprenticeLevel !== null) localStorage.setItem("coc_apprentice_level", String(apprenticeLevel));
+    if (data.token)           { localStorage.setItem("coc_token", data.token); window.COC_TOKEN = data.token; }
 
     overlay.remove();
     onConfirm(name);

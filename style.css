@@ -1426,6 +1426,29 @@ button:disabled {
 
 .builder-card:hover .boost-finish-indicator { opacity: 0.9; }
 
+/* Builder Apprentice locked banner (shown inside boostFocusCard for TH < 10) */
+.boost-apprentice-locked {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.boost-apprentice-th-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.boost-apprentice-locked span {
+  font-size: 11px;
+  color: #9999a8;
+  line-height: 1.3;
+}
+
 /* Boost level badge (left of "Boost Plan" heading) */
 .boost-level-badge {
   font-size: 9px;

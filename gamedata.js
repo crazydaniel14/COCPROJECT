@@ -1694,6 +1694,15 @@ function formatDefenseDuration(minutes) {
   return parts.join(' ') || '< 1 min';
 }
 
+// ── BUILDER APPRENTICE ────────────────────────────────────────────────────────
+// Helper unit that speeds up building upgrades. data_id matches village JSON helpers[].data
+const BUILDER_APPRENTICE = {
+  data_id:   93000000,
+  name:      "Builder Apprentice",
+  unlock_th: 10,
+  max_level: 8,
+};
+
 // ── BUILDER HUT GEM COSTS ─────────────────────────────────────────────────────
 // Cost in gems to unlock each Builder's Hut (builder number → gems).
 const BUILDER_HUT_GEMS = { 1: 0, 2: 250, 3: 500, 4: 1000, 5: 2000 };
