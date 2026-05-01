@@ -881,10 +881,14 @@ function renderBuilderCards() {
 
     if (rowVal.includes('Not Active Yet')) {
       const nextNum    = i;
+      const gemCost    = BUILDER_HUT_GEMS[nextNum];
+      const costHTML   = gemCost != null
+        ? `<span class="unlock-btn-cost"><img src="Images/gem.png" class="unlock-gem-icon" alt="gem" />${gemCost.toLocaleString()}</span>`
+        : '';
       const unlockCard = document.createElement('div');
-      unlockCard.className            = 'unlock-builder-btn';
-      unlockCard.dataset.builderNum   = String(nextNum);
-      unlockCard.innerHTML            = `Unlock<br>Builder ${nextNum}`;
+      unlockCard.className          = 'unlock-builder-btn';
+      unlockCard.dataset.builderNum = String(nextNum);
+      unlockCard.innerHTML          = `<span class="unlock-btn-label">Unlock Builder ${nextNum}</span>${costHTML}`;
       unlockCard.addEventListener('click', () => showUnlockBuilderConfirm(nextNum));
       container.appendChild(unlockCard);
       break;
@@ -1798,6 +1802,10 @@ function updateBuilderCountBadge() {
 
 function showUnlockBuilderConfirm(num) {
   document.querySelector('.unlock-confirm-overlay')?.remove();
+  const gemCost  = BUILDER_HUT_GEMS[num];
+  const costLine = gemCost != null
+    ? `<div class="unlock-confirm-cost"><img src="Images/gem.png" class="unlock-gem-icon" alt="gem" />${gemCost.toLocaleString()} gems</div>`
+    : '';
   const overlay = document.createElement('div');
   overlay.className = 'bs-modal-overlay unlock-confirm-overlay';
   overlay.style.cssText = 'display:flex;';
@@ -1806,6 +1814,7 @@ function showUnlockBuilderConfirm(num) {
       <button class="boost-level-close unlock-confirm-close">✕</button>
       <div class="unlock-confirm-body">
         <div class="unlock-confirm-title">Did you unlock Builder ${num}?</div>
+        ${costLine}
         <div class="unlock-confirm-sub">Can be corrected at the bottom of the page</div>
         <div class="unlock-confirm-actions">
           <button class="unlock-confirm-yes">Yes, unlocked!</button>

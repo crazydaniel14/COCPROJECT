@@ -1694,6 +1694,10 @@ function formatDefenseDuration(minutes) {
   return parts.join(' ') || '< 1 min';
 }
 
+// ── BUILDER HUT GEM COSTS ─────────────────────────────────────────────────────
+// Cost in gems to unlock each Builder's Hut (builder number → gems).
+const BUILDER_HUT_GEMS = { 1: 0, 2: 250, 3: 500, 4: 1000, 5: 2000 };
+
 // ── HELPER: format cost ───────────────────────────────────────────────────────
 function formatDefenseCost(cost, resource) {
   const suffix = resource === 'de' ? ' DE' : resource === 'gems' ? ' gems' : '';
