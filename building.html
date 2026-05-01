@@ -1856,6 +1856,27 @@
       return String(cost);
     }
 
+    function gameDataEntryFor(baseName) {
+      return DEFENSE_GAME_DATA[baseName]
+          || RESOURCE_GAME_DATA[baseName]
+          || ARMY_GAME_DATA[baseName]
+          || TRAP_GAME_DATA[baseName]
+          || null;
+    }
+
+    function everHasMultipleInstances(baseName) {
+      const entry = gameDataEntryFor(baseName);
+      if (!entry?.count_at_th) return false;
+      return Object.values(entry.count_at_th).some(count => Number(count) > 1);
+    }
+
+    function heroHallCapForGeneration(thLevel, villageLevels) {
+      const currentHeroHall = villageLevels['1000071']?.[0];
+      if (currentHeroHall) return currentHeroHall;
+      const heroHall = getArmyAtTH(thLevel).find(b => b.name === 'Hero Hall');
+      return heroHall?.maxLevel || 0;
+    }
+
     /* ── GENERATE UNASSIGNED FROM PROGRESS ── */
     async function generateUnassignedFromProgress() {
       const grid = document.getElementById('unassignedGrid');
@@ -1901,24 +1922,33 @@
       for (const category of categories) {
         for (const bldg of category) {
           const levels = villageLevels[String(bldg.buildingId)] || [];
+          const needsInstanceNumber = everHasMultipleInstances(bldg.name);
           for (let i = 0; i < bldg.count; i++) {
             const curLvl        = levels[i] ?? 0;
-            const instanceLabel = bldg.count > 1 ? ` #${i + 1}` : '';
-            for (let lvl = curLvl + 1; lvl <= bldg.maxLevel; lvl++) {
-              const gd = lookupUpgradeInGamedata(bldg.name, lvl);
-              toAdd.push({ upgradeName: `${bldg.name}${instanceLabel} Lvl ${lvl}`, durationMinutes: gd?.duration_min ?? 0 });
+            const instanceLabel = needsInstanceNumber ? ` #${i + 1}` : '';
+            for (const lvlData of bldg.levels) {
+              if (lvlData.level <= curLvl) continue;
+              toAdd.push({
+                upgradeName: `${bldg.name}${instanceLabel} Lvl ${lvlData.level}`,
+                durationMinutes: lvlData.duration_min ?? 0,
+              });
             }
           }
         }
       }
 
       // Heroes — single instance, keyed by heroId.
-      const heroHallLevel = villageLevels['1000071']?.[0] ?? null;
-      for (const hero of getHeroesForProgress(heroHallLevel)) {
-        const curLvl = (villageLevels[String(hero.heroId)] || [])[0] ?? 0;
-        for (let lvl = curLvl + 1; lvl <= hero.maxLevel; lvl++) {
-          const gd = lookupUpgradeInGamedata(hero.name, lvl);
-          toAdd.push({ upgradeName: `${hero.name} Lvl ${lvl}`, durationMinutes: gd?.duration_min ?? 0 });
+      const heroHallLevel = heroHallCapForGeneration(thLevel, villageLevels);
+      if (heroHallLevel > 0) {
+        for (const hero of getHeroesForProgress(heroHallLevel)) {
+          const curLvl = (villageLevels[String(hero.heroId)] || [])[0] ?? 0;
+          for (const lvlData of hero.levels) {
+            if (lvlData.level <= curLvl) continue;
+            toAdd.push({
+              upgradeName: `${hero.name} Lvl ${lvlData.level}`,
+              durationMinutes: lvlData.duration_min ?? 0,
+            });
+          }
         }
       }
 
