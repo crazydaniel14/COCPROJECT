@@ -71,6 +71,7 @@
     }
     .cat-tab:hover { color: var(--text); border-color: rgba(245,208,76,0.5); }
     .cat-tab.active { background: rgba(245,208,76,0.15); border-color: var(--gold); color: var(--gold); }
+    .cat-tab[data-min-th] { display: none; }
     .cat-tab-divider {
       width: 1px; height: 28px; background: var(--border); flex-shrink: 0; align-self: center; margin: 0 2px;
     }
@@ -622,10 +623,10 @@
     <button class="cat-tab active" data-cat="all">All</button>
     <button class="cat-tab" data-cat="1"><img class="tab-icon" src="Images/Upgrades/Cannon Lvl 1.png" alt="">Defenses</button>
     <button class="cat-tab" data-cat="2"><img class="tab-icon" src="Images/ged.png" alt="">Resources</button>
-    <button class="cat-tab" data-cat="3"><img class="tab-icon" src="Images/CraftingStation.png" alt="">Craft. Def</button>
+    <button class="cat-tab" data-cat="3" data-min-th="18"><img class="tab-icon" src="Images/CraftingStation.png" alt="">Craft. Def</button>
     <button class="cat-tab" data-cat="4"><img class="tab-icon" src="Images/Upgrades/Spring Trap Lvl 1&2.png" alt="">Traps</button>
-    <button class="cat-tab" data-cat="5"><img class="tab-icon" src="Images/SCicon.png" alt="">Supercharged</button>
-    <button class="cat-tab" data-cat="6"><img class="tab-icon" src="Images/Upgrades/Longshot.png" alt="">Guardians</button>
+    <button class="cat-tab" data-cat="5" data-min-th="18"><img class="tab-icon" src="Images/SCicon.png" alt="">Supercharged</button>
+    <button class="cat-tab" data-cat="6" data-min-th="18"><img class="tab-icon" src="Images/Upgrades/Longshot.png" alt="">Guardians</button>
     <button class="cat-tab" data-cat="7"><img class="tab-icon" src="Images/Upgrades/Hero Hall Lvl 1.png" alt="">Heroes</button>
     <button class="cat-tab" data-cat="8"><img class="tab-icon" src="Images/Army.png" alt="">Army</button>
     <div class="cat-tab-divider"></div>
@@ -1409,6 +1410,7 @@
             thLevel = parseInt(data.th_level);
             localStorage.setItem('coc_th_level', String(thLevel));
             if (data.tag) localStorage.setItem('coc_tag', data.tag);
+            applyTHTabVisibility(thLevel);
           }
         } catch { /* fall through to error below */ }
       }
@@ -1950,12 +1952,30 @@
       return BCAT[baseName] || null;
     }
 
+    /* ── TH-GATED TABS ── */
+    const MAX_TH = 18;
+    function applyTHTabVisibility(th) {
+      document.querySelectorAll('.cat-tab[data-min-th]').forEach(tab => {
+        const minTH = parseInt(tab.dataset.minTh, 10);
+        const visible = th >= minTH;
+        tab.style.display = visible ? '' : 'none';
+        if (!visible && activeTab === tab.dataset.cat) {
+          document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+          document.querySelector('.cat-tab[data-cat="all"]').classList.add('active');
+          activeTab = 'all';
+          renderGrid();
+        }
+      });
+    }
+
     /* ── INIT ── */
     document.addEventListener('DOMContentLoaded', () => {
       window.COC_TOKEN = localStorage.getItem('coc_token') || '';
       const username = localStorage.getItem('coc_username');
       if (!username) { window.location.href = 'index.html'; return; }
       window.COC_USERNAME = username;
+      const cachedTH = parseInt(localStorage.getItem('coc_th_level') || '0');
+      if (cachedTH) applyTHTabVisibility(cachedTH);
       loadBuildings();
       setupPullToRefresh(loadBuildings);
     });
