@@ -1406,29 +1406,31 @@
     /* ── TH PROGRESS ── */
     let progressLoaded = false;
 
+    async function refreshTownHallCache() {
+      const res = await fetch(endpoint('get_town_hall_level') + "&_=" + Date.now(), { cache: "no-store" });
+      const data = await res.json();
+      const thLevel = parseInt(data.th_level, 10);
+      if (!thLevel) return null;
+
+      const prevTH = parseInt(localStorage.getItem('coc_th_level') || '0', 10);
+      localStorage.setItem('coc_th_level', String(thLevel));
+      if (data.tag) localStorage.setItem('coc_tag', data.tag);
+      applyTHTabVisibility(thLevel);
+      if (prevTH && thLevel > prevTH) {
+        localStorage.removeItem('coc_unassigned_initialized_' + window.COC_USERNAME);
+      }
+      return thLevel;
+    }
+
     async function loadProgress() {
       const pg = document.getElementById('progressGrid');
       let thLevel = parseInt(localStorage.getItem('coc_th_level') || '0');
 
-      // Not cached yet — try fetching from backend (reads Registrations sheet)
-      if (!thLevel) {
-        pg.innerHTML = `<div class="bldg-status"><div class="bldg-spinner"></div><span>Looking up your TH level…</span></div>`;
-        pg.style.display = '';
-        try {
-          const res  = await fetch(endpoint('get_town_hall_level'));
-          const data = await res.json();
-          if (data.th_level) {
-            thLevel = parseInt(data.th_level);
-            const prevTH = parseInt(localStorage.getItem('coc_th_level') || '0');
-            localStorage.setItem('coc_th_level', String(thLevel));
-            if (data.tag) localStorage.setItem('coc_tag', data.tag);
-            applyTHTabVisibility(thLevel);
-            if (prevTH && thLevel > prevTH) {
-              localStorage.removeItem('coc_unassigned_initialized_' + window.COC_USERNAME);
-            }
-          }
-        } catch { /* fall through to error below */ }
-      }
+      pg.innerHTML = `<div class="bldg-status"><div class="bldg-spinner"></div><span>Looking up your TH level…</span></div>`;
+      pg.style.display = '';
+      try {
+        thLevel = await refreshTownHallCache() || thLevel;
+      } catch { /* use the existing cache if the backend lookup fails */ }
 
       if (!thLevel) {
         pg.innerHTML = `<div class="prog-no-th">
@@ -1451,6 +1453,13 @@
         const data = await res.json();
         if (data.buildings) villageLevels = data.buildings;
       } catch { /* graceful — show reference list without current levels */ }
+
+      const jsonTH = parseInt(villageLevels['1000001']?.[0] || '0', 10);
+      if (jsonTH) {
+        thLevel = jsonTH;
+        localStorage.setItem('coc_th_level', String(jsonTH));
+        applyTHTabVisibility(jsonTH);
+      }
 
       // Hero levels are not in get_village_buildings. Infer from the builder queue:
       // the lowest queued upgrade level for a hero minus 1 = its current level.
@@ -2126,6 +2135,7 @@
       window.COC_USERNAME = username;
       const cachedTH = parseInt(localStorage.getItem('coc_th_level') || '0');
       if (cachedTH) applyTHTabVisibility(cachedTH);
+      refreshTownHallCache().catch(() => {});
       loadBuildings();
       setupPullToRefresh(loadBuildings);
     });

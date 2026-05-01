@@ -488,7 +488,15 @@ async function loadTownHallLevel() {
     const res  = await fetch(TOWN_HALL_LEVEL_URL());
     const data = await res.json();
     console.log("[TH] raw response:", data);
-    const parsed = parseInt(data.th_level, 10);
+    let parsed = parseInt(data.th_level, 10);
+    try {
+      const villageRes = await fetch(endpoint("get_village_buildings") + "&_=" + Date.now(), { cache: "no-store" });
+      const villageData = await villageRes.json();
+      const jsonTH = parseInt(villageData.buildings?.["1000001"]?.[0], 10);
+      if (jsonTH) parsed = jsonTH;
+    } catch (e) {
+      console.warn("Could not derive TH level from village JSON", e);
+    }
     townHallLevel = isNaN(parsed) ? null : parsed;
     if (townHallLevel) localStorage.setItem("coc_th_level", String(townHallLevel));
     if (data.tag) localStorage.setItem("coc_tag", data.tag);
