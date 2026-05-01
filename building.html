@@ -1879,9 +1879,7 @@
       return Object.values(entry.count_at_th).some(count => Number(count) > 1);
     }
 
-    function heroHallCapForGeneration(thLevel, villageLevels) {
-      const currentHeroHall = villageLevels['1000071']?.[0];
-      if (currentHeroHall) return currentHeroHall;
+    function heroHallCapForGeneration(thLevel) {
       const heroHall = getArmyAtTH(thLevel).find(b => b.name === 'Hero Hall');
       return heroHall?.maxLevel || 0;
     }
@@ -1947,7 +1945,7 @@
       }
 
       // Heroes — single instance, keyed by heroId.
-      const heroHallLevel = heroHallCapForGeneration(thLevel, villageLevels);
+      const heroHallLevel = heroHallCapForGeneration(thLevel);
       if (heroHallLevel > 0) {
         for (const hero of getHeroesForProgress(heroHallLevel)) {
           const curLvl = (villageLevels[String(hero.heroId)] || [])[0] ?? 0;
