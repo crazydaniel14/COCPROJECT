@@ -556,6 +556,15 @@ function updateApprenticeDisplay() {
   if (townHallLevel !== null && townHallLevel < BUILDER_APPRENTICE.unlock_th) {
     badge.style.display = "none";
     if (locked) locked.style.display = "flex";
+    // Hide boost card content — apprentice unavailable means the card is irrelevant
+    [".boost-day", ".boost-status", ".boost-builder", ".boost-extra"].forEach(sel => {
+      const el = document.querySelector(sel);
+      if (el) el.style.display = "none";
+    });
+    const menuBtn = document.getElementById("boostMenuBtn");
+    if (menuBtn) menuBtn.style.display = "none";
+    const nextBtn = document.getElementById("boostNext");
+    if (nextBtn) nextBtn.disabled = true;
   } else if (townHallLevel !== null && townHallLevel >= BUILDER_APPRENTICE.unlock_th) {
     badge.style.display = "";
     if (locked) locked.style.display = "none";
@@ -659,6 +668,7 @@ async function refreshDashboard() {
    ========================= */
 function renderBoostFocusCard() {
   if (!boostPlanData.length) return;
+  if (townHallLevel !== null && townHallLevel < BUILDER_APPRENTICE.unlock_th) return;
   const day       = boostPlanData[currentBoostIndex];
   const dayEl     = document.querySelector(".boost-day");
   const statusEl  = document.querySelector(".boost-status");
