@@ -597,6 +597,17 @@
       padding: 64px 20px; color: var(--text-dim); font-size: 14px; font-weight: 500; gap: 10px; text-align: center;
     }
     .unassigned-empty-icon { font-size: 36px; opacity: .4; }
+    .gen-btn {
+      margin-top: 10px; padding: 8px 16px;
+      background: var(--accent, #f5d04c); color: #111;
+      border: none; border-radius: 8px;
+      font-weight: 700; font-size: 13px; cursor: pointer;
+    }
+    .gen-btn:hover { opacity: .85; }
+    .gen-btn--small {
+      margin-top: 0; margin-left: auto;
+      padding: 4px 10px; font-size: 11px;
+    }
     @media (max-width: 480px) {
       .unassigned-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; padding: 12px; }
     }
@@ -1408,9 +1419,13 @@
           const data = await res.json();
           if (data.th_level) {
             thLevel = parseInt(data.th_level);
+            const prevTH = parseInt(localStorage.getItem('coc_th_level') || '0');
             localStorage.setItem('coc_th_level', String(thLevel));
             if (data.tag) localStorage.setItem('coc_tag', data.tag);
             applyTHTabVisibility(thLevel);
+            if (prevTH && thLevel > prevTH) {
+              localStorage.removeItem('coc_unassigned_initialized_' + window.COC_USERNAME);
+            }
           }
         } catch { /* fall through to error below */ }
       }
@@ -1841,6 +1856,93 @@
       return String(cost);
     }
 
+    /* ── GENERATE UNASSIGNED FROM PROGRESS ── */
+    async function generateUnassignedFromProgress() {
+      const grid = document.getElementById('unassignedGrid');
+      grid.innerHTML = `<div class="bldg-status"><div class="bldg-spinner"></div><span>Generating from progress…</span></div>`;
+      grid.style.display = '';
+
+      // Resolve TH level — prefer localStorage, fall back to API.
+      let thLevel = parseInt(localStorage.getItem('coc_th_level') || '0');
+      if (!thLevel) {
+        try {
+          const r = await fetch(endpoint('get_town_hall_level'));
+          const d = await r.json();
+          if (d.th_level) {
+            thLevel = parseInt(d.th_level);
+            localStorage.setItem('coc_th_level', String(thLevel));
+            if (d.tag) localStorage.setItem('coc_tag', d.tag);
+            applyTHTabVisibility(thLevel);
+          }
+        } catch {}
+      }
+      if (!thLevel) {
+        grid.innerHTML = `<div class="unassigned-empty"><div class="unassigned-empty-icon">⚠️</div><span>TH level not found. Visit the Progress tab first.</span></div>`;
+        return;
+      }
+
+      // Fetch current village building levels.
+      let villageLevels = {};
+      try {
+        const r = await fetch(endpoint('get_village_buildings'));
+        const d = await r.json();
+        if (d.buildings) villageLevels = d.buildings;
+      } catch {}
+
+      // Compute missing upgrades across all categories.
+      const toAdd = [];
+      const categories = [
+        getDefensesAtTH(thLevel),
+        getResourcesAtTH(thLevel),
+        getArmyAtTH(thLevel),
+        getTrapsAtTH(thLevel),
+      ];
+
+      for (const category of categories) {
+        for (const bldg of category) {
+          const levels = villageLevels[String(bldg.buildingId)] || [];
+          for (let i = 0; i < bldg.count; i++) {
+            const curLvl        = levels[i] ?? 0;
+            const instanceLabel = bldg.count > 1 ? ` #${i + 1}` : '';
+            for (let lvl = curLvl + 1; lvl <= bldg.maxLevel; lvl++) {
+              const gd = lookupUpgradeInGamedata(bldg.name, lvl);
+              toAdd.push({ upgradeName: `${bldg.name}${instanceLabel} Lvl ${lvl}`, durationMinutes: gd?.duration_min ?? 0 });
+            }
+          }
+        }
+      }
+
+      // Heroes — single instance, keyed by heroId.
+      const heroHallLevel = villageLevels['1000071']?.[0] ?? null;
+      for (const hero of getHeroesForProgress(heroHallLevel)) {
+        const curLvl = (villageLevels[String(hero.heroId)] || [])[0] ?? 0;
+        for (let lvl = curLvl + 1; lvl <= hero.maxLevel; lvl++) {
+          const gd = lookupUpgradeInGamedata(hero.name, lvl);
+          toAdd.push({ upgradeName: `${hero.name} Lvl ${lvl}`, durationMinutes: gd?.duration_min ?? 0 });
+        }
+      }
+
+      // POST to backend.
+      try {
+        const body = new URLSearchParams({
+          username: window.COC_USERNAME,
+          token:    window.COC_TOKEN,
+          upgrades: JSON.stringify(toAdd),
+        });
+        const r = await fetch(`${API_BASE}?action=populate_unassigned_upgrades`, { method: 'POST', body });
+        const d = await r.json();
+        if (!d.success) throw new Error(d.error || 'Unknown error');
+      } catch(err) {
+        grid.innerHTML = `<div class="unassigned-empty"><div class="unassigned-empty-icon">⚠️</div><span>Failed to save: ${esc(err.message)}</span></div>`;
+        return;
+      }
+
+      // Reload the unassigned display with fresh data.
+      unassignedLoaded = false;
+      allUpgrades = allUpgrades.filter(u => !u.isUnassigned);
+      await loadUnassigned();
+    }
+
     /* ── UNASSIGNED UPGRADES ── */
     let unassignedLoaded = false;
 
@@ -1873,6 +1975,17 @@
             });
           });
           unassignedLoaded = true;
+
+          // Auto-generate once for new users whose list is empty and TH is known.
+          if (upgrades.length === 0) {
+            const initKey = 'coc_unassigned_initialized_' + window.COC_USERNAME;
+            const thLevel = parseInt(localStorage.getItem('coc_th_level') || '0');
+            if (thLevel > 0 && !localStorage.getItem(initKey)) {
+              localStorage.setItem(initKey, '1');
+              generateUnassignedFromProgress();
+              return;
+            }
+          }
         } catch (err) {
           grid.innerHTML = `<div class="unassigned-empty"><div class="unassigned-empty-icon">⚠️</div><span>Failed to load: ${esc(err.message)}</span></div>`;
           return;
@@ -1880,7 +1993,13 @@
       }
 
       if (upgrades.length === 0) {
-        grid.innerHTML = `<div class="unassigned-empty"><div class="unassigned-empty-icon">📋</div><span>No unassigned upgrades</span><span style="font-size:12px">Add upgrades to A34:B in your CURRENT_WORK sheet to see them here</span></div>`;
+        grid.innerHTML = `
+          <div class="unassigned-empty">
+            <div class="unassigned-empty-icon">📋</div>
+            <span>No unassigned upgrades</span>
+            <span style="font-size:12px;margin-bottom:12px">Auto-populate from your current progress, or add rows manually to A34:B in CURRENT_WORK.</span>
+            <button class="gen-btn" onclick="generateUnassignedFromProgress()">⚡ Generate from Progress</button>
+          </div>`;
         return;
       }
 
@@ -1922,6 +2041,7 @@
           <span class="unassigned-x-icon">✕</span>
           <span class="unassigned-title">Unassigned Upgrades</span>
           <span class="unassigned-count">${upgrades.length}</span>
+          <button class="gen-btn gen-btn--small" onclick="generateUnassignedFromProgress()" title="Re-generate from current progress">⟳ Sync</button>
         </div>
         <div class="unassigned-grid">${cards}</div>`;
       grid.style.display = '';
