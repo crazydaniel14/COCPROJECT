@@ -601,7 +601,8 @@ function updateApprenticeDisplay() {
     badge.style.display = "";
     if (locked) locked.style.display = "none";
     const lvl = parseInt(localStorage.getItem("coc_apprentice_level"), 10);
-    if (!isNaN(lvl)) badge.textContent = lvl + " Lvl";
+    // Fall back to server-stored level (C21) when localStorage entry is missing
+    badge.textContent = (!isNaN(lvl) ? lvl : currentBoostLevel) + " Lvl";
     const simBtn = document.getElementById("runBoostSimBtn");
     if (simBtn) simBtn.disabled = false;
   } else {
@@ -660,6 +661,7 @@ async function refreshDashboardFast() {
     showRefreshIndicator('done');
   } catch (e) {
     setBoostLoadingState(false);
+    updateApprenticeDisplay();
     console.error("Fast refresh failed", e);
     showRefreshIndicator('hidden');
   } finally {
@@ -697,6 +699,7 @@ async function refreshDashboard() {
     showRefreshIndicator('done');
   } catch (e) {
     setBoostLoadingState(false);
+    updateApprenticeDisplay();
     console.error("Refresh failed", e);
     showRefreshIndicator('hidden');
   } finally {
@@ -2021,7 +2024,8 @@ function wireBoostFocusNavigation() {
 function wireBuilderCardClicks() {
   document.addEventListener("click", async e => {
     if (e.target.closest("[data-apply-boost]")) { e.stopPropagation(); e.preventDefault(); return; }
-    if (e.target.closest(".start-builder-btn")) return;
+    const startBtn = e.target.closest(".start-builder-btn");
+    if (startBtn) { showStartPausedBuilderModal(startBtn.dataset.builder, startBtn.dataset.upgrade, startBtn.dataset.duration); return; }
     const finishBtn = e.target.closest(".finish-upgrade-btn");
     if (finishBtn) { showFinishUpgradeModal(finishBtn.dataset.builder, finishBtn.dataset.upgrade, finishBtn.dataset.next); return; }
     const card = e.target.closest(".builder-card");
@@ -2724,12 +2728,7 @@ async function finishUpgradeNow(builderNumber, currentUpgrade, startNext) {
 }
 
 function wirePausedBuilderButtons() {
-  document.querySelectorAll('.start-builder-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      showStartPausedBuilderModal(btn.dataset.builder, btn.dataset.upgrade, btn.dataset.duration);
-    });
-  });
+  // Handling moved to wireBuilderCardClicks event delegation
 }
 
 function scheduledToDatetimeLocal(s) {
@@ -3193,7 +3192,10 @@ async function doRegister(nameInput, jsonInput, errEl, loadingEl, btn, overlay, 
     if (parsed.tag)           localStorage.setItem("coc_tag", parsed.tag);
     if (thLevel !== null)     localStorage.setItem("coc_th_level", String(thLevel));
     localStorage.setItem("coc_builder_count", String(builderCount));
-    if (apprenticeLevel !== null) localStorage.setItem("coc_apprentice_level", String(apprenticeLevel));
+    if (apprenticeLevel !== null) {
+      localStorage.setItem("coc_apprentice_level", String(apprenticeLevel));
+      fetch(SET_BOOST_LEVEL_URL(apprenticeLevel)).catch(() => {});
+    }
     if (data.token)           { localStorage.setItem("coc_token", data.token); window.COC_TOKEN = data.token; }
 
     overlay.remove();

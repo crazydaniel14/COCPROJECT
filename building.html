@@ -2168,7 +2168,13 @@
 
     /* ── ASSIGN BUILDER MENU ── */
     function showAssignBuilderMenu(upgradeName, durationMinutes, cardEl) {
-      const builderCount = parseInt(localStorage.getItem('coc_builder_count') || '1', 10);
+      // Use the live builder map (populated from current_work_table) to get the
+      // actual number of unlocked builders for this account. Falls back to
+      // localStorage only if the map hasn't loaded yet.
+      const mapCount     = Object.keys(currentWorkMap).length;
+      const builderCount = mapCount > 0
+        ? mapCount
+        : Math.min(Math.max(parseInt(localStorage.getItem('coc_builder_count') || '1', 10), 1), 6);
       const clampedCount = Math.min(Math.max(builderCount, 1), 6);
 
       const overlay = document.createElement('div');
