@@ -1443,10 +1443,17 @@ button:disabled {
   object-fit: contain;
   flex-shrink: 0;
 }
-.boost-apprentice-locked span {
+.boost-apprentice-locked-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.boost-apprentice-locked-text span {
   font-size: 11px;
   color: #9999a8;
   line-height: 1.3;
+  text-align: center;
 }
 
 /* Boost level badge (left of "Boost Plan" heading) */
