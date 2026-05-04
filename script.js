@@ -7,10 +7,10 @@ const API_BASE =
   "https://script.google.com/macros/s/AKfycbzaxmuwpTD9cUzrz4e4k75caCpQrTjEDefs-B5nuEaqlFoMrBHjrhDun3Iy7kPkc9j2/exec";
 
 function tok() {
-  return window.COC_TOKEN ? `&token=${encodeURIComponent(window.COC_TOKEN)}` : '';
+  return Auth.tok();
 }
 function endpoint(action) {
-  return `${API_BASE}?action=${action}&username=${window.COC_USERNAME}${tok()}`;
+  return `${API_BASE}?action=${action}&username=${Auth.getUsername()}${tok()}`;
 }
 
 /* =========================
@@ -997,7 +997,7 @@ function renderBuilderCards() {
       : '0 d 0 hr 0 min';
     const currentUpgradeImg = getUpgradeImage(row[1]);
 
-    const builderKey = `${window.COC_USERNAME}_Builder_${builderNumber}`;
+    const builderKey = `${Auth.getUsername()}_Builder_${builderNumber}`;
     const pauseInfo  = window._pausedBuilders?.[builderKey];
     const isPaused   = pauseInfo?.paused === true;
 
@@ -1121,7 +1121,7 @@ async function updateCardDuration(builderName, newMinutes, newDurationHr, durati
 
   await enqueueMutation(async () => {
     try {
-      const res  = await fetch(`${API_BASE}?action=update_active_upgrade_time&username=${window.COC_USERNAME}&builder=${builderName}&remaining_minutes=${newMinutes}${tok()}`);
+      const res  = await fetch(`${API_BASE}?action=update_active_upgrade_time&username=${Auth.getUsername()}&builder=${builderName}&remaining_minutes=${newMinutes}${tok()}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       scheduleNextRefresh(); // push auto-refresh back so it doesn't race with our update
@@ -1227,7 +1227,7 @@ async function updateUpgradeDuration(builderName, row, newMinutes, newDurationHr
   durationEl.textContent = 'Saving...';
   await enqueueMutation(async () => {
     try {
-      const res  = await fetch(`${API_BASE}?action=update_upgrade_duration&username=${window.COC_USERNAME}&builder=${builderName}&row=${row}&minutes=${newMinutes}&duration_hr=${encodeURIComponent(newDurationHr)}${tok()}`);
+      const res  = await fetch(`${API_BASE}?action=update_upgrade_duration&username=${Auth.getUsername()}&builder=${builderName}&row=${row}&minutes=${newMinutes}&duration_hr=${encodeURIComponent(newDurationHr)}${tok()}`);
       const data = await res.json();
       if (data.error) { alert('Failed to update: ' + data.error); durationEl.textContent = originalText; return; }
       scheduleNextRefresh();
@@ -1313,7 +1313,7 @@ function showBuilderPicker(currentBuilder, callback) {
 
 async function transferUpgradeToBuilder(upgradeName, fromBuilder, row, toBuilder, detailsWrapper) {
   try {
-    const res  = await fetch(`${API_BASE}?action=transfer_upgrade&username=${window.COC_USERNAME}&upgrade=${encodeURIComponent(upgradeName)}&from_builder=${fromBuilder}&row=${row}&to_builder=${toBuilder}${tok()}`);
+    const res  = await fetch(`${API_BASE}?action=transfer_upgrade&username=${Auth.getUsername()}&upgrade=${encodeURIComponent(upgradeName)}&from_builder=${fromBuilder}&row=${row}&to_builder=${toBuilder}${tok()}`);
     const data = await res.json();
     if (data.error) { alert('Failed to transfer: ' + data.error); return; }
     alert(`✓ Moved "${upgradeName}" to ${toBuilder}`);
@@ -1410,13 +1410,13 @@ function setupDragAndDrop(detailsWrapper) {
     const currentItems = upgradeList.querySelectorAll('.upgrade-item');
     const newOrder = Array.from(currentItems).map(i => i.dataset.index).join(',');
 
-    console.log("[SaveOrder] builder:", builderNum, "order:", newOrder, "username:", window.COC_USERNAME);
+    console.log("[SaveOrder] builder:", builderNum, "order:", newOrder, "username:", Auth.getUsername());
 
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
 
     try {
-      const url = `${API_BASE}?action=reorder_builder_upgrades&username=${encodeURIComponent(window.COC_USERNAME)}&builder=Builder_${builderNum}&order=${encodeURIComponent(newOrder)}${tok()}`;
+      const url = `${API_BASE}?action=reorder_builder_upgrades&username=${encodeURIComponent(Auth.getUsername())}&builder=Builder_${builderNum}&order=${encodeURIComponent(newOrder)}${tok()}`;
       console.log("[SaveOrder] Fetching:", url);
       const res  = await fetch(url, { redirect: 'follow' });
       const data = await res.json();
@@ -1703,7 +1703,7 @@ function showBuilderBoostModal({ title, image, desc, minsPerUse, apiAction, erro
     showRefreshIndicator('refreshing');
 
     try {
-      const res = await fetch(`${API_BASE}?action=${apiAction}&username=${window.COC_USERNAME}&times=${times}${tok()}`);
+      const res = await fetch(`${API_BASE}?action=${apiAction}&username=${Auth.getUsername()}&times=${times}${tok()}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       if (Array.isArray(data.updatedBuilders) && data.updatedBuilders.length === 0) {
@@ -2390,7 +2390,7 @@ async function handleBuilderConfirmation(btn, modal, upgrades) {
   if (!startTime || isNaN(startTime)) { alert('Please enter a valid start time'); return; }
   btn.disabled = true; btn.textContent = 'Confirming…';
   try {
-    const params = new URLSearchParams({ action:'confirm_upgrade_start', username:window.COC_USERNAME, builder:b, upgradeName, startTime:startTime.toISOString(), confirmAction:choice==='different'?'different':'confirm', differentUpgrade:differentUpgrade||'', token:window.COC_TOKEN||'' });
+    const params = new URLSearchParams({ action:'confirm_upgrade_start', username:Auth.getUsername(), builder:b, upgradeName, startTime:startTime.toISOString(), confirmAction:choice==='different'?'different':'confirm', differentUpgrade:differentUpgrade||'', token:Auth.getToken() });
     const res  = await fetch(API_BASE + '?' + params.toString());
     const data = await res.json();
     if (data.error) { alert('Error: '+data.error); btn.disabled=false; btn.textContent=`Confirm ${b.replace('_',' ')}`; return; }
@@ -2407,7 +2407,7 @@ async function handleBuilderPause(btn, modal, upgrades) {
   if (!confirm(`Pause ${bLabel}? This means the upgrade has not started yet.`)) return;
   btn.disabled = true; btn.textContent = 'Pausing…';
   try {
-    const params = new URLSearchParams({ action:'confirm_upgrade_start', username:window.COC_USERNAME, builder:b, upgradeName:'', startTime:'', confirmAction:'pause', differentUpgrade:'', token:window.COC_TOKEN||'' });
+    const params = new URLSearchParams({ action:'confirm_upgrade_start', username:Auth.getUsername(), builder:b, upgradeName:'', startTime:'', confirmAction:'pause', differentUpgrade:'', token:Auth.getToken() });
     const res  = await fetch(API_BASE + '?' + params.toString());
     const data = await res.json();
     if (data.error) { alert('Error: '+data.error); btn.disabled=false; btn.textContent=`⏸️ Not Started — Pause ${bLabel}`; return; }
@@ -2434,14 +2434,14 @@ async function handleResumeFrom(btn, modal, upgrades) {
   try {
     const params = new URLSearchParams({
       action: 'confirm_upgrade_start',
-      username: window.COC_USERNAME,
+      username: Auth.getUsername(),
       builder: b,
       upgradeName: resumeUpgrade,
       startTime: '',
       confirmAction: 'rewind',
       differentUpgrade: '',
       requeueUpgrades: toRequeue.join(','),
-      token: window.COC_TOKEN || ''
+      token: Auth.getToken()
     });
     const res  = await fetch(API_BASE + '?' + params.toString());
     const data = await res.json();
@@ -2601,12 +2601,12 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
       if (method === 'exact') {
         const exactTime = new Date(modal.querySelector('.sp-exact-dt').value);
         if (!exactTime || isNaN(exactTime)) { alert('Please enter a valid start time'); startBtn.disabled=false; startBtn.textContent='▶️ Start Now'; return; }
-        params = new URLSearchParams({ action:'start_paused_builder', username:window.COC_USERNAME, builder:b, method:'exact', startTime:exactTime.toISOString(), token:window.COC_TOKEN||'' });
+        params = new URLSearchParams({ action:'start_paused_builder', username:Auth.getUsername(), builder:b, method:'exact', startTime:exactTime.toISOString(), token:Auth.getToken() });
       } else {
         const d = parseInt(document.getElementById('sp-rd').value)||0;
         const h = parseInt(document.getElementById('sp-rh').value)||0;
         const m = parseInt(document.getElementById('sp-rm').value)||0;
-        params = new URLSearchParams({ action:'start_paused_builder', username:window.COC_USERNAME, builder:b, method:'remaining', remainingMinutes:String(d*24*60+h*60+m), token:window.COC_TOKEN||'' });
+        params = new URLSearchParams({ action:'start_paused_builder', username:Auth.getUsername(), builder:b, method:'remaining', remainingMinutes:String(d*24*60+h*60+m), token:Auth.getToken() });
       }
       const res  = await fetch(API_BASE + '?' + params.toString());
       const data = await res.json();
@@ -2717,11 +2717,11 @@ function showFinishUpgradeModal(builderNumber, currentUpgrade, nextUpgrade) {
 async function finishUpgradeNow(builderNumber, currentUpgrade, startNext) {
   const params = new URLSearchParams({
     action:      'finish_upgrade',
-    username:    window.COC_USERNAME,
+    username:    Auth.getUsername(),
     builder:     `Builder_${builderNumber}`,
     upgradeName: currentUpgrade,
     startNext:   startNext ? 'true' : 'false',
-    token:       window.COC_TOKEN || ''
+    token:       Auth.getToken()
   });
   const res  = await fetch(API_BASE + '?' + params.toString());
   return await res.json();
@@ -2746,7 +2746,7 @@ function toDatetimeLocal(d) {
    ========================= */
 document.addEventListener("DOMContentLoaded", async () => {
   // Restore session tokens from localStorage before any API call is made
-  window.COC_TOKEN = localStorage.getItem("coc_token") || '';
+  Auth.setToken(localStorage.getItem("coc_token") || '');
 
   let username = localStorage.getItem("coc_username");
   if (username && username.endsWith("_CURRENT_WORK")) {
@@ -2755,13 +2755,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   if (!username || username === "null" || username === "undefined" || username.trim() === "") {
     showLoginScreen(async (confirmedUsername) => {
-      window.COC_USERNAME = confirmedUsername.toLowerCase();
-      console.log("[Init] Username set to:", window.COC_USERNAME);
+      Auth.setUsername(confirmedUsername.toLowerCase());
+      console.log("[Init] Username set to:", Auth.getUsername());
       await bootApp();
     });
     return;
   }
-  window.COC_USERNAME = username;
+  Auth.setUsername(username);
   console.log("[Init] Username:", username);
   await bootApp();
 });
@@ -2828,7 +2828,7 @@ function switchUser() {
   const existing = document.getElementById("profile-popup");
   if (existing) { existing.remove(); return; }
 
-  const username = window.COC_USERNAME || localStorage.getItem("coc_username") || "—";
+  const username = Auth.getUsername() || localStorage.getItem("coc_username") || "—";
   const tag      = localStorage.getItem("coc_tag");
   const thLevel  = localStorage.getItem("coc_th_level");
 
@@ -2865,12 +2865,11 @@ function switchUser() {
     localStorage.removeItem("coc_tag");
     localStorage.removeItem("coc_th_level");
     localStorage.removeItem("coc_token");
-    window.COC_USERNAME = null;
-    window.COC_TOKEN    = null;
+    Auth.clear();
     document.getElementById("builders-container").innerHTML = "";
     document.querySelector('.upgrade-confirmation-modal-overlay')?.remove();
     showLoginScreen(async (confirmedUsername) => {
-      window.COC_USERNAME = confirmedUsername.toLowerCase();
+      Auth.setUsername(confirmedUsername.toLowerCase());
       location.reload();
     });
   });
@@ -3196,7 +3195,7 @@ async function doRegister(nameInput, jsonInput, errEl, loadingEl, btn, overlay, 
       localStorage.setItem("coc_apprentice_level", String(apprenticeLevel));
       fetch(SET_BOOST_LEVEL_URL(apprenticeLevel)).catch(() => {});
     }
-    if (data.token)           { localStorage.setItem("coc_token", data.token); window.COC_TOKEN = data.token; }
+    if (data.token)           { localStorage.setItem("coc_token", data.token); Auth.setToken(data.token); }
 
     overlay.remove();
     onConfirm(name);
@@ -3405,7 +3404,7 @@ function showLoginScreen(onConfirm) {
       localStorage.setItem("coc_username", val.toLowerCase());
       if (data.th_level) localStorage.setItem("coc_th_level", String(data.th_level));
       if (data.tag)      localStorage.setItem("coc_tag", data.tag);
-      if (data.token)    { localStorage.setItem("coc_token", data.token); window.COC_TOKEN = data.token; }
+      if (data.token)    { localStorage.setItem("coc_token", data.token); Auth.setToken(data.token); }
     } catch {
       err.textContent = "Connection error. Try again.";
       err.style.display = "block";

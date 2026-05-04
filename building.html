@@ -749,16 +749,17 @@
     </div>
   </div>
 
+  <script src="auth.js"></script>
   <script src="gamedata.js"></script>
   <script src="imagemap.js"></script>
   <script>
     /* ── CONFIG ── */
     const API_BASE = "https://script.google.com/macros/s/AKfycbzaxmuwpTD9cUzrz4e4k75caCpQrTjEDefs-B5nuEaqlFoMrBHjrhDun3Iy7kPkc9j2/exec";
     function tok() {
-      return window.COC_TOKEN ? `&token=${encodeURIComponent(window.COC_TOKEN)}` : '';
+      return Auth.tok();
     }
     function endpoint(action) {
-      return `${API_BASE}?action=${action}&username=${encodeURIComponent(window.COC_USERNAME)}${tok()}`;
+      return `${API_BASE}?action=${action}&username=${encodeURIComponent(Auth.getUsername())}${tok()}`;
     }
 
     /* ── FORMAT NAME: replace * with SC icon ── */
@@ -1482,7 +1483,7 @@
       if (data.tag) localStorage.setItem('coc_tag', data.tag);
       applyTHTabVisibility(thLevel);
       if (prevTH && thLevel > prevTH) {
-        localStorage.removeItem('coc_unassigned_initialized_' + window.COC_USERNAME);
+        localStorage.removeItem('coc_unassigned_initialized_' + Auth.getUsername());
       }
       return thLevel;
     }
@@ -2037,8 +2038,8 @@
       // POST to backend.
       try {
         const body = new URLSearchParams({
-          username: window.COC_USERNAME,
-          token:    window.COC_TOKEN,
+          username: Auth.getUsername(),
+          token:    Auth.getToken(),
           upgrades: JSON.stringify(toAdd),
         });
         const r = await fetch(`${API_BASE}?action=populate_unassigned_upgrades`, { method: 'POST', body });
@@ -2090,7 +2091,7 @@
 
           // Auto-generate once for new users whose list is empty and TH is known.
           if (upgrades.length === 0) {
-            const initKey = 'coc_unassigned_initialized_' + window.COC_USERNAME;
+            const initKey = 'coc_unassigned_initialized_' + Auth.getUsername();
             const thLevel = parseInt(localStorage.getItem('coc_th_level') || '0');
             if (thLevel > 0 && !localStorage.getItem(initKey)) {
               localStorage.setItem(initKey, '1');
@@ -2225,11 +2226,11 @@
 
           try {
             const url = `${API_BASE}?action=assign_unassigned_upgrade`
-              + `&username=${encodeURIComponent(window.COC_USERNAME)}`
+              + `&username=${encodeURIComponent(Auth.getUsername())}`
               + `&upgradeName=${encodeURIComponent(upgradeName)}`
               + `&builder=${encodeURIComponent(builderName)}`
               + `&durationMinutes=${encodeURIComponent(durationMinutes)}`
-              + (window.COC_TOKEN ? `&token=${encodeURIComponent(window.COC_TOKEN)}` : '');
+              + tok();
 
             const res  = await fetch(url);
             const data = await res.json();
@@ -2298,10 +2299,10 @@
 
     /* ── INIT ── */
     document.addEventListener('DOMContentLoaded', () => {
-      window.COC_TOKEN = localStorage.getItem('coc_token') || '';
+      Auth.setToken(localStorage.getItem('coc_token') || '');
       const username = localStorage.getItem('coc_username');
       if (!username) { window.location.href = 'index.html'; return; }
-      window.COC_USERNAME = username;
+      Auth.setUsername(username);
       const cachedTH = parseInt(localStorage.getItem('coc_th_level') || '0');
       if (cachedTH) applyTHTabVisibility(cachedTH);
       refreshTownHallCache().catch(() => {});
