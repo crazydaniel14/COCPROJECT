@@ -51,7 +51,7 @@ const IMAGE_MAP = {
   "Pet House":          ["Lvl 1","Lvl 2","Lvl 3","Lvl 4","Lvl 5","Lvl 6","Lvl 7","Lvl 8","Lvl 9","Lvl 10","Lvl 11","Lvl 12"],
   "Revenge Tower":      ["Lvl 1","Lvl 2"],
   "Ricochet Cannon":    ["Lvl 1","Lvl 2","Lvl 3","Lvl 4"],
-  "Scattershot":        ["Lvl 1","Lvl 2","Lvl 3","Lvl 4","Lvl 5","Lvl 6&7&8"],
+  "Scattershot":        ["Lvl 1","Lvl 2","Lvl 3","Lvl 4","Lvl 5","Lvl 6","Lvl 7"],
   "Seeking Air Mine":   ["Lvl 1&2","Lvl 3&4","Lvl 5&6","Lvl 7&8"],
   "Skeleton Trap":      ["Lvl 1&2","Lvl 3&4","Lvl 5"],
   "Spell Factory":      ["Lvl 1","Lvl 2","Lvl 3","Lvl 4","Lvl 5","Lvl 6","Lvl 7","Lvl 8","Lvl 9"],
