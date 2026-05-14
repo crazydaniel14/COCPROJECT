@@ -2766,9 +2766,76 @@ document.addEventListener("DOMContentLoaded", async () => {
   await bootApp();
 });
 
+async function progressiveInitialLoad() {
+  if (isRefreshing) { _pendingRefresh = true; return; }
+  isRefreshing = true;
+  showRefreshIndicator('refreshing');
+  setBoostLoadingState(true);
+  updateActiveStatusSmart();
+
+  // Show cached TH level instantly while live data loads
+  const cachedTH = parseInt(localStorage.getItem("coc_th_level") || "0", 10);
+  if (cachedTH) { townHallLevel = cachedTH; renderTownHallSection(); }
+
+  try {
+    // Fire all fetches immediately — no refresh_sheet blocking anything
+    const criticalPromises = [
+      loadCurrentWork(),
+      loadTodaysBoost(),
+      loadPausedBuilders(),
+    ];
+    const secondaryPromises = [
+      loadBoostPlan(),
+      loadBoostLevel(),
+      loadTownHallLevel(),
+      loadAllBuildersLastFinish(),
+    ];
+
+    // Render builder cards the moment critical data arrives
+    Promise.all(criticalPromises).then(() => {
+      if (openBuilders.length === 0) {
+        const container = document.getElementById("builders-container");
+        if (container) container.innerHTML = "";
+        renderBuilderCards();
+      }
+    });
+
+    // Wait for secondary data, then render TH/boost sections
+    await Promise.all(secondaryPromises);
+    setBoostLoadingState(false);
+    renderTownHallSection();
+    updateApprenticeDisplay();
+
+    // Re-render builder cards now that boost/paused data is complete
+    await Promise.all(criticalPromises);
+    if (openBuilders.length === 0) {
+      const container = document.getElementById("builders-container");
+      if (container) container.innerHTML = "";
+      renderBuilderCards();
+    }
+
+    updateLastRefreshed();
+    showRefreshIndicator('done');
+  } catch (e) {
+    setBoostLoadingState(false);
+    updateApprenticeDisplay();
+    console.error("Progressive load failed", e);
+    showRefreshIndicator('hidden');
+  } finally {
+    isRefreshing = false;
+    if (_pendingRefresh) { _pendingRefresh = false; refreshDashboardFast(); }
+  }
+
+  // Sync the sheet in the background — update UI with fresh data when done
+  fetch(endpoint("refresh_sheet"))
+    .then(() => refreshDashboardFast())
+    .catch(() => {});
+}
+
 async function bootApp() {
   renderSkeletonCards(6);
-  await refreshDashboard();
+
+  // Wire up all UI before data arrives so interactions are ready immediately
   startAutoRefresh();
   setupPullToRefresh(refreshDashboard);
   startLiveCountdown();
@@ -2780,6 +2847,8 @@ async function bootApp() {
   wireBuilderCardClicks();
   wireImageButtons();
   wireSearchFeature();
+
+  await progressiveInitialLoad();
   setTimeout(() => checkForFinishedUpgrades(true), 1500);
 
   // Jump to a specific upgrade if navigated here from the Buildings page
