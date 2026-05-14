@@ -229,31 +229,64 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-auto-rows: auto;
-  gap: 14px;
+  gap: 16px;
   margin-top: 28px;
 }
 
 .builder-card {
   position: relative;
   height: 160px;
-  background: linear-gradient(135deg, #1e1e24 0%, #17171c 100%);
-  border-radius: 22px;
+  background: linear-gradient(145deg, #1d1d25 0%, #131318 100%);
+  border-radius: 16px;
   overflow: hidden;
-  border-left: 8px solid #f5d04c;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.055);
+  border-left: 4px solid #f5d04c;
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.45),
+    0 8px 20px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.builder-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(245,208,76,0.055) 0%, transparent 48%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.builder-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 16px rgba(0,0,0,0.55),
+    0 12px 28px rgba(0,0,0,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.08);
 }
 
 .builder-card.next-finish {
-  box-shadow: 0 0 0 0px #24f016, 0 5px 10px rgba(36,240,22,0.60);
+  border-left-color: #2bde1e;
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.45),
+    0 8px 20px rgba(43,222,30,0.14),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+.builder-card.next-finish::before {
+  background: linear-gradient(90deg, rgba(43,222,30,0.07) 0%, transparent 48%);
 }
 
 .builder-card.expanded {
   grid-column: 1 / -1;
-  background: linear-gradient(135deg, #222230 0%, #16161f 100%);
-  border-left: 8px solid #f5d04c;
-  outline: 2px solid rgba(245,208,76,0.55);
-  outline-offset: -1px;
-  box-shadow: 0 0 0 4px rgba(245,208,76,0.08), 0 12px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06);
+  background: linear-gradient(145deg, #1e1e28 0%, #131318 100%);
+  border: 1px solid rgba(245,208,76,0.22);
+  border-left: 4px solid #f5d04c;
+  box-shadow:
+    0 8px 28px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(245,208,76,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.07);
 }
 
 .builder-character {
@@ -280,11 +313,15 @@ button:disabled {
   left: 33%;
   top: 55%;
   transform: translateY(-50%);
-  width: 70px;
-  height: 70px;
+  width: 68px;
+  height: 68px;
   object-fit: contain;
   z-index: 1;
-  filter: drop-shadow(0 0 5px rgba(245,208,76,0.6));
+  border-radius: 50%;
+  background: rgba(10,10,15,0.45);
+  padding: 6px;
+  box-sizing: border-box;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5)) drop-shadow(0 0 10px rgba(245,208,76,0.45));
 }
 
 .builder-card.expanded .builder-text {
@@ -297,27 +334,36 @@ button:disabled {
   top: 50%;
   width: 100px;
   height: 100px;
+  padding: 8px;
 }
 
 .builder-name {
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  color: #ffffff;
-  margin-bottom: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase;
+  margin-bottom: 5px;
 }
 
 .builder-upgrade {
   font-size: 15px;
-  font-weight: 600;
-  margin-bottom: 10px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  color: rgba(255,255,255,0.92);
 }
 
 .builder-time-left {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
   color: #f5d04c;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
+  letter-spacing: -0.5px;
+  text-shadow: 0 0 22px rgba(245,208,76,0.4);
 }
 
 .editable-card-duration {
@@ -334,8 +380,9 @@ button:disabled {
 
 .builder-finish {
   font-size: 12px;
-  opacity: 0.85;
+  opacity: 0.55;
   margin-bottom: 8px;
+  letter-spacing: 0.2px;
 }
 
 .builder-finish-row {
@@ -1714,25 +1761,28 @@ button:disabled {
    PAUSED BUILDER CARD
    ================================================== */
 .builder-card.paused {
-  border-left: 6px solid #ff9800 !important;
-  background: linear-gradient(135deg, rgba(255,152,0,0.08) 0%, #19191ec7 100%) !important;
+  border-left: 4px solid #ff9800 !important;
   position: relative;
+}
+
+.builder-card.paused::before {
+  background: linear-gradient(90deg, rgba(255,152,0,0.08) 0%, transparent 48%) !important;
 }
 
 .pause-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(255,152,0,0.2);
-  border: 1px solid rgba(255,152,0,0.5);
-  border-radius: 8px;
-  padding: 4px 10px;
-  font-size: 12px;
+  gap: 5px;
+  background: rgba(255,152,0,0.1);
+  border: 1px solid rgba(255,152,0,0.25);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 10px;
   font-weight: 700;
   color: #ff9800;
   margin-bottom: 6px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
 }
 
 .start-builder-btn {
@@ -1763,8 +1813,8 @@ button:disabled {
    ================================================== */
 .builder-card.skeleton {
   pointer-events: none;
-  border-left-color: #2a2a35;
-  background: linear-gradient(135deg, #1e1e24 0%, #17171c 100%);
+  border-left-color: #28283200;
+  background: linear-gradient(145deg, #1d1d25 0%, #131318 100%);
   overflow: hidden;
 }
 
@@ -2401,18 +2451,59 @@ button:disabled {
 }
 
 /* ==================================================
+   TABLET — keep 2 columns but tighten sizing
+   ================================================== */
+@media (min-width: 481px) and (max-width: 768px) {
+  .builders-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .builder-card {
+    height: 170px;
+    border-radius: 14px;
+  }
+
+  .builder-character {
+    left: 80px;
+    bottom: 10px;
+    height: 96px;
+    transform: scale(1.2);
+    transform-origin: bottom left;
+  }
+
+  .builder-text {
+    left: 47%;
+    width: 50%;
+  }
+
+  .current-upgrade-icon {
+    left: 30%;
+    top: 56%;
+    width: 60px;
+    height: 60px;
+  }
+
+  .builder-name        { font-size: 9px; letter-spacing: 1.6px; }
+  .builder-upgrade     { font-size: 13px; }
+  .builder-time-left   { font-size: 19px; }
+  .builder-finish      { font-size: 11px; }
+}
+
+/* ==================================================
    MOBILE STYLES
    ================================================== */
 @media (max-width: 768px) {
   .builders-container {
     grid-template-columns: 1fr;
-    gap: 5px;
+    gap: 10px;
   }
 
   .builder-card {
-    height: 210px;
+    height: 200px;
     min-height: 48px;
     cursor: pointer;
+    border-radius: 14px;
   }
 
   .builder-card * { pointer-events: none; }
@@ -2426,7 +2517,7 @@ button:disabled {
 
   .builder-character {
     left: 10px;
-    bottom: 40px;
+    bottom: 36px;
     height: 110px;
     transform: scale(1);
   }
@@ -2436,32 +2527,34 @@ button:disabled {
     width: 54%;
   }
 
-  .builder-name   { font-size: 17px; }
-  .builder-upgrade { font-size: 14px; margin-top: 10px; }
-  .builder-time-left { font-size: 16px; }
-  .builder-finish { font-size: 13px; }
-  .builder-finish-row { margin-top: -5px; margin-bottom: -5px; }
+  .builder-name   { font-size: 9px; letter-spacing: 1.6px; }
+  .builder-upgrade { font-size: 14px; margin-top: 6px; }
+  .builder-time-left { font-size: 20px; }
+  .builder-finish { font-size: 12px; }
+  .builder-finish-row { margin-top: -4px; margin-bottom: -4px; }
   .builder-next   { font-size: 10px; }
 
   .editable-card-duration { padding: 0; margin-bottom: 7px; }
 
   .current-upgrade-icon {
-    left: 26%;
-    top: 70%;
-    width: 55px;
-    height: 55px;
+    left: 25%;
+    top: 68%;
+    width: 52px;
+    height: 52px;
+    padding: 5px;
   }
 
   .builder-card.expanded .current-upgrade-icon {
-    left: 28% !important;
-    top: 70% !important;
-    width: 55px !important;
-    height: 55px !important;
+    left: 25% !important;
+    top: 68% !important;
+    width: 52px !important;
+    height: 52px !important;
+    padding: 5px !important;
   }
 
   .builder-card.expanded {
-    height: 210px;
-    min-height: 210px;
+    height: 200px;
+    min-height: 200px;
     grid-column: 1 / -1;
   }
 
@@ -3145,41 +3238,42 @@ button:disabled {
    ================================================== */
 .unlock-builder-btn {
   height: 100px;
-  background: rgba(30,30,36,0.4);
+  background: rgba(255,255,255,0.018);
   border-radius: 16px;
-  border: 2px dashed rgba(255,255,255,0.1);
+  border: 1.5px dashed rgba(255,255,255,0.1);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   cursor: pointer;
-  color: #7a7a8a;
-  font-size: 12px;
-  font-weight: 700;
+  color: rgba(255,255,255,0.28);
   text-align: center;
   line-height: 1.5;
-  transition: all 0.18s;
+  transition: all 0.2s ease;
   user-select: none;
 }
 .unlock-builder-btn:hover {
-  border-color: rgba(245,208,76,0.35);
+  border-color: rgba(245,208,76,0.3);
+  border-style: solid;
   color: #f5d04c;
-  background: rgba(30,30,36,0.7);
-}
-.unlock-builder-btn {
-  flex-direction: column;
-  gap: 4px;
+  background: rgba(245,208,76,0.04);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
 }
 .unlock-btn-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
 }
 .unlock-btn-cost {
-  font-size: 10px;
-  font-weight: 600;
-  opacity: 0.7;
+  font-size: 11px;
+  font-weight: 700;
+  opacity: 0.8;
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
 }
 .unlock-gem-icon {
   width: 12px;
