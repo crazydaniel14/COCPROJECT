@@ -813,9 +813,10 @@ function renderBuilderDetails(details) {
         const RES_COLOR = { gold: '#f5d04c', elixir: '#e87dbd', de: '#9b59b6' };
         const resKey = meta?.resource || 'gold';
         const costFmt = meta?.costFmt || null;
+        const mobileCompleteBtn = `<button class="complete-upgrade-btn complete-upgrade-btn--mobile" data-builder="${upg.builder}" data-upgrade="${upg.upgrade}" title="Mark as complete"><img src="Images/Finished.png" alt="✓" /></button>`;
         const costColHtml = costFmt
-          ? `<div class="upgrade-cost-col"><img src="${RES_ICON[resKey] || 'Images/Gold.png'}" class="upgrade-cost-res-icon" alt=""><span class="upgrade-cost-val" style="color:${RES_COLOR[resKey] || '#f5d04c'}">${costFmt}</span></div>`
-          : `<div class="upgrade-cost-col upgrade-cost-col--empty">—</div>`;
+          ? `<div class="upgrade-cost-col"><img src="${RES_ICON[resKey] || 'Images/Gold.png'}" class="upgrade-cost-res-icon" alt=""><span class="upgrade-cost-val" style="color:${RES_COLOR[resKey] || '#f5d04c'}">${costFmt}</span>${mobileCompleteBtn}</div>`
+          : `<div class="upgrade-cost-col upgrade-cost-col--empty"><span>—</span>${mobileCompleteBtn}</div>`;
         return `
           <div class="upgrade-item"
                data-builder="${upg.builder}" data-row="${upg.row}"
@@ -840,6 +841,9 @@ function renderBuilderDetails(details) {
               <span>${upg.start}</span><span>→</span><span>${upg.end}</span>
             </div>
             <div class="upgrade-controls">
+              <button class="complete-upgrade-btn complete-upgrade-btn--desktop"
+                      data-builder="${upg.builder}" data-upgrade="${upg.upgrade}"
+                      title="Mark as complete"><img src="Images/Finished.png" alt="✓" /></button>
               <button class="transfer-builder-btn"
                       data-upgrade-name="${upg.upgrade}"
                       data-current-builder="${upg.builder}"
@@ -1282,6 +1286,13 @@ function setupBuilderTransfer(detailsWrapper) {
         if (confirm(`Move "${upgradeName}" from ${currentBuilder} to ${target}?`))
           transferUpgradeToBuilder(upgradeName, currentBuilder, row, target, detailsWrapper);
       });
+    });
+  });
+
+  detailsWrapper.querySelectorAll('.complete-upgrade-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showCompleteUpgradeModal(btn.dataset.builder, btn.dataset.upgrade, detailsWrapper);
     });
   });
 }
@@ -2725,6 +2736,50 @@ async function finishUpgradeNow(builderNumber, currentUpgrade, startNext) {
   });
   const res  = await fetch(API_BASE + '?' + params.toString());
   return await res.json();
+}
+
+function showCompleteUpgradeModal(builderStr, upgradeName, detailsWrapper) {
+  document.querySelector('.cum-overlay')?.remove();
+  const builderNumber = builderStr.match(/\d+/)?.[0];
+  if (!builderNumber) return;
+  const isSC = upgradeName.includes('*');
+  const imgSrc = isSC ? getSuperchargeImage(upgradeName) : getUpgradeImage(upgradeName);
+  const overlay = document.createElement('div');
+  overlay.className = 'cum-overlay';
+  overlay.innerHTML = `
+    <div class="fim-modal">
+      <div class="fim-header">
+        <h3>Mark as Complete?</h3>
+      </div>
+      <div class="fim-body">
+        <div class="fim-upgrade-row">
+          <img src="${imgSrc}" class="fim-upgrade-img" onerror="this.src='Images/Upgrades/PH.png'" alt="${upgradeName}" />
+          <div class="fim-upgrade-name">${formatUpgradeName(upgradeName)}</div>
+        </div>
+        <p class="fim-confirm-text">This will unassign the upgrade from the builder and move it to <strong>Completed upgrades</strong>.</p>
+      </div>
+      <div class="fim-footer">
+        <button class="fim-cancel-btn">Cancel</button>
+        <button class="fim-confirm-btn">Mark Complete ✅</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('.fim-cancel-btn').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('.fim-confirm-btn').addEventListener('click', () => {
+    overlay.remove();
+    showRefreshIndicator('refreshing');
+    finishUpgradeNow(builderNumber, upgradeName, false)
+      .then(async () => {
+        try {
+          const bd = await fetchBuilderDetails(`Builder_${builderNumber}`);
+          if (bd?.builder) detailsWrapper.replaceWith(renderBuilderDetails(bd));
+        } catch (e) { console.error('Refresh builder details failed:', e); }
+      })
+      .catch(err => console.error('Complete upgrade failed:', err))
+      .finally(() => refreshDashboardFast());
+  });
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
 function wirePausedBuilderButtons() {

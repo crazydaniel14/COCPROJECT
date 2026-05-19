@@ -436,6 +436,7 @@ button:disabled {
 }
 
 /* === FINISH UPGRADE MODAL === */
+.cum-overlay,
 .fim-overlay {
   position: fixed;
   inset: 0;
@@ -748,7 +749,7 @@ button:disabled {
 /* Desktop grid: icon col | name | duration | cost | dates | controls */
 .upgrade-headers {
   display: grid;
-  grid-template-columns: 52px 1fr 140px 110px 280px 64px;
+  grid-template-columns: 52px 1fr 140px 110px 280px 96px;
   align-items: center;
   font-size: 10px;
   font-weight: 700;
@@ -788,7 +789,7 @@ button:disabled {
 
 .upgrade-item {
   display: grid;
-  grid-template-columns: 52px 1fr 140px 110px 280px 64px;
+  grid-template-columns: 52px 1fr 140px 110px 280px 96px;
   align-items: center;
   font-size: 14px;
   color: #ffffff;
@@ -936,6 +937,32 @@ button:disabled {
   border-color: #f5d04c;
   transform: scale(1.1);
 }
+
+.complete-upgrade-btn {
+  background: rgba(129,199,132,0.15);
+  border: 1px solid rgba(129,199,132,0.3);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+  flex-shrink: 0;
+}
+.complete-upgrade-btn img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+.complete-upgrade-btn:hover {
+  background: rgba(129,199,132,0.3);
+  border-color: #81c784;
+  transform: scale(1.1);
+}
+.complete-upgrade-btn--mobile { display: none; }
 
 /* Hide the duplicate drag handle inside upgrade-controls on desktop */
 .upgrade-controls .drag-handle {
@@ -2691,6 +2718,15 @@ button:disabled {
   }
 
   .upgrade-icon { width: 30px; height: 30px; }
+
+  .complete-upgrade-btn--desktop { display: none !important; }
+  .complete-upgrade-btn--mobile {
+    display: flex;
+    width: 24px;
+    height: 24px;
+    margin-left: 8px;
+  }
+  .complete-upgrade-btn--mobile img { width: 14px; height: 14px; }
 
   /* Cost col: appears after upgrade-name in flex column, aligned to the right */
   .upgrade-cost-col {
