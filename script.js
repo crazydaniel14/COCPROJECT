@@ -840,9 +840,9 @@ function renderBuilderDetails(details) {
                 <div class="upgrade-time">
                   <span>${upg.start}</span><span>→</span><span>${upg.end}</span>
                 </div>
+                ${costColHtml}
               </div>
               <div class="upgrade-item-bottom-right">
-                ${costColHtml}
                 <button class="complete-upgrade-btn complete-upgrade-btn--mobile"
                         data-builder="${upg.builder}" data-upgrade="${upg.upgrade}"
                         title="Mark as complete"><img src="Images/Finished.png" alt="✓" /></button>

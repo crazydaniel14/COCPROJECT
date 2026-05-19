@@ -2748,13 +2748,10 @@ button:disabled {
   }
   .upgrade-item-bottom-right {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 6px;
+    align-items: center;
   }
 
   .upgrade-cost-col {
-    justify-content: flex-end;
     padding: 0;
     grid-column: unset;
   }
