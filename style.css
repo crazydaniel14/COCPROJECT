@@ -964,6 +964,11 @@ button:disabled {
 }
 .complete-upgrade-btn--mobile { display: none; }
 
+/* Desktop: wrappers are invisible so children participate in the parent grid directly */
+.upgrade-item-bottom,
+.upgrade-item-bottom-left,
+.upgrade-item-bottom-right { display: contents; }
+
 /* Hide the duplicate drag handle inside upgrade-controls on desktop */
 .upgrade-controls .drag-handle {
   display: none;
@@ -2722,15 +2727,33 @@ button:disabled {
   .complete-upgrade-btn--desktop { display: none !important; }
   .complete-upgrade-btn--mobile {
     display: flex;
-    align-self: flex-end;
     width: 36px;
     height: 36px;
   }
   .complete-upgrade-btn--mobile img { width: 18px; height: 18px; }
 
-  /* Cost col: appears after upgrade-name in flex column, aligned to the right */
+  .upgrade-item-bottom {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    margin-top: 4px;
+    gap: 8px;
+  }
+  .upgrade-item-bottom-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .upgrade-item-bottom-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+
   .upgrade-cost-col {
-    align-self: flex-end;
     justify-content: flex-end;
     padding: 0;
     grid-column: unset;

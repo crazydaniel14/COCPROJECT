@@ -834,13 +834,19 @@ function renderBuilderDetails(details) {
                    onerror="this.src='Images/Upgrades/PH.png'" />`}
               <span${isSC ? ' style="color:#093DBA"' : ''}>${formatUpgradeName(upg.upgrade)}</span>
             </div>
-            ${costColHtml}
-            <button class="complete-upgrade-btn complete-upgrade-btn--mobile"
-                    data-builder="${upg.builder}" data-upgrade="${upg.upgrade}"
-                    title="Mark as complete"><img src="Images/Finished.png" alt="✓" /></button>
-            <div class="upgrade-duration editable-duration" data-index="${idx}">${upg.duration}</div>
-            <div class="upgrade-time">
-              <span>${upg.start}</span><span>→</span><span>${upg.end}</span>
+            <div class="upgrade-item-bottom">
+              <div class="upgrade-item-bottom-left">
+                <div class="upgrade-duration editable-duration" data-index="${idx}">${upg.duration}</div>
+                <div class="upgrade-time">
+                  <span>${upg.start}</span><span>→</span><span>${upg.end}</span>
+                </div>
+              </div>
+              <div class="upgrade-item-bottom-right">
+                ${costColHtml}
+                <button class="complete-upgrade-btn complete-upgrade-btn--mobile"
+                        data-builder="${upg.builder}" data-upgrade="${upg.upgrade}"
+                        title="Mark as complete"><img src="Images/Finished.png" alt="✓" /></button>
+              </div>
             </div>
             <div class="upgrade-controls">
               <button class="complete-upgrade-btn complete-upgrade-btn--desktop"
