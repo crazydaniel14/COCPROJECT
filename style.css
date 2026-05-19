@@ -2754,6 +2754,7 @@ button:disabled {
   .upgrade-cost-col {
     padding: 0;
     grid-column: unset;
+    justify-content: flex-start;
   }
 
   .upgrade-duration {
