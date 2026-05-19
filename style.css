@@ -2722,11 +2722,11 @@ button:disabled {
   .complete-upgrade-btn--desktop { display: none !important; }
   .complete-upgrade-btn--mobile {
     display: flex;
-    width: 24px;
-    height: 24px;
-    margin-left: 8px;
+    align-self: flex-end;
+    width: 36px;
+    height: 36px;
   }
-  .complete-upgrade-btn--mobile img { width: 14px; height: 14px; }
+  .complete-upgrade-btn--mobile img { width: 18px; height: 18px; }
 
   /* Cost col: appears after upgrade-name in flex column, aligned to the right */
   .upgrade-cost-col {

@@ -813,10 +813,9 @@ function renderBuilderDetails(details) {
         const RES_COLOR = { gold: '#f5d04c', elixir: '#e87dbd', de: '#9b59b6' };
         const resKey = meta?.resource || 'gold';
         const costFmt = meta?.costFmt || null;
-        const mobileCompleteBtn = `<button class="complete-upgrade-btn complete-upgrade-btn--mobile" data-builder="${upg.builder}" data-upgrade="${upg.upgrade}" title="Mark as complete"><img src="Images/Finished.png" alt="✓" /></button>`;
         const costColHtml = costFmt
-          ? `<div class="upgrade-cost-col"><img src="${RES_ICON[resKey] || 'Images/Gold.png'}" class="upgrade-cost-res-icon" alt=""><span class="upgrade-cost-val" style="color:${RES_COLOR[resKey] || '#f5d04c'}">${costFmt}</span>${mobileCompleteBtn}</div>`
-          : `<div class="upgrade-cost-col upgrade-cost-col--empty"><span>—</span>${mobileCompleteBtn}</div>`;
+          ? `<div class="upgrade-cost-col"><img src="${RES_ICON[resKey] || 'Images/Gold.png'}" class="upgrade-cost-res-icon" alt=""><span class="upgrade-cost-val" style="color:${RES_COLOR[resKey] || '#f5d04c'}">${costFmt}</span></div>`
+          : `<div class="upgrade-cost-col upgrade-cost-col--empty">—</div>`;
         return `
           <div class="upgrade-item"
                data-builder="${upg.builder}" data-row="${upg.row}"
@@ -836,6 +835,9 @@ function renderBuilderDetails(details) {
               <span${isSC ? ' style="color:#093DBA"' : ''}>${formatUpgradeName(upg.upgrade)}</span>
             </div>
             ${costColHtml}
+            <button class="complete-upgrade-btn complete-upgrade-btn--mobile"
+                    data-builder="${upg.builder}" data-upgrade="${upg.upgrade}"
+                    title="Mark as complete"><img src="Images/Finished.png" alt="✓" /></button>
             <div class="upgrade-duration editable-duration" data-index="${idx}">${upg.duration}</div>
             <div class="upgrade-time">
               <span>${upg.start}</span><span>→</span><span>${upg.end}</span>
@@ -2756,7 +2758,6 @@ function showCompleteUpgradeModal(builderStr, upgradeName, detailsWrapper) {
           <img src="${imgSrc}" class="fim-upgrade-img" onerror="this.src='Images/Upgrades/PH.png'" alt="${upgradeName}" />
           <div class="fim-upgrade-name">${formatUpgradeName(upgradeName)}</div>
         </div>
-        <p class="fim-confirm-text">This will unassign the upgrade from the builder and move it to <strong>Completed upgrades</strong>.</p>
       </div>
       <div class="fim-footer">
         <button class="fim-cancel-btn">Cancel</button>
