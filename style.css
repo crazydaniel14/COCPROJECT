@@ -1262,7 +1262,9 @@ button:disabled {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  margin-top: 10px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .boost-plan-header h4 {
@@ -3331,9 +3333,9 @@ button:disabled {
    BUILDER COUNT BADGE (bottom-right, very subtle)
    ================================================== */
 .builder-count-badge {
-  position: fixed;
-  bottom: 12px;
-  right: 12px;
+  display: block;
+  text-align: center;
+  margin: 16px auto 8px;
   font-size: 9px;
   font-weight: 700;
   color: #444455;
@@ -3345,8 +3347,6 @@ button:disabled {
   white-space: nowrap;
   user-select: none;
   line-height: 1.4;
-  z-index: 100;
-  background: rgba(15,15,20,0.5);
 }
 .builder-count-badge:hover {
   color: #f5d04c;
