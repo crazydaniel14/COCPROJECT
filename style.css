@@ -2727,10 +2727,10 @@ button:disabled {
   .complete-upgrade-btn--desktop { display: none !important; }
   .complete-upgrade-btn--mobile {
     display: flex;
-    width: 36px;
-    height: 36px;
+    width: 24px;
+    height: 24px;
   }
-  .complete-upgrade-btn--mobile img { width: 18px; height: 18px; }
+  .complete-upgrade-btn--mobile img { width: 13px; height: 13px; }
 
   .upgrade-item-bottom {
     display: flex;
