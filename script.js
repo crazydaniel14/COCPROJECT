@@ -2714,20 +2714,7 @@ function showFinishUpgradeModal(builderNumber, currentUpgrade, nextUpgrade) {
     showRefreshIndicator('refreshing');
     finishUpgradeNow(builderNumber, currentUpgrade, startNext)
       .then(async data => {
-        if (!startNext) {
-          // Register the pause properly so get_paused_builders picks it up
-          const pauseParams = new URLSearchParams({
-            action: 'confirm_upgrade_start',
-            username: Auth.getUsername(),
-            builder: `Builder_${builderNumber}`,
-            upgradeName: '',
-            startTime: '',
-            confirmAction: 'pause',
-            differentUpgrade: '',
-            token: Auth.getToken()
-          });
-          await fetch(API_BASE + '?' + pauseParams.toString());
-        } else if (card && data?.newActive) {
+        if (startNext && card && data?.newActive) {
           // Patch card immediately from API response — no extra fetch
           const { durationHr, finishTime, nextUpgrade: nextInQueue } = data.newActive;
           const durationEl = card.querySelector('.editable-card-duration');
@@ -2739,9 +2726,20 @@ function showFinishUpgradeModal(builderNumber, currentUpgrade, nextUpgrade) {
           const finishBtn = card.querySelector('.finish-upgrade-btn');
           if (finishBtn) finishBtn.style.display = '';
         }
+        await refreshDashboardFast();
+        if (!startNext) {
+          // If GAS didn't write to paused_builders, force the paused state locally and re-render
+          const builderKey = `${Auth.getUsername()}_Builder_${builderNumber}`;
+          if (!window._pausedBuilders?.[builderKey]?.paused) {
+            window._pausedBuilders = window._pausedBuilders || {};
+            window._pausedBuilders[builderKey] = { paused: true, upgradeName: nextUpgrade, duration: '' };
+            openBuilders = openBuilders.filter(b => b != builderNumber && b != String(builderNumber));
+            const container = document.getElementById('builders-container');
+            if (container) { container.innerHTML = ''; renderBuilderCards(); }
+          }
+        }
       })
-      .catch(err => console.error('Finish upgrade API failed:', err))
-      .finally(() => refreshDashboardFast());
+      .catch(err => console.error('Finish upgrade API failed:', err));
   });
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
