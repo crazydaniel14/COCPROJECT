@@ -2721,9 +2721,21 @@ function showFinishUpgradeModal(builderNumber, currentUpgrade, nextUpgrade) {
     finishUpgradeNow(builderNumber, currentUpgrade, startNext)
       .then(async data => {
         if (!startNext) {
-          // Register the paused state locally so it survives every loadPausedBuilders() call
-          const builderKey = `${Auth.getUsername()}_Builder_${builderNumber}`;
-          _localPausedOverrides[builderKey] = { paused: true, upgradeName: nextUpgrade, duration: '' };
+          const builderKey   = `${Auth.getUsername()}_Builder_${builderNumber}`;
+          const pausedEntry  = {
+            paused:      true,
+            upgradeName: data?.pausedInfo?.upgradeName || nextUpgrade,
+            duration:    data?.pausedInfo?.duration    || ''
+          };
+          // Persist through all future loadPausedBuilders() calls
+          _localPausedOverrides[builderKey]  = pausedEntry;
+          window._pausedBuilders             = window._pausedBuilders || {};
+          window._pausedBuilders[builderKey] = pausedEntry;
+          // Force re-render regardless of whether any cards are expanded
+          openBuilders = openBuilders.filter(b => b != builderNumber && b != String(builderNumber));
+          const container = document.getElementById('builders-container');
+          if (container) { container.innerHTML = ''; renderBuilderCards(); }
+          refreshDashboardFast(); // background sync — don't await, card already updated
         } else if (card && data?.newActive) {
           // Patch card immediately from API response — no extra fetch
           const { durationHr, finishTime, nextUpgrade: nextInQueue } = data.newActive;
@@ -2735,8 +2747,8 @@ function showFinishUpgradeModal(builderNumber, currentUpgrade, nextUpgrade) {
           if (nextEl) nextEl.innerHTML = buildNextUpgradeHTML(nextInQueue);
           const finishBtn = card.querySelector('.finish-upgrade-btn');
           if (finishBtn) finishBtn.style.display = '';
+          await refreshDashboardFast();
         }
-        await refreshDashboardFast();
       })
       .catch(err => console.error('Finish upgrade API failed:', err));
   });
