@@ -343,6 +343,7 @@ const MAX_BOOST_LEVEL = 8; // update when a new level is added to the game
 let currentBuilderCount = 0;
 let openBuilders = [];
 let loadingBuilders = new Set();
+let _localPausedOverrides = {}; // persists pauses that GAS hasn't written to paused_builders yet
 let lastActiveStatusUpdate = 0;
 
 /* =========================
@@ -480,6 +481,10 @@ async function loadPausedBuilders() {
   } catch (e) {
     console.error("Failed to load paused builders:", e);
     window._pausedBuilders = {};
+  }
+  // Merge any locally-tracked pauses that GAS hasn't registered yet
+  if (Object.keys(_localPausedOverrides).length) {
+    Object.assign(window._pausedBuilders, _localPausedOverrides);
   }
 }
 
@@ -2631,6 +2636,7 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
       const data = await res.json();
       if (data.error) { alert('Error: '+data.error); startBtn.disabled=false; startBtn.textContent='▶️ Start Now'; return; }
       modal.remove();
+      delete _localPausedOverrides[`${Auth.getUsername()}_${b}`];
       const container = document.getElementById("builders-container");
       if (container) container.innerHTML = "";
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -2714,7 +2720,11 @@ function showFinishUpgradeModal(builderNumber, currentUpgrade, nextUpgrade) {
     showRefreshIndicator('refreshing');
     finishUpgradeNow(builderNumber, currentUpgrade, startNext)
       .then(async data => {
-        if (startNext && card && data?.newActive) {
+        if (!startNext) {
+          // Register the paused state locally so it survives every loadPausedBuilders() call
+          const builderKey = `${Auth.getUsername()}_Builder_${builderNumber}`;
+          _localPausedOverrides[builderKey] = { paused: true, upgradeName: nextUpgrade, duration: '' };
+        } else if (card && data?.newActive) {
           // Patch card immediately from API response — no extra fetch
           const { durationHr, finishTime, nextUpgrade: nextInQueue } = data.newActive;
           const durationEl = card.querySelector('.editable-card-duration');
@@ -2727,17 +2737,6 @@ function showFinishUpgradeModal(builderNumber, currentUpgrade, nextUpgrade) {
           if (finishBtn) finishBtn.style.display = '';
         }
         await refreshDashboardFast();
-        if (!startNext) {
-          // If GAS didn't write to paused_builders, force the paused state locally and re-render
-          const builderKey = `${Auth.getUsername()}_Builder_${builderNumber}`;
-          if (!window._pausedBuilders?.[builderKey]?.paused) {
-            window._pausedBuilders = window._pausedBuilders || {};
-            window._pausedBuilders[builderKey] = { paused: true, upgradeName: nextUpgrade, duration: '' };
-            openBuilders = openBuilders.filter(b => b != builderNumber && b != String(builderNumber));
-            const container = document.getElementById('builders-container');
-            if (container) { container.innerHTML = ''; renderBuilderCards(); }
-          }
-        }
       })
       .catch(err => console.error('Finish upgrade API failed:', err));
   });
