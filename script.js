@@ -476,8 +476,14 @@ async function loadTodaysBoost() {
 
 async function loadPausedBuilders() {
   try {
-    const res = await fetch(PAUSED_BUILDERS_URL());
-    window._pausedBuilders = await res.json();
+    const res  = await fetch(PAUSED_BUILDERS_URL());
+    const raw  = await res.json();
+    // GAS resolves username to canonical casing (e.g. "Jer382") but Auth.getUsername()
+    // is always lowercase — normalize keys so lookups always match
+    window._pausedBuilders = {};
+    for (const key of Object.keys(raw)) {
+      window._pausedBuilders[key.toLowerCase()] = raw[key];
+    }
   } catch (e) {
     console.error("Failed to load paused builders:", e);
     window._pausedBuilders = {};
