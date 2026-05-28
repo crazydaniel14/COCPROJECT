@@ -1020,7 +1020,7 @@ function renderBuilderCards() {
       : '0 d 0 hr 0 min';
     const currentUpgradeImg = getUpgradeImage(row[1]);
 
-    const builderKey = `${Auth.getUsername()}_Builder_${builderNumber}`;
+    const builderKey = `${Auth.getUsername()}_Builder_${builderNumber}`.toLowerCase();
     const pauseInfo  = window._pausedBuilders?.[builderKey];
     const isPaused   = pauseInfo?.paused === true;
 
@@ -2642,7 +2642,7 @@ function showStartPausedBuilderModal(builderNum, upgradeName, totalDuration) {
       const data = await res.json();
       if (data.error) { alert('Error: '+data.error); startBtn.disabled=false; startBtn.textContent='▶️ Start Now'; return; }
       modal.remove();
-      delete _localPausedOverrides[`${Auth.getUsername()}_${b}`];
+      delete _localPausedOverrides[`${Auth.getUsername()}_${b}`.toLowerCase()];
       const container = document.getElementById("builders-container");
       if (container) container.innerHTML = "";
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -2727,7 +2727,7 @@ function showFinishUpgradeModal(builderNumber, currentUpgrade, nextUpgrade) {
     finishUpgradeNow(builderNumber, currentUpgrade, startNext)
       .then(async data => {
         if (!startNext) {
-          const builderKey   = `${Auth.getUsername()}_Builder_${builderNumber}`;
+          const builderKey   = `${Auth.getUsername()}_Builder_${builderNumber}`.toLowerCase();
           const pausedEntry  = {
             paused:      true,
             upgradeName: data?.pausedInfo?.upgradeName || nextUpgrade,
