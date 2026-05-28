@@ -2694,9 +2694,9 @@ function showFinishUpgradeModal(builderNumber, currentUpgrade, nextUpgrade) {
   overlay.querySelector('.fim-confirm-btn').addEventListener('click', () => {
     const startNext = toggle.checked;
     overlay.remove();
-    // Instant DOM feedback — swap card to show next upgrade immediately
+    // Instant DOM feedback — swap card to show next upgrade immediately (only when starting, not pausing)
     const card = document.querySelector(`.builder-card[data-builder="${builderNumber}"]`);
-    if (card) {
+    if (card && startNext) {
       const nextImg = getUpgradeImage(nextUpgrade);
       const iconEl = card.querySelector('.current-upgrade-icon');
       if (iconEl) { iconEl.src = nextImg; iconEl.alt = nextUpgrade; }
@@ -2713,9 +2713,22 @@ function showFinishUpgradeModal(builderNumber, currentUpgrade, nextUpgrade) {
     }
     showRefreshIndicator('refreshing');
     finishUpgradeNow(builderNumber, currentUpgrade, startNext)
-      .then(data => {
-        // Patch card immediately from API response — no extra fetch
-        if (card && data?.newActive) {
+      .then(async data => {
+        if (!startNext) {
+          // Register the pause properly so get_paused_builders picks it up
+          const pauseParams = new URLSearchParams({
+            action: 'confirm_upgrade_start',
+            username: Auth.getUsername(),
+            builder: `Builder_${builderNumber}`,
+            upgradeName: '',
+            startTime: '',
+            confirmAction: 'pause',
+            differentUpgrade: '',
+            token: Auth.getToken()
+          });
+          await fetch(API_BASE + '?' + pauseParams.toString());
+        } else if (card && data?.newActive) {
+          // Patch card immediately from API response — no extra fetch
           const { durationHr, finishTime, nextUpgrade: nextInQueue } = data.newActive;
           const durationEl = card.querySelector('.editable-card-duration');
           if (durationEl) durationEl.textContent = durationHr;
