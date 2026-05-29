@@ -856,12 +856,14 @@ function renderBuilderDetails(details) {
               <div class="upgrade-item-bottom-right">
                 <button class="complete-upgrade-btn complete-upgrade-btn--mobile"
                         data-builder="${upg.builder}" data-upgrade="${upg.upgrade}"
+                        data-row="${upg.row}" data-index="${idx}"
                         title="Mark as complete"><img src="Images/Finished.png" alt="✓" /></button>
               </div>
             </div>
             <div class="upgrade-controls">
               <button class="complete-upgrade-btn complete-upgrade-btn--desktop"
                       data-builder="${upg.builder}" data-upgrade="${upg.upgrade}"
+                      data-row="${upg.row}" data-index="${idx}"
                       title="Mark as complete"><img src="Images/Finished.png" alt="✓" /></button>
               <button class="transfer-builder-btn"
                       data-upgrade-name="${upg.upgrade}"
@@ -1311,7 +1313,7 @@ function setupBuilderTransfer(detailsWrapper) {
   detailsWrapper.querySelectorAll('.complete-upgrade-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      showCompleteUpgradeModal(btn.dataset.builder, btn.dataset.upgrade, detailsWrapper);
+      showCompleteUpgradeModal(btn.dataset.builder, btn.dataset.upgrade, btn.dataset.row, btn.dataset.index, detailsWrapper);
     });
   });
 }
@@ -2774,10 +2776,24 @@ async function finishUpgradeNow(builderNumber, currentUpgrade, startNext) {
   return await res.json();
 }
 
-function showCompleteUpgradeModal(builderStr, upgradeName, detailsWrapper) {
+async function completeQueuedUpgradeNow(builderNumber, upgradeName, row) {
+  const params = new URLSearchParams({
+    action:      'complete_queued_upgrade',
+    username:    Auth.getUsername(),
+    builder:     `Builder_${builderNumber}`,
+    upgradeName: upgradeName,
+    row:         row,
+    token:       Auth.getToken()
+  });
+  const res  = await fetch(API_BASE + '?' + params.toString());
+  return await res.json();
+}
+
+function showCompleteUpgradeModal(builderStr, upgradeName, row, index, detailsWrapper) {
   document.querySelector('.cum-overlay')?.remove();
   const builderNumber = builderStr.match(/\d+/)?.[0];
   if (!builderNumber) return;
+  const isQueued = Number(index) > 0;
   const isSC = upgradeName.includes('*');
   const imgSrc = isSC ? getSuperchargeImage(upgradeName) : getUpgradeImage(upgradeName);
   const overlay = document.createElement('div');
@@ -2792,6 +2808,7 @@ function showCompleteUpgradeModal(builderStr, upgradeName, detailsWrapper) {
           <img src="${imgSrc}" class="fim-upgrade-img" onerror="this.src='Images/Upgrades/PH.png'" alt="${upgradeName}" />
           <div class="fim-upgrade-name">${formatUpgradeName(upgradeName)}</div>
         </div>
+        ${isQueued ? `<div class="fim-queued-note" style="font-size:0.85em;color:#ffb74d;margin-top:8px;">This upgrade is in the queue (not currently active).<br>It will be removed from the queue and logged as completed.</div>` : ''}
       </div>
       <div class="fim-footer">
         <button class="fim-cancel-btn">Cancel</button>
@@ -2804,7 +2821,10 @@ function showCompleteUpgradeModal(builderStr, upgradeName, detailsWrapper) {
   overlay.querySelector('.fim-confirm-btn').addEventListener('click', () => {
     overlay.remove();
     showRefreshIndicator('refreshing');
-    finishUpgradeNow(builderNumber, upgradeName, false)
+    const apiCall = isQueued
+      ? completeQueuedUpgradeNow(builderNumber, upgradeName, row)
+      : finishUpgradeNow(builderNumber, upgradeName, false);
+    apiCall
       .then(async () => {
         try {
           const bd = await fetchBuilderDetails(`Builder_${builderNumber}`);
