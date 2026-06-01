@@ -76,7 +76,8 @@ function SET_BOOST_LEVEL_URL(lvl) { return endpoint("set_boost_level") + "&level
 function SET_BUILDER_COUNT_URL(n) { return endpoint("set_builder_count") + "&count=" + n; }
 
 function BUILDER_SNACK_URL()  { return endpoint("apply_one_hour_boost"); }
-function BATTLE_PASS_URL()    { return endpoint("apply_battle_pass"); }
+function BATTLE_PASS_URL()        { return endpoint("apply_battle_pass"); }
+function SET_BATTLE_PASS_URL(lvl) { return endpoint("set_battle_pass_level") + "&level=" + lvl; }
 function BUILDER_DETAILS_URL(builderName) { return endpoint("builder_details") + "&builder=" + builderName; }
 function PAUSED_BUILDERS_URL() { return endpoint("get_paused_builders"); }
 function TOWN_HALL_LEVEL_URL()        { return endpoint("get_town_hall_level"); }
@@ -1822,14 +1823,66 @@ function showGoldPassModal() {
     overlay.innerHTML = `
       <div class="bs-modal">
         <h3><img src="Images/Builderpass.png" class="bs-title-icon" alt=""> Gold Pass</h3>
-        <p class="bs-modal-desc">Gold Pass is not active for this month.</p>
+        <p class="bs-modal-desc">Gold Pass is not active for this month. Select a level to activate it.</p>
+        <div class="bs-count-row">
+          <button class="bs-count-btn" id="gpDecBtn">−</button>
+          <input class="bs-count-input" id="gpLevelInput" type="number" min="1" max="10" value="1">
+          <button class="bs-count-btn" id="gpIncBtn">+</button>
+        </div>
         <div class="bs-modal-footer">
-          <button class="bs-cancel-btn" id="gpCloseBtn">Close</button>
+          <button class="bs-cancel-btn" id="gpCloseBtn">Cancel</button>
+          <button class="bs-apply-btn" id="gpActivateBtn">Activate</button>
         </div>
       </div>`;
     document.body.appendChild(overlay);
+
+    const levelInput  = overlay.querySelector('#gpLevelInput');
+    const decBtn      = overlay.querySelector('#gpDecBtn');
+    const incBtn      = overlay.querySelector('#gpIncBtn');
+    const activateBtn = overlay.querySelector('#gpActivateBtn');
+
+    function updateLevelBtns() {
+      const v = parseInt(levelInput.value) || 1;
+      decBtn.disabled = v <= 1;
+      incBtn.disabled = v >= 10;
+    }
+    updateLevelBtns();
+
+    decBtn.addEventListener('click', () => {
+      const v = parseInt(levelInput.value) || 1;
+      if (v > 1) { levelInput.value = v - 1; updateLevelBtns(); }
+    });
+    incBtn.addEventListener('click', () => {
+      const v = parseInt(levelInput.value) || 1;
+      if (v < 10) { levelInput.value = v + 1; updateLevelBtns(); }
+    });
+    levelInput.addEventListener('input', () => {
+      let v = parseInt(levelInput.value) || 1;
+      v = Math.max(1, Math.min(10, v));
+      levelInput.value = v;
+      updateLevelBtns();
+    });
+
     overlay.querySelector('#gpCloseBtn').addEventListener('click', () => overlay.remove());
     overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+    activateBtn.addEventListener('click', async () => {
+      const level = parseInt(levelInput.value) || 1;
+      activateBtn.disabled = true;
+      activateBtn.textContent = '…';
+      try {
+        const res = await fetch(SET_BATTLE_PASS_URL(level));
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        await loadGoldPassState();
+        overlay.remove();
+        if (_gpState.active) showGoldPassModal();
+      } catch(e) {
+        activateBtn.disabled = false;
+        activateBtn.textContent = 'Activate';
+        showBsErrorToast('Failed to activate Gold Pass');
+      }
+    });
     return;
   }
 
