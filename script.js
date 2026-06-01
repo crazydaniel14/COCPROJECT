@@ -1592,7 +1592,7 @@ function wireApprenticeBoost() {
 function wireImageButtons() {
   document.getElementById("oneHourBoostBtn")?.addEventListener("click",  () => showBuilderSnackModal());
   document.getElementById("builderPotionBtn")?.addEventListener("click", () => showBuilderPotionModal());
-  document.getElementById("battlePassBtn")?.addEventListener("click",    async () => { await fetch(BATTLE_PASS_URL()); await loadGoldPassState(); refreshDashboard(); });
+  document.getElementById("battlePassBtn")?.addEventListener("click",    () => showGoldPassModal());
   document.getElementById("buildingBtn")?.addEventListener("click",      () => { window.location.href = "building.html"; });
 }
 
@@ -1806,6 +1806,188 @@ function showBsErrorToast(msg) {
   toast.textContent = msg;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 4000);
+}
+
+/* =========================
+   GOLD PASS MODAL
+   ========================= */
+function showGoldPassModal() {
+  document.querySelector('.gp-modal-overlay')?.remove();
+
+  const { active, label, monthName, year } = _gpState;
+
+  if (!active) {
+    const overlay = document.createElement('div');
+    overlay.className = 'bs-modal-overlay gp-modal-overlay';
+    overlay.innerHTML = `
+      <div class="bs-modal">
+        <h3><img src="Images/Builderpass.png" class="bs-title-icon" alt=""> Gold Pass</h3>
+        <p class="bs-modal-desc">Gold Pass is not active for this month.</p>
+        <div class="bs-modal-footer">
+          <button class="bs-cancel-btn" id="gpCloseBtn">Close</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#gpCloseBtn').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    return;
+  }
+
+  const pct = parseFloat(label) || 0;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'bs-modal-overlay gp-modal-overlay';
+  overlay.innerHTML = `
+    <div class="bs-modal">
+      <h3><img src="Images/Builderpass.png" class="bs-title-icon" alt=""> Gold Pass — ${monthName} ${year}</h3>
+      <p class="bs-modal-desc">Applies a ${label} reduction to all active builders' remaining upgrade time.</p>
+      <div class="bs-preview-list" id="gpPreviewList">
+        <div class="bs-preview-loading">Loading preview…</div>
+      </div>
+      <div class="bs-modal-footer">
+        <button class="bs-cancel-btn" id="gpCancelBtn">Cancel</button>
+        <button class="bs-apply-btn" id="gpApplyBtn" disabled>Apply</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  const applyBtn    = overlay.querySelector('#gpApplyBtn');
+  const cancelBtn   = overlay.querySelector('#gpCancelBtn');
+  const previewList = overlay.querySelector('#gpPreviewList');
+
+  function gpFormatTime(ms) {
+    if (!ms) return '—';
+    return new Date(ms).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+  }
+
+  function gpBuilderLabel(builderStr) {
+    return builderStr.replace(/^[^_]+_/, '').replace(/_/g, ' ');
+  }
+
+  function fetchPreview() {
+    if (!currentWorkData || currentWorkData.length <= 1) {
+      previewList.innerHTML = '<div class="bs-preview-loading">No builder data loaded.</div>';
+      return;
+    }
+
+    const now = Date.now();
+    const rows = [];
+    for (let i = 1; i < currentWorkData.length; i++) {
+      const row = currentWorkData[i];
+      const builderName = row[0]?.toString();
+      const upgradeName = row[1]?.toString() || '';
+      const finishMs = new Date(row[2]).getTime();
+      if (!builderName || isNaN(finishMs)) continue;
+      const remainingMs = finishMs - now;
+      if (remainingMs <= 0) continue;
+      const reductionMs = remainingMs * (pct / 100);
+      rows.push({ builder: builderName, upgrade: upgradeName, oldTime: finishMs, newTime: finishMs - reductionMs, savedMs: reductionMs });
+    }
+
+    if (rows.length === 0) {
+      previewList.innerHTML = '<div class="bs-preview-loading">No active upgrades found.</div>';
+      applyBtn.disabled = true;
+      return;
+    }
+
+    previewList.innerHTML = rows.map(p => {
+      const savedMins = Math.round(p.savedMs / 60000);
+      const savedLabel = savedMins >= 60
+        ? `(−${(savedMins / 60).toFixed(1)} hr)`
+        : `(−${savedMins} min.)`;
+      return `
+        <div class="bs-builder-row">
+          <img src="${getUpgradeImage(p.upgrade)}" class="bs-upgrade-icon"
+               alt="${p.upgrade}" onerror="this.src='Images/Upgrades/PH.png'">
+          <span class="bs-builder-name">${gpBuilderLabel(p.builder)}<span class="bs-saved-label">${savedLabel}</span></span>
+          <span class="bs-builder-times">
+            ${gpFormatTime(p.oldTime)}
+            <span class="bs-arrow">→</span>
+            <span class="bs-new-time">${gpFormatTime(p.newTime)}</span>
+          </span>
+        </div>`;
+    }).join('');
+    applyBtn.disabled = false;
+  }
+
+  cancelBtn.addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  applyBtn.addEventListener('click', async () => {
+    const now = Date.now();
+    const snapshot = currentWorkData ? currentWorkData.map(row => [...row]) : null;
+
+    if (currentWorkData) {
+      for (let i = 1; i < currentWorkData.length; i++) {
+        const finishMs = new Date(currentWorkData[i][2]).getTime();
+        if (!isNaN(finishMs)) {
+          const remainingMs = finishMs - now;
+          if (remainingMs > 0) {
+            currentWorkData[i][2] = new Date(finishMs - remainingMs * (pct / 100)).toISOString();
+          }
+        }
+      }
+      document.querySelectorAll('.builder-time-left[data-builder]').forEach(el => {
+        const builderNum = el.dataset.builder.match(/(\d+)/)?.[1];
+        if (!builderNum) return;
+        const row = currentWorkData.find(r => r[0]?.toString().includes(`_${builderNum}`) || r[0]?.toString().endsWith(builderNum));
+        if (!row) return;
+        const newFinishMs = new Date(row[2]).getTime();
+        const remainingMs = newFinishMs - now;
+        if (remainingMs > 0) {
+          const totalMins = Math.floor(remainingMs / 60000);
+          const days  = Math.floor(totalMins / (24 * 60));
+          const hours = Math.floor((totalMins % (24 * 60)) / 60);
+          const mins  = totalMins % 60;
+          el.textContent = `${days} d ${hours} hr ${mins} min`;
+        } else {
+          el.textContent = '0 d 0 hr 0 min';
+        }
+        const finishEl = el.closest('.builder-text')?.querySelector('.builder-finish');
+        if (finishEl) finishEl.textContent = 'Finishes: ' + formatFinishTime(new Date(row[2]));
+      });
+    }
+
+    overlay.remove();
+    showRefreshIndicator('refreshing');
+
+    try {
+      const res = await fetch(BATTLE_PASS_URL());
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      await loadGoldPassState();
+      await refreshDashboardFast();
+    } catch(e) {
+      if (snapshot) {
+        currentWorkData = snapshot;
+        const now2 = Date.now();
+        document.querySelectorAll('.builder-time-left[data-builder]').forEach(el => {
+          const builderNum = el.dataset.builder.match(/(\d+)/)?.[1];
+          if (!builderNum) return;
+          const row = currentWorkData.find(r => r[0]?.toString().includes(`_${builderNum}`) || r[0]?.toString().endsWith(builderNum));
+          if (!row) return;
+          const finishMs = new Date(row[2]).getTime();
+          const remainingMs = finishMs - now2;
+          if (remainingMs > 0) {
+            const totalMins = Math.floor(remainingMs / 60000);
+            const days  = Math.floor(totalMins / (24 * 60));
+            const hours = Math.floor((totalMins % (24 * 60)) / 60);
+            const mins  = totalMins % 60;
+            el.textContent = `${days} d ${hours} hr ${mins} min`;
+          } else {
+            el.textContent = '0 d 0 hr 0 min';
+          }
+          const finishEl = el.closest('.builder-text')?.querySelector('.builder-finish');
+          if (finishEl) finishEl.textContent = 'Finishes: ' + formatFinishTime(new Date(row[2]));
+        });
+      }
+      showRefreshIndicator('hidden');
+      showBsErrorToast('Failed to apply Gold Pass — no changes were made');
+    }
+  });
+
+  fetchPreview();
 }
 
 /* =========================
