@@ -345,6 +345,24 @@ let openBuilders = [];
 let loadingBuilders = new Set();
 let _localPausedOverrides = {}; // persists pauses that GAS hasn't written to paused_builders yet
 let lastActiveStatusUpdate = 0;
+let _gpState = { level: 0, month: -1, year: -1, active: false, label: '0%', monthName: null };
+
+async function loadGoldPassState() {
+  try {
+    const data = await fetch(endpoint('battle_pass_status')).then(r => r.json());
+    if (data && !data.error) _gpState = data;
+  } catch (e) {}
+  updateBattlePassTooltip();
+}
+
+function updateBattlePassTooltip() {
+  const btn = document.getElementById('battlePassBtn');
+  if (!btn) return;
+  const { active, label, monthName, year } = _gpState;
+  btn.title = active
+    ? `Gold Pass: ${label} reduction — ${monthName} ${year}`
+    : 'Gold Pass: Inactive';
+}
 
 /* =========================
    HELPERS
@@ -658,7 +676,8 @@ async function refreshDashboardFast() {
       loadBoostPlan(),
       loadBoostLevel(),
       loadTownHallLevel(),
-      loadAllBuildersLastFinish()
+      loadAllBuildersLastFinish(),
+      loadGoldPassState()
     ]);
     if (openBuilders.length === 0) {
       const container = document.getElementById("builders-container");
@@ -696,7 +715,8 @@ async function refreshDashboard() {
       loadBoostPlan(),
       loadBoostLevel(),
       loadTownHallLevel(),
-      loadAllBuildersLastFinish()
+      loadAllBuildersLastFinish(),
+      loadGoldPassState()
     ]);
     if (openBuilders.length === 0) {
       const container = document.getElementById("builders-container");
@@ -827,8 +847,11 @@ function renderBuilderDetails(details) {
         const costColHtml = costFmt
           ? `<div class="upgrade-cost-col"><img src="${RES_ICON[resKey] || 'Images/Gold.png'}" class="upgrade-cost-res-icon" alt=""><span class="upgrade-cost-val" style="color:${RES_COLOR[resKey] || '#f5d04c'}">${costFmt}</span></div>`
           : `<div class="upgrade-cost-col upgrade-cost-col--empty">—</div>`;
+        const gpBadge = upg.goldPass
+          ? `<img src="Images/Builderpass.png" class="gp-badge" alt="GP" title="Gold Pass reduction applied" />`
+          : '';
         return `
-          <div class="upgrade-item"
+          <div class="upgrade-item${upg.goldPass ? ' has-gp' : ''}"
                data-builder="${upg.builder}" data-row="${upg.row}"
                data-index="${idx}" data-upgrade-name="${upg.upgrade}"
                data-duration-minutes="${totalMinutes}" draggable="true">
@@ -844,6 +867,7 @@ function renderBuilderDetails(details) {
               <img src="${imgSrc}" class="upgrade-icon" alt="${upg.upgrade}"
                    onerror="this.src='Images/Upgrades/PH.png'" />`}
               <span${isSC ? ' style="color:#093DBA"' : ''}>${formatUpgradeName(upg.upgrade)}</span>
+              ${gpBadge}
             </div>
             <div class="upgrade-item-bottom">
               <div class="upgrade-item-bottom-left">
@@ -1568,7 +1592,7 @@ function wireApprenticeBoost() {
 function wireImageButtons() {
   document.getElementById("oneHourBoostBtn")?.addEventListener("click",  () => showBuilderSnackModal());
   document.getElementById("builderPotionBtn")?.addEventListener("click", () => showBuilderPotionModal());
-  document.getElementById("battlePassBtn")?.addEventListener("click",    async () => { await fetch(BATTLE_PASS_URL()); refreshDashboard(); });
+  document.getElementById("battlePassBtn")?.addEventListener("click",    async () => { await fetch(BATTLE_PASS_URL()); await loadGoldPassState(); refreshDashboard(); });
   document.getElementById("buildingBtn")?.addEventListener("click",      () => { window.location.href = "building.html"; });
 }
 

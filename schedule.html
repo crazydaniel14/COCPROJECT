@@ -1166,7 +1166,7 @@ const dayLbl = document.createElement('div');
       const bordCol = (upg.upgrade && upg.upgrade.includes('*')) ? '#093DBA' : upg._isCurrent ? '#ffffff' : isEven ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.18)';
 
       const bar = document.createElement('div');
-      bar.className = 'gantt-bar';
+      bar.className = 'gantt-bar' + (upg.goldPass && !upg._isCurrent ? ' has-gp' : '');
       bar.style.cssText = `left:${leftPx}px; width:${widthPx}px; top:${BT}px; height:${BH}px; background:${barCol}; border-color:${bordCol};`;
 
       if (upg._isCurrent) {
@@ -1176,6 +1176,15 @@ const dayLbl = document.createElement('div');
           ? `▶ since ${fmtDay(upg._startDate)}`
           : '▶ NOW';
         bar.appendChild(badge);
+      }
+
+      if (upg.goldPass && !upg._isCurrent) {
+        const gpMarker = document.createElement('img');
+        gpMarker.className = 'gp-marker';
+        gpMarker.src = 'Images/Builderpass.png';
+        gpMarker.alt = 'GP';
+        gpMarker.title = 'Gold Pass reduction applied';
+        bar.appendChild(gpMarker);
       }
 
       /* ── STICKY LABEL — follows horizontal scroll (FIX #5) ── */
@@ -1435,7 +1444,7 @@ function renderMobileVertical() {
         const bordCol = (upg.upgrade && upg.upgrade.includes('*')) ? '#093DBA' : upg._isCurrent ? '#fff' : isEven ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)';
 
         const bar = document.createElement('div');
-        bar.className = 'mobile-bar';
+        bar.className = 'mobile-bar' + (upg.goldPass && !upg._isCurrent ? ' has-gp' : '');
         bar.style.cssText = `top:${topPx}px; height:${hPx}px; background:${barCol}; border-color:${bordCol};`;
 
         if (upg._isCurrent) {
@@ -1443,6 +1452,15 @@ function renderMobileVertical() {
           badge.style.cssText = `position:absolute;top:0;left:0;right:0;text-align:center;background:rgba(255,255,255,0.92);color:#000;font-size:7px;font-weight:800;padding:1px 4px;border-radius:0 0 4px 4px;white-space:nowrap;pointer-events:none;letter-spacing:.4px;line-height:1.5;z-index:4;`;
           badge.textContent = (upg._startDate && upg._startDate.getTime() < todayStart.getTime()) ? `▶ since ${fmtDay(upg._startDate)}` : '▶ NOW';
           bar.appendChild(badge);
+        }
+
+        if (upg.goldPass && !upg._isCurrent) {
+          const gpMarker = document.createElement('img');
+          gpMarker.className = 'gp-marker';
+          gpMarker.src = 'Images/Builderpass.png';
+          gpMarker.alt = 'GP';
+          gpMarker.title = 'Gold Pass reduction applied';
+          bar.appendChild(gpMarker);
         }
 
         const lbl = document.createElement('div');
