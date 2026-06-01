@@ -76,8 +76,8 @@ function SET_BOOST_LEVEL_URL(lvl) { return endpoint("set_boost_level") + "&level
 function SET_BUILDER_COUNT_URL(n) { return endpoint("set_builder_count") + "&count=" + n; }
 
 function BUILDER_SNACK_URL()  { return endpoint("apply_one_hour_boost"); }
-function BATTLE_PASS_URL()        { return endpoint("apply_battle_pass"); }
-function SET_BATTLE_PASS_URL(lvl) { return endpoint("set_battle_pass_level") + "&level=" + lvl; }
+function BATTLE_PASS_URL()         { return endpoint("apply_battle_pass"); }
+function BATTLE_PASS_PREVIEW_URL() { return endpoint("preview_battle_pass"); }
 function BUILDER_DETAILS_URL(builderName) { return endpoint("builder_details") + "&builder=" + builderName; }
 function PAUSED_BUILDERS_URL() { return endpoint("get_paused_builders"); }
 function TOWN_HALL_LEVEL_URL()        { return endpoint("get_town_hall_level"); }
@@ -1812,199 +1812,102 @@ function showBsErrorToast(msg) {
 /* =========================
    GOLD PASS MODAL
    ========================= */
-function showGoldPassModal() {
+async function showGoldPassModal() {
   document.querySelector('.gp-modal-overlay')?.remove();
 
-  const { active, label, monthName, year } = _gpState;
+  const { level, active, label, monthName, year } = _gpState;
 
-  if (!active) {
-    const overlay = document.createElement('div');
-    overlay.className = 'bs-modal-overlay gp-modal-overlay';
-    overlay.innerHTML = `
-      <div class="bs-modal">
-        <h3><img src="Images/Builderpass.png" class="bs-title-icon" alt=""> Gold Pass</h3>
-        <p class="bs-modal-desc">Gold Pass is not active for this month. Select a level to activate it.</p>
-        <div class="bs-count-row">
-          <button class="bs-count-btn" id="gpDecBtn">−</button>
-          <input class="bs-count-input" id="gpLevelInput" type="number" min="1" max="10" value="1">
-          <button class="bs-count-btn" id="gpIncBtn">+</button>
-        </div>
-        <div class="bs-modal-footer">
-          <button class="bs-cancel-btn" id="gpCloseBtn">Cancel</button>
-          <button class="bs-apply-btn" id="gpActivateBtn">Activate</button>
-        </div>
-      </div>`;
-    document.body.appendChild(overlay);
+  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const now = new Date();
 
-    const levelInput  = overlay.querySelector('#gpLevelInput');
-    const decBtn      = overlay.querySelector('#gpDecBtn');
-    const incBtn      = overlay.querySelector('#gpIncBtn');
-    const activateBtn = overlay.querySelector('#gpActivateBtn');
-
-    function updateLevelBtns() {
-      const v = parseInt(levelInput.value) || 1;
-      decBtn.disabled = v <= 1;
-      incBtn.disabled = v >= 10;
-    }
-    updateLevelBtns();
-
-    decBtn.addEventListener('click', () => {
-      const v = parseInt(levelInput.value) || 1;
-      if (v > 1) { levelInput.value = v - 1; updateLevelBtns(); }
-    });
-    incBtn.addEventListener('click', () => {
-      const v = parseInt(levelInput.value) || 1;
-      if (v < 10) { levelInput.value = v + 1; updateLevelBtns(); }
-    });
-    levelInput.addEventListener('input', () => {
-      let v = parseInt(levelInput.value) || 1;
-      v = Math.max(1, Math.min(10, v));
-      levelInput.value = v;
-      updateLevelBtns();
-    });
-
-    overlay.querySelector('#gpCloseBtn').addEventListener('click', () => overlay.remove());
-    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-
-    activateBtn.addEventListener('click', async () => {
-      const level = parseInt(levelInput.value) || 1;
-      activateBtn.disabled = true;
-      activateBtn.textContent = '…';
-      try {
-        const res = await fetch(SET_BATTLE_PASS_URL(level));
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        await loadGoldPassState();
-        overlay.remove();
-        if (_gpState.active) showGoldPassModal();
-      } catch(e) {
-        activateBtn.disabled = false;
-        activateBtn.textContent = 'Activate';
-        showBsErrorToast('Failed to activate Gold Pass');
-      }
-    });
-    return;
+  // Determine button label based on next tier
+  function actionLabel(nextLevel) {
+    if (nextLevel === 0)  return 'Reset Gold Pass';
+    if (level    === 0)  return `Activate (${nextLevel}%)`;
+    return `Upgrade to ${nextLevel}%`;
   }
 
-  const pct = parseFloat(label) || 0;
-
+  // Build the overlay with a loading state for the preview
   const overlay = document.createElement('div');
   overlay.className = 'bs-modal-overlay gp-modal-overlay';
+
+  const currentDesc = active
+    ? `Active at <strong>${label}</strong> — ${monthName} ${year}`
+    : 'Not active this month';
+
   overlay.innerHTML = `
     <div class="bs-modal">
-      <h3><img src="Images/Builderpass.png" class="bs-title-icon" alt=""> Gold Pass — ${monthName} ${year}</h3>
-      <p class="bs-modal-desc">Applies a ${label} reduction to all active builders' remaining upgrade time.</p>
-      <div class="bs-preview-list" id="gpPreviewList">
+      <h3><img src="Images/Builderpass.png" class="bs-title-icon" alt=""> Gold Pass</h3>
+      <p class="bs-modal-desc gp-current-status">${currentDesc}</p>
+      <div class="gp-preview-block" id="gpPreviewBlock">
         <div class="bs-preview-loading">Loading preview…</div>
       </div>
       <div class="bs-modal-footer">
         <button class="bs-cancel-btn" id="gpCancelBtn">Cancel</button>
-        <button class="bs-apply-btn" id="gpApplyBtn" disabled>Apply</button>
+        <button class="bs-apply-btn" id="gpActionBtn" disabled>…</button>
       </div>
     </div>`;
 
   document.body.appendChild(overlay);
 
-  const applyBtn    = overlay.querySelector('#gpApplyBtn');
-  const cancelBtn   = overlay.querySelector('#gpCancelBtn');
-  const previewList = overlay.querySelector('#gpPreviewList');
-
-  function gpFormatTime(ms) {
-    if (!ms) return '—';
-    return new Date(ms).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
-  }
-
-  function gpBuilderLabel(builderStr) {
-    return builderStr.replace(/^[^_]+_/, '').replace(/_/g, ' ');
-  }
-
-  function fetchPreview() {
-    if (!currentWorkData || currentWorkData.length <= 1) {
-      previewList.innerHTML = '<div class="bs-preview-loading">No builder data loaded.</div>';
-      return;
-    }
-
-    const now = Date.now();
-    const rows = [];
-    for (let i = 1; i < currentWorkData.length; i++) {
-      const row = currentWorkData[i];
-      const builderName = row[0]?.toString();
-      const upgradeName = row[1]?.toString() || '';
-      const finishMs = new Date(row[2]).getTime();
-      if (!builderName || isNaN(finishMs)) continue;
-      const remainingMs = finishMs - now;
-      if (remainingMs <= 0) continue;
-      const reductionMs = remainingMs * (pct / 100);
-      rows.push({ builder: builderName, upgrade: upgradeName, oldTime: finishMs, newTime: finishMs - reductionMs, savedMs: reductionMs });
-    }
-
-    if (rows.length === 0) {
-      previewList.innerHTML = '<div class="bs-preview-loading">No active upgrades found.</div>';
-      applyBtn.disabled = true;
-      return;
-    }
-
-    previewList.innerHTML = rows.map(p => {
-      const savedMins = Math.round(p.savedMs / 60000);
-      const savedLabel = savedMins >= 60
-        ? `(−${(savedMins / 60).toFixed(1)} hr)`
-        : `(−${savedMins} min.)`;
-      return `
-        <div class="bs-builder-row">
-          <img src="${getUpgradeImage(p.upgrade)}" class="bs-upgrade-icon"
-               alt="${p.upgrade}" onerror="this.src='Images/Upgrades/PH.png'">
-          <span class="bs-builder-name">${gpBuilderLabel(p.builder)}<span class="bs-saved-label">${savedLabel}</span></span>
-          <span class="bs-builder-times">
-            ${gpFormatTime(p.oldTime)}
-            <span class="bs-arrow">→</span>
-            <span class="bs-new-time">${gpFormatTime(p.newTime)}</span>
-          </span>
-        </div>`;
-    }).join('');
-    applyBtn.disabled = false;
-  }
+  const cancelBtn = overlay.querySelector('#gpCancelBtn');
+  const actionBtn = overlay.querySelector('#gpActionBtn');
+  const previewBlock = overlay.querySelector('#gpPreviewBlock');
 
   cancelBtn.addEventListener('click', () => overlay.remove());
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 
-  applyBtn.addEventListener('click', async () => {
-    const now = Date.now();
-    const snapshot = currentWorkData ? currentWorkData.map(row => [...row]) : null;
+  // Fetch preview from backend
+  let preview = null;
+  try {
+    const res = await fetch(BATTLE_PASS_PREVIEW_URL());
+    preview = await res.json();
+    if (preview.error) throw new Error(preview.error);
+  } catch(e) {
+    previewBlock.innerHTML = '<div class="bs-preview-loading">Could not load preview.</div>';
+    return;
+  }
 
-    if (currentWorkData) {
-      for (let i = 1; i < currentWorkData.length; i++) {
-        const finishMs = new Date(currentWorkData[i][2]).getTime();
-        if (!isNaN(finishMs)) {
-          const remainingMs = finishMs - now;
-          if (remainingMs > 0) {
-            currentWorkData[i][2] = new Date(finishMs - remainingMs * (pct / 100)).toISOString();
-          }
-        }
-      }
-      document.querySelectorAll('.builder-time-left[data-builder]').forEach(el => {
-        const builderNum = el.dataset.builder.match(/(\d+)/)?.[1];
-        if (!builderNum) return;
-        const row = currentWorkData.find(r => r[0]?.toString().includes(`_${builderNum}`) || r[0]?.toString().endsWith(builderNum));
-        if (!row) return;
-        const newFinishMs = new Date(row[2]).getTime();
-        const remainingMs = newFinishMs - now;
-        if (remainingMs > 0) {
-          const totalMins = Math.floor(remainingMs / 60000);
-          const days  = Math.floor(totalMins / (24 * 60));
-          const hours = Math.floor((totalMins % (24 * 60)) / 60);
-          const mins  = totalMins % 60;
-          el.textContent = `${days} d ${hours} hr ${mins} min`;
-        } else {
-          el.textContent = '0 d 0 hr 0 min';
-        }
-        const finishEl = el.closest('.builder-text')?.querySelector('.builder-finish');
-        if (finishEl) finishEl.textContent = 'Finishes: ' + formatFinishTime(new Date(row[2]));
-      });
-    }
+  const { nextLevel, upgradesAffected, month: prevMonth, year: prevYear } = preview;
+  const monthLabel = prevMonth >= 0 ? `${MONTH_NAMES[prevMonth]} ${prevYear}` : `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
 
+  // Build preview content
+  let previewHtml;
+  if (nextLevel === 0) {
+    previewHtml = `
+      <div class="gp-preview-row">
+        <span class="gp-preview-label">Next action:</span>
+        <span class="gp-preview-value gp-reset">Reset to inactive</span>
+      </div>
+      <div class="gp-preview-row">
+        <span class="gp-preview-label">Upgrades affected:</span>
+        <span class="gp-preview-value">${upgradesAffected}</span>
+      </div>`;
+  } else {
+    previewHtml = `
+      <div class="gp-preview-row">
+        <span class="gp-preview-label">Next tier:</span>
+        <span class="gp-preview-value"><strong>${nextLevel}%</strong> reduction</span>
+      </div>
+      <div class="gp-preview-row">
+        <span class="gp-preview-label">Month locked:</span>
+        <span class="gp-preview-value">${monthLabel}</span>
+      </div>
+      <div class="gp-preview-row">
+        <span class="gp-preview-label">Upgrades affected:</span>
+        <span class="gp-preview-value">${upgradesAffected}</span>
+      </div>`;
+  }
+
+  previewBlock.innerHTML = previewHtml;
+  actionBtn.textContent = actionLabel(nextLevel);
+  actionBtn.disabled = false;
+
+  actionBtn.addEventListener('click', async () => {
+    actionBtn.disabled = true;
+    actionBtn.textContent = '…';
     overlay.remove();
     showRefreshIndicator('refreshing');
-
     try {
       const res = await fetch(BATTLE_PASS_URL());
       const data = await res.json();
@@ -2012,35 +1915,10 @@ function showGoldPassModal() {
       await loadGoldPassState();
       await refreshDashboardFast();
     } catch(e) {
-      if (snapshot) {
-        currentWorkData = snapshot;
-        const now2 = Date.now();
-        document.querySelectorAll('.builder-time-left[data-builder]').forEach(el => {
-          const builderNum = el.dataset.builder.match(/(\d+)/)?.[1];
-          if (!builderNum) return;
-          const row = currentWorkData.find(r => r[0]?.toString().includes(`_${builderNum}`) || r[0]?.toString().endsWith(builderNum));
-          if (!row) return;
-          const finishMs = new Date(row[2]).getTime();
-          const remainingMs = finishMs - now2;
-          if (remainingMs > 0) {
-            const totalMins = Math.floor(remainingMs / 60000);
-            const days  = Math.floor(totalMins / (24 * 60));
-            const hours = Math.floor((totalMins % (24 * 60)) / 60);
-            const mins  = totalMins % 60;
-            el.textContent = `${days} d ${hours} hr ${mins} min`;
-          } else {
-            el.textContent = '0 d 0 hr 0 min';
-          }
-          const finishEl = el.closest('.builder-text')?.querySelector('.builder-finish');
-          if (finishEl) finishEl.textContent = 'Finishes: ' + formatFinishTime(new Date(row[2]));
-        });
-      }
       showRefreshIndicator('hidden');
       showBsErrorToast('Failed to apply Gold Pass — no changes were made');
     }
   });
-
-  fetchPreview();
 }
 
 /* =========================
