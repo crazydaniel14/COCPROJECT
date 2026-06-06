@@ -3578,13 +3578,13 @@ button:disabled {
 /* Gantt bar GP badge (schedule.html) */
 .gp-marker {
   position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 13px;
-  height: 13px;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
   z-index: 4;
   pointer-events: none;
-  opacity: 0.9;
+  opacity: 0.85;
 }
 
 .gantt-bar.has-gp {
