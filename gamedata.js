@@ -306,6 +306,7 @@ const DEFENSE_GAME_DATA = {
       { level: 5, th_required: 15, duration_min: 7200,  cost: 7000000 },
       { level: 6, th_required: 16, duration_min: 8160,  cost: 8000000 },
       { level: 7, th_required: 17, duration_min: 13680, cost: 15500000 },
+      { level: 8, th_required: 18, duration_min: 18720, cost: 24000000 },
     ],
     count_at_th: { 1:5, 2:5, 3:5, 4:5, 5:5, 6:5, 7:5, 8:5, 9:5, 10:5, 11:5, 12:5, 13:5, 14:5, 15:5, 16:5, 17:5, 18:5 },
   },

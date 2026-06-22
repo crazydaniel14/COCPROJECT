@@ -25,7 +25,7 @@ const IMAGE_MAP = {
   "Blacksmith":         ["Lvl 1&2","Lvl 3&4","Lvl 5&6","Lvl 7&8","Lvl 9&10"],
   "Bomb":               ["Lvl 1&2","Lvl 3&4","Lvl 5&6","Lvl 7&8","Lvl 9&10","Lvl 11&12","Lvl 13&14"],
   "Bomb Tower":         ["Lvl 1","Lvl 2","Lvl 3","Lvl 4","Lvl 5","Lvl 6","Lvl 7","Lvl 8","Lvl 9","Lvl 10","Lvl 11","Lvl 12","Lvl 13"],
-  "Builder Hut":        ["Lvl 2","Lvl 3","Lvl 4","Lvl 5","Lvl 6","Lvl 7&8&9"],
+  "Builder Hut":        ["Lvl 2","Lvl 3","Lvl 4","Lvl 5","Lvl 6","Lvl 8","Lvl 7&8&9"],
   "Cannon":             ["Lvl 1","Lvl 2","Lvl 3","Lvl 4","Lvl 5","Lvl 6","Lvl 7","Lvl 8","Lvl 9","Lvl 10","Lvl 11","Lvl 12","Lvl 13","Lvl 14","Lvl 15","Lvl 16","Lvl 17","Lvl 18","Lvl 19","Lvl 20","Lvl 21"],
   "Clan Castle":        ["Lvl 1","Lvl 2","Lvl 3","Lvl 4","Lvl 5","Lvl 6","Lvl 7","Lvl 8","Lvl 9","Lvl 10","Lvl 11","Lvl 12","Lvl 13","Lvl 14"],
   "Dark Barracks":      ["Lvl 1","Lvl 2","Lvl 3","Lvl 4","Lvl 5","Lvl 6","Lvl 7","Lvl 8","Lvl 9","Lvl 10","Lvl 11","Lvl 12"],
