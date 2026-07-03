@@ -682,6 +682,7 @@ const ARMY_GAME_DATA = {
       { level: 10, th_required: 13, duration_min: 10800, cost:  10000000 },
       { level: 11, th_required: 14, duration_min: 11520, cost:  12000000 },
       { level: 12, th_required: 15, duration_min: 17280, cost:  20000000 },
+      { level: 13, th_required: 16, duration_min: 14400, cost:  23000000 },
     ],
     count_at_th: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:1, 8:1, 9:1, 10:1, 11:1, 12:1, 13:1, 14:1, 15:1, 16:1, 17:1, 18:1 },
   },
@@ -718,6 +719,7 @@ const ARMY_GAME_DATA = {
       { level:  5, th_required: 10, duration_min:  7200, cost:   2500000 },
       { level:  6, th_required: 12, duration_min:  8640, cost:   4000000 },
       { level:  7, th_required: 14, duration_min: 10080, cost:  11000000 },
+      { level:  8, th_required: 15, duration_min: 14400, cost:  18000000 },
     ],
     count_at_th: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:1, 9:1, 10:1, 11:1, 12:1, 13:1, 14:1, 15:1, 16:1, 17:1, 18:1 },
   },
@@ -762,7 +764,7 @@ const ARMY_GAME_DATA = {
       { level:  6, th_required: 14, duration_min:  7920, cost:  10000000 },
       { level:  7, th_required: 15, duration_min:  8640, cost:  11000000 },
       { level:  8, th_required: 16, duration_min: 10080, cost:  13000000 },
-      { level:  9, th_required: 18, duration_min: 19440, cost:  26000000 },
+      { level:  9, th_required: 17, duration_min: 19440, cost:  26000000 },
     ],
     count_at_th: { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0, 12:1, 13:1, 14:1, 15:1, 16:1, 17:1, 18:1 },
   },
@@ -1074,7 +1076,7 @@ function getArmyAtTH(thLevel) {
 const HERO_GAME_DATA = {
 
   // ── BARBARIAN KING ───────────────────────────────────────────────────────────
-  // One per village. Levels 1–105 (as of 2026-04). dataId: 28000000
+  // One per village. Levels 1–110. dataId: 28000000
   "Barbarian King": {
     resource: "de",
     heroId: 28000000,
@@ -1184,11 +1186,16 @@ const HERO_GAME_DATA = {
       { level: 103, hero_hall_required: 12, duration_min: 11520, cost: 420000 },
       { level: 104, hero_hall_required: 12, duration_min: 11520, cost: 430000 },
       { level: 105, hero_hall_required: 12, duration_min: 11520, cost: 450000 },
+      { level: 106, hero_hall_required: 12, duration_min: 11520, cost: 460000 },
+      { level: 107, hero_hall_required: 12, duration_min: 11520, cost: 470000 },
+      { level: 108, hero_hall_required: 12, duration_min: 11520, cost: 480000 },
+      { level: 109, hero_hall_required: 12, duration_min: 11520, cost: 490000 },
+      { level: 110, hero_hall_required: 12, duration_min: 11520, cost: 500000 },
     ],
   },
 
   // ── ARCHER QUEEN ─────────────────────────────────────────────────────────────
-  // One per village. Levels 1–105 (as of 2026-04). dataId: 28000001
+  // One per village. Levels 1–110. dataId: 28000001
   "Archer Queen": {
     resource: "de",
     heroId: 28000001,
@@ -1298,11 +1305,16 @@ const HERO_GAME_DATA = {
       { level: 103, hero_hall_required: 12, duration_min: 11520, cost: 420000 },
       { level: 104, hero_hall_required: 12, duration_min: 11520, cost: 430000 },
       { level: 105, hero_hall_required: 12, duration_min: 11520, cost: 450000 },
+      { level: 106, hero_hall_required: 12, duration_min: 11520, cost: 460000 },
+      { level: 107, hero_hall_required: 12, duration_min: 11520, cost: 470000 },
+      { level: 108, hero_hall_required: 12, duration_min: 11520, cost: 480000 },
+      { level: 109, hero_hall_required: 12, duration_min: 11520, cost: 490000 },
+      { level: 110, hero_hall_required: 12, duration_min: 11520, cost: 500000 },
     ],
   },
 
   // ── GRAND WARDEN ─────────────────────────────────────────────────────────────
-  // One per village. Levels 1–80 (as of 2026-04). dataId: 28000002. Uses Elixir.
+  // One per village. Levels 1–85. dataId: 28000002. Uses Elixir.
   "Grand Warden": {
     resource: "elixir",
     heroId: 28000002,
@@ -1387,6 +1399,11 @@ const HERO_GAME_DATA = {
       { level: 78, hero_hall_required: 12, duration_min: 11520, cost:  27000000 },
       { level: 79, hero_hall_required: 12, duration_min: 11520, cost:  28500000 },
       { level: 80, hero_hall_required: 12, duration_min: 11520, cost:  30000000 },
+      { level: 81, hero_hall_required: 12, duration_min: 11520, cost:  31500000 },
+      { level: 82, hero_hall_required: 12, duration_min: 11520, cost:  33000000 },
+      { level: 83, hero_hall_required: 12, duration_min: 11520, cost:  34500000 },
+      { level: 84, hero_hall_required: 12, duration_min: 11520, cost:  36000000 },
+      { level: 85, hero_hall_required: 12, duration_min: 11520, cost:  37500000 },
     ],
   },
 
