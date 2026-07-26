@@ -278,17 +278,18 @@ function getNextUpgradeMeta(upgradeName) {
 }
 
 /**
- * Combined discount factor (0–1) from Gold Pass + Builder Apprentice.
+ * Combined discount factor (0–1) from Gold Pass + E13 event reduction.
  * Multiply a raw time or cost by this to get the discounted value.
+ * E13 comes from _gpState.extraReductionPct (sent by the backend's battle_pass_status response).
  */
 function getActiveDiscountFactor() {
   let factor = 1.0;
   if (_gpState.active && _gpState.level > 0) {
     factor *= (1 - _gpState.level / 100);
   }
-  const apprenticePct = APPRENTICE_REDUCTION_PCT[Math.min(currentBoostLevel, APPRENTICE_REDUCTION_PCT.length - 1)] ?? 0;
-  if (apprenticePct > 0) {
-    factor *= (1 - apprenticePct / 100);
+  const e13Pct = _gpState.extraReductionPct || 0;
+  if (e13Pct > 0) {
+    factor *= (1 - e13Pct / 100);
   }
   return factor;
 }
@@ -366,9 +367,6 @@ let boostPlanData = [];
 let currentBoostIndex = 0;
 let currentBoostLevel = 8;
 const MAX_BOOST_LEVEL = 8; // update when a new level is added to the game
-// Builder Apprentice (E.V.E.) time+cost reduction % per level — index = level (0 unused).
-// These match the E13 sheet values; update here if the sheet changes.
-const APPRENTICE_REDUCTION_PCT = [0, 5, 8, 10, 13, 16, 20, 25, 30];
 let currentBuilderCount = 0;
 let openBuilders = [];
 let loadingBuilders = new Set();
