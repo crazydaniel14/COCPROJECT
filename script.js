@@ -310,9 +310,10 @@ function buildNextUpgradeHTML(upgradeName, discountedMinutes) {
     const factor = (dm > 0 && meta.rawMinutes > 0)
       ? dm / meta.rawMinutes          // ratio from backend — captures all discounts exactly
       : getActiveDiscountFactor();    // fallback: GP from _gpState (no E13)
-    const durFmt   = meta.rawMinutes > 0
-      ? fmtDurShort(Math.round(meta.rawMinutes * factor))
-      : meta.durFmt;
+    const discMin  = Math.round(meta.rawMinutes * factor);
+    // Floor to whole hours when any discount is active — matches game display behaviour
+    const durMin   = factor < 0.9999 ? Math.floor(discMin / 60) * 60 : discMin;
+    const durFmt   = meta.rawMinutes > 0 ? fmtDurShort(durMin) : meta.durFmt;
     const costFmt  = meta.rawCost > 0
       ? fmtCostShort(Math.round(meta.rawCost * factor))
       : meta.costFmt;
