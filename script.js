@@ -294,8 +294,10 @@ function getActiveDiscountFactor() {
   return factor;
 }
 
-/** Builds the inner HTML for the .builder-next element. */
-function buildNextUpgradeHTML(upgradeName) {
+/** Builds the inner HTML for the .builder-next element.
+ *  discountedMinutes: backend-provided discounted duration for the next upgrade (row[4]).
+ *  When provided, uses the same ratio approach as builder-details so ALL discounts match. */
+function buildNextUpgradeHTML(upgradeName, discountedMinutes) {
   if (!upgradeName) return '';
   const imgSrc = getUpgradeImage(upgradeName);
   const meta   = getNextUpgradeMeta(upgradeName);
@@ -304,7 +306,10 @@ function buildNextUpgradeHTML(upgradeName) {
 
   let metaHTML = '';
   if (meta) {
-    const factor   = getActiveDiscountFactor();
+    const dm = Number(discountedMinutes) || 0;
+    const factor = (dm > 0 && meta.rawMinutes > 0)
+      ? dm / meta.rawMinutes          // ratio from backend — captures all discounts exactly
+      : getActiveDiscountFactor();    // fallback: GP from _gpState (no E13)
     const durFmt   = meta.rawMinutes > 0
       ? fmtDurShort(Math.round(meta.rawMinutes * factor))
       : meta.durFmt;
@@ -1142,7 +1147,7 @@ function renderBuilderCards() {
             <div class="builder-finish">Finishes: ${formatFinishTime(row[2])}</div>
             <button class="finish-upgrade-btn" data-builder="${builderNumber}" data-upgrade="${row[1]}" data-next="${row[3]}" title="Mark upgrade as finished"><img src="Images/Finished.png" alt="Finish" /></button>
           </div>
-          <div class="builder-next">${buildNextUpgradeHTML(row[3])}</div>
+          <div class="builder-next">${buildNextUpgradeHTML(row[3], row[4])}</div>
         </div>`;
       const durationEl = card.querySelector('.editable-card-duration');
       if (durationEl) setupCardDurationEditor(durationEl);
@@ -3070,6 +3075,7 @@ async function progressiveInitialLoad() {
       loadBoostLevel(),
       loadTownHallLevel(),
       loadAllBuildersLastFinish(),
+      loadGoldPassState(),
     ];
 
     // Render builder cards the moment critical data arrives
