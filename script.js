@@ -267,12 +267,30 @@ function getNextUpgradeMeta(upgradeName) {
     const lvl = entry.levels?.find(l => l.level === info.level);
     if (!lvl) continue;
     return {
-      durFmt:   fmtDurShort(lvl.duration_min),
-      costFmt:  fmtCostShort(lvl.cost),
-      resource: entry.resource || 'gold',
+      durFmt:     fmtDurShort(lvl.duration_min),
+      costFmt:    fmtCostShort(lvl.cost),
+      resource:   entry.resource || 'gold',
+      rawMinutes: lvl.duration_min,
+      rawCost:    lvl.cost || 0,
     };
   }
   return null;
+}
+
+/**
+ * Combined discount factor (0–1) from Gold Pass + Builder Apprentice.
+ * Multiply a raw time or cost by this to get the discounted value.
+ */
+function getActiveDiscountFactor() {
+  let factor = 1.0;
+  if (_gpState.active && _gpState.level > 0) {
+    factor *= (1 - _gpState.level / 100);
+  }
+  const apprenticePct = APPRENTICE_REDUCTION_PCT[Math.min(currentBoostLevel, APPRENTICE_REDUCTION_PCT.length - 1)] ?? 0;
+  if (apprenticePct > 0) {
+    factor *= (1 - apprenticePct / 100);
+  }
+  return factor;
 }
 
 /** Builds the inner HTML for the .builder-next element. */
@@ -285,10 +303,17 @@ function buildNextUpgradeHTML(upgradeName) {
 
   let metaHTML = '';
   if (meta) {
+    const factor   = getActiveDiscountFactor();
+    const durFmt   = meta.rawMinutes > 0
+      ? fmtDurShort(Math.round(meta.rawMinutes * factor))
+      : meta.durFmt;
+    const costFmt  = meta.rawCost > 0
+      ? fmtCostShort(Math.round(meta.rawCost * factor))
+      : meta.costFmt;
     const resIcon  = RES_ICON[meta.resource]  ? `<img src="${RES_ICON[meta.resource]}" class="next-meta-res-icon" alt="">` : '';
     const resClass = RES_CLASS[meta.resource] || '';
-    const durPart  = meta.durFmt  ? `<img src="Images/Clock vector.png" class="next-meta-clock-icon" alt=""><span class="next-meta-dur">${meta.durFmt}</span>` : '';
-    const costPart = meta.costFmt ? `${resIcon}<span class="next-meta-cost ${resClass}">${meta.costFmt}</span>` : '';
+    const durPart  = durFmt  ? `<img src="Images/Clock vector.png" class="next-meta-clock-icon" alt=""><span class="next-meta-dur">${durFmt}</span>` : '';
+    const costPart = costFmt ? `${resIcon}<span class="next-meta-cost ${resClass}">${costFmt}</span>` : '';
     if (durPart || costPart) {
       metaHTML = `<div class="next-upgrade-meta">${durPart}${durPart && costPart ? '<span class="next-meta-sep">·</span>' : ''}${costPart}</div>`;
     }
@@ -341,6 +366,9 @@ let boostPlanData = [];
 let currentBoostIndex = 0;
 let currentBoostLevel = 8;
 const MAX_BOOST_LEVEL = 8; // update when a new level is added to the game
+// Builder Apprentice (E.V.E.) time+cost reduction % per level — index = level (0 unused).
+// These match the E13 sheet values; update here if the sheet changes.
+const APPRENTICE_REDUCTION_PCT = [0, 5, 8, 10, 13, 16, 20, 25, 30];
 let currentBuilderCount = 0;
 let openBuilders = [];
 let loadingBuilders = new Set();
@@ -844,12 +872,20 @@ function renderBuilderDetails(details) {
         const RES_ICON  = { gold: 'Images/Gold.png', elixir: 'Images/Elixir.png', de: 'Images/Dark Elixir.png' };
         const RES_COLOR = { gold: '#f5d04c', elixir: '#e87dbd', de: '#9b59b6' };
         const resKey = meta?.resource || 'gold';
-        const costFmt = meta?.costFmt || null;
+        // Derive the discount factor from the ratio of discounted time (from backend) to raw time
+        // (from gamedata). This automatically captures both Gold Pass and E13 reductions.
+        let costFmt = meta?.costFmt || null;
+        if (meta?.rawCost > 0 && meta.rawMinutes > 0 && upg.durationMinutes > 0) {
+          const factor = upg.durationMinutes / meta.rawMinutes;
+          if (factor < 0.9999) {
+            costFmt = fmtCostShort(Math.round(meta.rawCost * factor));
+          }
+        }
         const costColHtml = costFmt
           ? `<div class="upgrade-cost-col"><img src="${RES_ICON[resKey] || 'Images/Gold.png'}" class="upgrade-cost-res-icon" alt=""><span class="upgrade-cost-val" style="color:${RES_COLOR[resKey] || '#f5d04c'}">${costFmt}</span></div>`
           : `<div class="upgrade-cost-col upgrade-cost-col--empty">—</div>`;
         const gpBadge = upg.goldPass
-          ? `<img src="Images/Builderpass.png" class="gp-badge" alt="GP" title="Gold Pass reduction applied" />`
+          ? `<img src="Images/Builderpass.png" class="gp-badge" alt="GP" title="Gold Pass + E13 reduction applied" />`
           : '';
         return `
           <div class="upgrade-item${upg.goldPass ? ' has-gp' : ''}"

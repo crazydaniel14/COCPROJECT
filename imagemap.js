@@ -1,5 +1,5 @@
 /* ── SHARED IMAGE MAP ──────────────────────────────────────────────────────
-   Single source of truth for building upgrade image lookups.
+   Single source of truth for building upgrade image lookupscs.
    Loaded by: index.html, building.html, schedule.html
    ────────────────────────────────────────────────────────────────────────── */
 
