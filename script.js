@@ -1178,7 +1178,7 @@ function renderBuilderCards() {
     const gbUpgImg    = gbUpgrade ? getUpgradeImage(gbUpgrade) : 'Images/Upgrades/PH.png';
 
     const gbCard = document.createElement('div');
-    gbCard.className    = 'builder-card gb-card';
+    gbCard.className    = 'builder-card gb-card' + (cardCount === 6 ? ' gb-centered' : '');
     gbCard.dataset.builder = 'Goblin_Bd';
 
     if (gbUpgrade) {
@@ -1437,6 +1437,11 @@ function showBuilderPicker(currentBuilder, callback) {
   const modal = document.createElement('div');
   modal.className = 'builder-picker-modal';
   const builders = ['Builder_1','Builder_2','Builder_3','Builder_4','Builder_5','Builder_6'].filter(b => b !== currentBuilder);
+
+  const goblinRow = currentWorkData ? currentWorkData.slice(1).find(r => String(r[0] || '').includes('Goblin_Bd')) : null;
+  const goblinActive = goblinRow && goblinRow[1] && new Date(goblinRow[2]).getTime() > Date.now();
+  const showGoblin   = goblinActive && currentBuilder !== 'Goblin_Bd';
+
   modal.innerHTML = `
     <div class="builder-picker-content">
       <h3>Move to Builder</h3>
@@ -1447,6 +1452,9 @@ function showBuilderPicker(currentBuilder, callback) {
             <img src="Images/Builders/Builder ${n}.png" alt="${b}" onerror="this.style.display='none'">
             <span>Builder ${n}</span></button>`;
         }).join('')}
+        ${showGoblin ? `<button class="builder-picker-btn" data-builder="Goblin_Bd">
+            <img src="Images/Builders/Goblin_Builder.png" alt="Goblin Builder" onerror="this.style.display='none'">
+            <span>Goblin Builder</span></button>` : ''}
       </div>
       <button class="builder-picker-cancel">Cancel</button>
     </div>`;

@@ -1838,6 +1838,25 @@ button:disabled {
 .boost-level-down-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ==================================================
+   GOBLIN BUILDER CARD
+   ================================================== */
+.builder-card.gb-card {
+  border-left: none;
+  background: linear-gradient(145deg, #182318 0%, #0f180f 100%);
+}
+
+.builder-card.gb-card::before {
+  background: linear-gradient(135deg, rgba(43,222,30,0.08) 0%, rgba(43,222,30,0.03) 100%);
+}
+
+.builder-card.gb-card.gb-centered {
+  grid-column: 1 / -1;
+  max-width: calc(50% - 8px);
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ==================================================
    PAUSED BUILDER CARD
    ================================================== */
 .builder-card.paused {
