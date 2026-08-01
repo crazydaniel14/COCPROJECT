@@ -257,7 +257,6 @@ button:disabled {
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid rgba(255,255,255,0.055);
-  border-left: 4px solid #f5d04c;
   box-shadow:
     0 2px 8px rgba(0,0,0,0.45),
     0 8px 20px rgba(0,0,0,0.35),
@@ -270,7 +269,6 @@ button:disabled {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(245,208,76,0.055) 0%, transparent 48%);
   pointer-events: none;
   z-index: 0;
 }
@@ -284,7 +282,7 @@ button:disabled {
 }
 
 .builder-card.next-finish {
-  border-left-color: #2bde1e;
+  border-left: 4px solid #2bde1e;
   box-shadow:
     0 2px 8px rgba(0,0,0,0.45),
     0 8px 20px rgba(43,222,30,0.14),
@@ -299,7 +297,6 @@ button:disabled {
   grid-column: 1 / -1;
   background: linear-gradient(145deg, #1e1e28 0%, #131318 100%);
   border: 1px solid rgba(245,208,76,0.22);
-  border-left: 4px solid #f5d04c;
   box-shadow:
     0 8px 28px rgba(0,0,0,0.55),
     0 0 0 1px rgba(245,208,76,0.08),
@@ -1860,7 +1857,6 @@ button:disabled {
    PAUSED BUILDER CARD
    ================================================== */
 .builder-card.paused {
-  border-left: 4px solid #ff9800 !important;
   position: relative;
 }
 
@@ -2602,6 +2598,13 @@ button:disabled {
     min-height: 48px;
     cursor: pointer;
     border-radius: 14px;
+  }
+
+  .builder-card.gb-card.gb-centered {
+    grid-column: unset;
+    max-width: unset;
+    margin: 0;
+    width: 100%;
   }
 
   .builder-card * { pointer-events: none; }
