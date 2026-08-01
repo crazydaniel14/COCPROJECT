@@ -835,7 +835,10 @@ function renderBoostFocusCard() {
    BUILDER CARDS
    ========================= */
 async function fetchBuilderDetails(builderNumber) {
-  const res  = await fetch(endpoint("builder_details") + "&builder=Builder_" + builderNumber);
+  // Pure digit strings get "Builder_" prepended; full refs (e.g. "Goblin_Bd", "Builder_1") pass through.
+  const ref = String(builderNumber || '');
+  const builderParam = /^\d+$/.test(ref) ? 'Builder_' + ref : ref;
+  const res  = await fetch(endpoint("builder_details") + "&builder=" + builderParam);
   const data = await res.json();
   if (data.error) throw new Error(data.error);
   if (!data.builder) throw new Error("Unexpected response: " + JSON.stringify(data));
@@ -845,8 +848,9 @@ async function fetchBuilderDetails(builderNumber) {
 function renderBuilderDetails(details) {
   const wrapper = document.createElement("div");
   wrapper.className = "builder-details";
-  const match = details.builder.toString().match(/Builder_?(\d+)/i) || details.builder.toString().match(/(\d+)/);
-  wrapper.dataset.builder = match ? match[1] : "";
+  const rawBuilderName = details.builder.toString();
+  const match = rawBuilderName.match(/Builder_?(\d+)/i) || rawBuilderName.match(/(\d+)/);
+  wrapper.dataset.builder = rawBuilderName.includes('Goblin') ? 'Goblin_Bd' : (match ? match[1] : "");
   const originalOrder = details.upgrades.map((_, i) => i);
   wrapper.innerHTML = `
     <div class="builder-details-header">
@@ -1160,6 +1164,52 @@ function renderBuilderCards() {
   currentBuilderCount = cardCount;
   updateBuilderCountBadge();
   wirePausedBuilderButtons();
+
+  // ── Goblin Builder card (appended after regular builders when F13 = Yes) ──
+  const goblinRow = currentWorkData.slice(1).find(r => String(r[0] || '').includes('Goblin_Bd'));
+  if (goblinRow) {
+    const gbFinishMs  = new Date(goblinRow[2]).getTime();
+    const gbRemMs     = gbFinishMs - Date.now();
+    const gbRemMins   = gbRemMs > 0 ? Math.floor(gbRemMs / 60000) : 0;
+    const gbTimeLeft  = gbRemMs > 0
+      ? `${Math.floor(gbRemMins / 1440)} d ${Math.floor((gbRemMins % 1440) / 60)} hr ${gbRemMins % 60} min`
+      : '0 d 0 hr 0 min';
+    const gbUpgrade   = goblinRow[1] || '';
+    const gbUpgImg    = gbUpgrade ? getUpgradeImage(gbUpgrade) : 'Images/Upgrades/PH.png';
+
+    const gbCard = document.createElement('div');
+    gbCard.className    = 'builder-card gb-card';
+    gbCard.dataset.builder = 'Goblin_Bd';
+
+    if (gbUpgrade) {
+      gbCard.innerHTML = `
+        <img src="Images/Builders/Goblin_Builder.png"
+             class="builder-character" alt="Goblin Builder"
+             onerror="this.src='Images/Builders/Builder 1.png'" />
+        <img src="${gbUpgImg}" class="current-upgrade-icon"
+             alt="${gbUpgrade}" onerror="this.src='Images/Upgrades/PH.png'" />
+        <div class="builder-text">
+          <div class="builder-name">GOBLIN BUILDER</div>
+          <div class="builder-upgrade">${gbUpgrade}</div>
+          <div class="builder-time-left">${gbTimeLeft}</div>
+          <div class="builder-finish-row">
+            <div class="builder-finish">Finishes: ${formatFinishTime(goblinRow[2])}</div>
+          </div>
+          <div class="builder-next">${buildNextUpgradeHTML(goblinRow[3], goblinRow[4])}</div>
+        </div>`;
+    } else {
+      gbCard.innerHTML = `
+        <img src="Images/Builders/Goblin_Builder.png"
+             class="builder-character" alt="Goblin Builder"
+             onerror="this.src='Images/Builders/Builder 1.png'" />
+        <div class="builder-text">
+          <div class="builder-name">GOBLIN BUILDER</div>
+          <div class="builder-upgrade">No active upgrade</div>
+        </div>`;
+    }
+
+    container.appendChild(gbCard);
+  }
 }
 
 /* =========================
